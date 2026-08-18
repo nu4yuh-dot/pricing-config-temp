@@ -7,6 +7,7 @@ import { pendingRequests } from '../../data/rate-cards';
 import { pendingProposals, pendingBookingExceptions } from '../../data/customers';
 import { signOut } from '../actions';
 import UiSwitch from '../../components/console/UiSwitch';
+import NavMenu from '../../components/NavMenu';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
@@ -31,28 +32,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <nav>
           {/* Grouped by what somebody is doing, not by which screen was built first.
               Nothing is removed: every page reachable before is reachable here. */}
-          <details>
-            <summary>Customers</summary>
-            <div className="menu">
-              <Link href="/customers">Contract customers</Link>
-              <Link href="/customers/new">Add a customer</Link>
-              <Link href="/signups">Online signups</Link>
-              <Link href="/coloaders">Co-loaders</Link>
-            </div>
-          </details>
+          <NavMenu label="Customers">
+            <Link href="/customers">Contract customers</Link>
+            <Link href="/customers/new">Add a customer</Link>
+            <Link href="/signups">Online signups</Link>
+            <Link href="/coloaders">Co-loaders</Link>
+          </NavMenu>
 
-          <details>
-            <summary>Contracts</summary>
-            <div className="menu">
-              <Link href={mode === 'sheet' ? '/sheets/model-1/surface' : '/console/model-1/rates'}>
-                Base rate cards
-              </Link>
-              <Link href="/templates">Rate templates</Link>
-              <Link href="/products">Products</Link>
-              <Link href="/charges">Charge library</Link>
-              <Link href="/offers">Offers</Link>
-            </div>
-          </details>
+          <NavMenu label="Contracts">
+            <Link href={mode === 'sheet' ? '/sheets/model-1/surface' : '/console/model-1/rates'}>
+              Base rate cards
+            </Link>
+            <Link href="/templates">Rate templates</Link>
+            <Link href="/products">Products</Link>
+            <Link href="/charges">Charge library</Link>
+            <Link href="/offers">Offers</Link>
+          </NavMenu>
 
           <Link href="/approvals">
             Approvals
@@ -66,18 +61,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
           <Link href="/money">Money</Link>
 
-          <details>
-            <summary>Tools</summary>
-            <div className="menu">
-              <Link href="/calculator">Calculator</Link>
-              <Link href="/bluedart">Bluedart</Link>
-              <Link href="/ups">UPS international</Link>
-              <Link href="/pincodes">Pincodes</Link>
-              <Link href="/glossary">What the terms mean</Link>
-              {can(user.role, 'manage-users') && <Link href="/users">Users</Link>}
-              {can(user.role, 'view-audit-log') && <Link href="/history">History</Link>}
-            </div>
-          </details>
+          <NavMenu label="Tools">
+            <Link href="/calculator">Calculator</Link>
+            <Link href="/bluedart">Bluedart</Link>
+            <Link href="/ups">UPS international</Link>
+            <Link href="/pincodes">Pincodes</Link>
+            <Link href="/glossary">What the terms mean</Link>
+            {can(user.role, 'manage-users') && <Link href="/users">Users</Link>}
+            {can(user.role, 'view-audit-log') && <Link href="/history">History</Link>}
+          </NavMenu>
 
           <UiSwitch mode={mode} cardKey="model-1" />
           <span className="whoami">
