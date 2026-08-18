@@ -1,0 +1,40 @@
+# Render Blueprint.
+#
+# Render → New → Blueprint → connect this repo. Render reads this file and creates
+# the service; you fill in one secret and press deploy.
+#
+# Render has no managed MongoDB, so the database comes from MongoDB Atlas (free M0).
+# If you would rather have the app and the database in one place, use Railway
+# instead — see docs/hosting-walkthrough.md.
+
+services:
+  - type: web
+    name: dns-pricing
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # `runner` is the last stage, so this is the lean service image, not the tools one.
+    plan: starter
+    region: singapore # closest Render region to India
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+    envVars:
+      # Render generates this once and keeps it stable across deploys, which matters:
+      # it signs session cookies, so a changing value signs everyone out.
+      - key: SESSION_SECRET
+        generateValue: true
+
+      - key: MONGODB_DB
+        value: dns_pricing
+
+      # Paste the Atlas connection string in the dashboard. Marked sync:false so it
+      # is never committed and Render prompts for it instead.
+      - key: MONGODB_URI
+        sync: false
+
+      # BOOKING_API_KEY is deliberately absent. Without it every /api/* route
+      # returns 503, which is what we want while the booking integration is out of
+      # scope. /api/health stays reachable for the health check.
+
+      - key: NODE_ENV
+        value: production

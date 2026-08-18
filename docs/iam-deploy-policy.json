@@ -1,0 +1,108 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EcrLoginOnly",
+      "Effect": "Allow",
+      "Action": "ecr:GetAuthorizationToken",
+      "Resource": "*"
+    },
+    {
+      "Sid": "OnlyTheDnsPricingRepository",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:CreateRepository",
+        "ecr:DescribeRepositories",
+        "ecr:DescribeImages",
+        "ecr:ListImages",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload",
+        "ecr:PutImage",
+        "ecr:BatchGetImage",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:PutLifecyclePolicy",
+        "ecr:TagResource"
+      ],
+      "Resource": "arn:aws:ecr:ap-south-1:837933861003:repository/dns-pricing"
+    },
+    {
+      "Sid": "OnlyTheDnsPricingAppRunnerService",
+      "Effect": "Allow",
+      "Action": [
+        "apprunner:CreateService",
+        "apprunner:UpdateService",
+        "apprunner:DescribeService",
+        "apprunner:DeleteService",
+        "apprunner:PauseService",
+        "apprunner:ResumeService",
+        "apprunner:StartDeployment",
+        "apprunner:ListOperations",
+        "apprunner:DescribeCustomDomains",
+        "apprunner:TagResource"
+      ],
+      "Resource": "arn:aws:apprunner:ap-south-1:837933861003:service/dns-pricing/*"
+    },
+    {
+      "Sid": "ListingIsAccountLevelButReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "apprunner:ListServices"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AppRunnerNeedsItsOwnServiceLinkedRole",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::837933861003:role/aws-service-role/apprunner.amazonaws.com/*",
+      "Condition": {
+        "StringEquals": {
+          "iam:AWSServiceName": "apprunner.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "OneRoleOnlySoAppRunnerCanPullTheImage",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:GetRole",
+        "iam:PassRole",
+        "iam:TagRole"
+      ],
+      "Resource": "arn:aws:iam::837933861003:role/AppRunnerECRAccessRole-dns-pricing"
+    },
+    {
+      "Sid": "AndOnlyTheAwsManagedEcrPolicyOnThatRole",
+      "Effect": "Allow",
+      "Action": "iam:AttachRolePolicy",
+      "Resource": "arn:aws:iam::837933861003:role/AppRunnerECRAccessRole-dns-pricing",
+      "Condition": {
+        "ArnEquals": {
+          "iam:PolicyARN": "arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess"
+        }
+      }
+    },
+    {
+      "Sid": "ReadItsOwnLogsForDebugging",
+      "Effect": "Allow",
+      "Action": [
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents"
+      ],
+      "Resource": "arn:aws:logs:ap-south-1:837933861003:log-group:/aws/apprunner/dns-pricing*"
+    },
+    {
+      "Sid": "ConfirmWhoWeAre",
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetCallerIdentity"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

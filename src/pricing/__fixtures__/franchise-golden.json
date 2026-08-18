@@ -1,0 +1,3435 @@
+{
+  "generatedFrom": "DNS_Directional_RateCard_Calculator.xlsx, recalculated by LibreOffice headless",
+  "note": "Expected values are what the workbook's own Calculator computes. Do not hand-edit; regenerate with scripts/generate_franchise_fixtures.py.",
+  "cases": [
+    {
+      "case": {
+        "id": "apex-west-0.5kg",
+        "description": "APEX to WEST at 0.5 kg",
+        "pincode": 334002,
+        "weight": 0.5,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 5,
+        "freight": 620,
+        "oda": 0,
+        "fuel": 570.4,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1490.4,
+        "gst": 268.272,
+        "total": 1758.672
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-1kg",
+        "description": "APEX to WEST at 1 kg",
+        "pincode": 334002,
+        "weight": 1,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 5,
+        "freight": 620,
+        "oda": 0,
+        "fuel": 570.4,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1490.4,
+        "gst": 268.272,
+        "total": 1758.672
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-4.9kg",
+        "description": "APEX to WEST at 4.9 kg",
+        "pincode": 334002,
+        "weight": 4.9,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 5,
+        "freight": 620,
+        "oda": 0,
+        "fuel": 570.4,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1490.4,
+        "gst": 268.272,
+        "total": 1758.672
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-5kg",
+        "description": "APEX to WEST at 5 kg",
+        "pincode": 334002,
+        "weight": 5,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 5,
+        "freight": 620,
+        "oda": 0,
+        "fuel": 570.4,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1490.4,
+        "gst": 268.272,
+        "total": 1758.672
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-5.1kg",
+        "description": "APEX to WEST at 5.1 kg",
+        "pincode": 334002,
+        "weight": 5.1,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 5.1,
+        "freight": 632.4,
+        "oda": 0,
+        "fuel": 581.808,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1514.208,
+        "gst": 272.55744,
+        "total": 1786.76544
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-24.9kg",
+        "description": "APEX to WEST at 24.9 kg",
+        "pincode": 334002,
+        "weight": 24.9,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 24.9,
+        "freight": 3087.6,
+        "oda": 0,
+        "fuel": 2840.592,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 6228.192,
+        "gst": 1121.07456,
+        "total": 7349.26656
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-25kg",
+        "description": "APEX to WEST at 25 kg",
+        "pincode": 334002,
+        "weight": 25,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 25,
+        "freight": 3100,
+        "oda": 0,
+        "fuel": 2852,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 6252,
+        "gst": 1125.36,
+        "total": 7377.36
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-25.1kg",
+        "description": "APEX to WEST at 25.1 kg",
+        "pincode": 334002,
+        "weight": 25.1,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 25.1,
+        "freight": 3112,
+        "oda": 0,
+        "fuel": 2863.04,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 6275.04,
+        "gst": 1129.5072,
+        "total": 7404.5472
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-49.9kg",
+        "description": "APEX to WEST at 49.9 kg",
+        "pincode": 334002,
+        "weight": 49.9,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 49.9,
+        "freight": 6088,
+        "oda": 0,
+        "fuel": 5600.96,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 11988.96,
+        "gst": 2158.0128,
+        "total": 14146.9728
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-50kg",
+        "description": "APEX to WEST at 50 kg",
+        "pincode": 334002,
+        "weight": 50,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 50,
+        "freight": 6100,
+        "oda": 0,
+        "fuel": 5612,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 12012,
+        "gst": 2162.16,
+        "total": 14174.16
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-50.1kg",
+        "description": "APEX to WEST at 50.1 kg",
+        "pincode": 334002,
+        "weight": 50.1,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 50.1,
+        "freight": 6111.2,
+        "oda": 0,
+        "fuel": 5622.304,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 12033.504,
+        "gst": 2166.03072,
+        "total": 14199.53472
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-99.9kg",
+        "description": "APEX to WEST at 99.9 kg",
+        "pincode": 334002,
+        "weight": 99.9,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 99.9,
+        "freight": 11688.8,
+        "oda": 0,
+        "fuel": 10753.696,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 22742.496,
+        "gst": 4093.64928,
+        "total": 26836.14528
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-100kg",
+        "description": "APEX to WEST at 100 kg",
+        "pincode": 334002,
+        "weight": 100,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 100,
+        "freight": 11700,
+        "oda": 0,
+        "fuel": 10764,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 22764,
+        "gst": 4097.52,
+        "total": 26861.52
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-100.1kg",
+        "description": "APEX to WEST at 100.1 kg",
+        "pincode": 334002,
+        "weight": 100.1,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 100.1,
+        "freight": 11709.9,
+        "oda": 0,
+        "fuel": 10773.108,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 22783.008,
+        "gst": 4100.94144,
+        "total": 26883.94944
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-250kg",
+        "description": "APEX to WEST at 250 kg",
+        "pincode": 334002,
+        "weight": 250,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 250,
+        "freight": 26550,
+        "oda": 0,
+        "fuel": 24426,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 51276,
+        "gst": 9229.68,
+        "total": 60505.68
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-1000kg",
+        "description": "APEX to WEST at 1000 kg",
+        "pincode": 334002,
+        "weight": 1000,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 1000,
+        "freight": 100800,
+        "oda": 0,
+        "fuel": 92736,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 193836,
+        "gst": 34890.48,
+        "total": 228726.48
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-0.5kg",
+        "description": "SURFACE to WEST at 0.5 kg",
+        "pincode": 334002,
+        "weight": 0.5,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 10,
+        "freight": 160,
+        "oda": 0,
+        "fuel": 104,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 564,
+        "gst": 101.52,
+        "total": 665.52
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-5kg",
+        "description": "SURFACE to WEST at 5 kg",
+        "pincode": 334002,
+        "weight": 5,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 10,
+        "freight": 160,
+        "oda": 0,
+        "fuel": 104,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 564,
+        "gst": 101.52,
+        "total": 665.52
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-9.9kg",
+        "description": "SURFACE to WEST at 9.9 kg",
+        "pincode": 334002,
+        "weight": 9.9,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 10,
+        "freight": 160,
+        "oda": 0,
+        "fuel": 104,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 564,
+        "gst": 101.52,
+        "total": 665.52
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-10kg",
+        "description": "SURFACE to WEST at 10 kg",
+        "pincode": 334002,
+        "weight": 10,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 10,
+        "freight": 160,
+        "oda": 0,
+        "fuel": 104,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 564,
+        "gst": 101.52,
+        "total": 665.52
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-10.1kg",
+        "description": "SURFACE to WEST at 10.1 kg",
+        "pincode": 334002,
+        "weight": 10.1,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 10.1,
+        "freight": 161.3,
+        "oda": 0,
+        "fuel": 104.845,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 566.145,
+        "gst": 101.9061,
+        "total": 668.0511
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-24.9kg",
+        "description": "SURFACE to WEST at 24.9 kg",
+        "pincode": 334002,
+        "weight": 24.9,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 24.9,
+        "freight": 353.7,
+        "oda": 0,
+        "fuel": 229.905,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 883.605,
+        "gst": 159.0489,
+        "total": 1042.6539
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-25kg",
+        "description": "SURFACE to WEST at 25 kg",
+        "pincode": 334002,
+        "weight": 25,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 25,
+        "freight": 355,
+        "oda": 0,
+        "fuel": 230.75,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 885.75,
+        "gst": 159.435,
+        "total": 1045.185
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-25.1kg",
+        "description": "SURFACE to WEST at 25.1 kg",
+        "pincode": 334002,
+        "weight": 25.1,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 25.1,
+        "freight": 356.25,
+        "oda": 0,
+        "fuel": 231.5625,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 887.8125,
+        "gst": 159.80625,
+        "total": 1047.61875
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-49.9kg",
+        "description": "SURFACE to WEST at 49.9 kg",
+        "pincode": 334002,
+        "weight": 49.9,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 49.9,
+        "freight": 666.25,
+        "oda": 0,
+        "fuel": 433.0625,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1399.3125,
+        "gst": 251.87625,
+        "total": 1651.18875
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-50kg",
+        "description": "SURFACE to WEST at 50 kg",
+        "pincode": 334002,
+        "weight": 50,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 50,
+        "freight": 667.5,
+        "oda": 0,
+        "fuel": 433.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1401.375,
+        "gst": 252.2475,
+        "total": 1653.6225
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-50.1kg",
+        "description": "SURFACE to WEST at 50.1 kg",
+        "pincode": 334002,
+        "weight": 50.1,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 50.1,
+        "freight": 668.7,
+        "oda": 0,
+        "fuel": 434.655,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1403.355,
+        "gst": 252.6039,
+        "total": 1655.9589
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-99.9kg",
+        "description": "SURFACE to WEST at 99.9 kg",
+        "pincode": 334002,
+        "weight": 99.9,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 99.9,
+        "freight": 1266.3,
+        "oda": 0,
+        "fuel": 823.095,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 2389.395,
+        "gst": 430.0911,
+        "total": 2819.4861
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-100kg",
+        "description": "SURFACE to WEST at 100 kg",
+        "pincode": 334002,
+        "weight": 100,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 100,
+        "freight": 1267.5,
+        "oda": 0,
+        "fuel": 823.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 2391.375,
+        "gst": 430.4475,
+        "total": 2821.8225
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-100.1kg",
+        "description": "SURFACE to WEST at 100.1 kg",
+        "pincode": 334002,
+        "weight": 100.1,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 100.1,
+        "freight": 1268.65,
+        "oda": 0,
+        "fuel": 824.6225,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 2393.2725,
+        "gst": 430.78905,
+        "total": 2824.06155
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-250kg",
+        "description": "SURFACE to WEST at 250 kg",
+        "pincode": 334002,
+        "weight": 250,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 250,
+        "freight": 2992.5,
+        "oda": 0,
+        "fuel": 1945.125,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 5237.625,
+        "gst": 942.7725,
+        "total": 6180.3975
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-1000kg",
+        "description": "SURFACE to WEST at 1000 kg",
+        "pincode": 334002,
+        "weight": 1000,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 1000,
+        "freight": 11617.5,
+        "oda": 0,
+        "fuel": 7551.375,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 19468.875,
+        "gst": 3504.3975,
+        "total": 22973.2725
+      }
+    },
+    {
+      "case": {
+        "id": "docs-west-0.1kg",
+        "description": "DOCs to WEST at 0.1 kg",
+        "pincode": 334002,
+        "weight": 0.1,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 0.5,
+        "freight": 50,
+        "oda": 0,
+        "fuel": 46,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 96,
+        "gst": 17.28,
+        "total": 113.28
+      }
+    },
+    {
+      "case": {
+        "id": "docs-west-0.5kg",
+        "description": "DOCs to WEST at 0.5 kg",
+        "pincode": 334002,
+        "weight": 0.5,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 0.5,
+        "freight": 50,
+        "oda": 0,
+        "fuel": 46,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 96,
+        "gst": 17.28,
+        "total": 113.28
+      }
+    },
+    {
+      "case": {
+        "id": "docs-west-0.51kg",
+        "description": "DOCs to WEST at 0.51 kg",
+        "pincode": 334002,
+        "weight": 0.51,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 0.51,
+        "freight": 100,
+        "oda": 0,
+        "fuel": 92,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 192,
+        "gst": 34.56,
+        "total": 226.56
+      }
+    },
+    {
+      "case": {
+        "id": "docs-west-0.9kg",
+        "description": "DOCs to WEST at 0.9 kg",
+        "pincode": 334002,
+        "weight": 0.9,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 0.9,
+        "freight": 100,
+        "oda": 0,
+        "fuel": 92,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 192,
+        "gst": 34.56,
+        "total": 226.56
+      }
+    },
+    {
+      "case": {
+        "id": "docs-west-1kg",
+        "description": "DOCs to WEST at 1 kg",
+        "pincode": 334002,
+        "weight": 1,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 1,
+        "freight": 100,
+        "oda": 0,
+        "fuel": 92,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 192,
+        "gst": 34.56,
+        "total": 226.56
+      }
+    },
+    {
+      "case": {
+        "id": "docs-west-1.1kg",
+        "description": "DOCs to WEST at 1.1 kg",
+        "pincode": 334002,
+        "weight": 1.1,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 1.1,
+        "freight": 150,
+        "oda": 0,
+        "fuel": 138,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 288,
+        "gst": 51.84,
+        "total": 339.84
+      }
+    },
+    {
+      "case": {
+        "id": "docs-west-1.5kg",
+        "description": "DOCs to WEST at 1.5 kg",
+        "pincode": 334002,
+        "weight": 1.5,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 1.5,
+        "freight": 150,
+        "oda": 0,
+        "fuel": 138,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 288,
+        "gst": 51.84,
+        "total": 339.84
+      }
+    },
+    {
+      "case": {
+        "id": "docs-west-2kg",
+        "description": "DOCs to WEST at 2 kg",
+        "pincode": 334002,
+        "weight": 2,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 2,
+        "freight": 200,
+        "oda": 0,
+        "fuel": 184,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 384,
+        "gst": 69.12,
+        "total": 453.12
+      }
+    },
+    {
+      "case": {
+        "id": "docs-west-4.9kg",
+        "description": "DOCs to WEST at 4.9 kg",
+        "pincode": 334002,
+        "weight": 4.9,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 4.9,
+        "freight": 500,
+        "oda": 0,
+        "fuel": 460,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 960,
+        "gst": 172.8,
+        "total": 1132.8
+      }
+    },
+    {
+      "case": {
+        "id": "docs-west-5kg",
+        "description": "DOCs to WEST at 5 kg",
+        "pincode": 334002,
+        "weight": 5,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 5,
+        "freight": 500,
+        "oda": 0,
+        "fuel": 460,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 960,
+        "gst": 172.8,
+        "total": 1132.8
+      }
+    },
+    {
+      "case": {
+        "id": "docs-west-6kg",
+        "description": "DOCs to WEST at 6 kg",
+        "pincode": 334002,
+        "weight": 6,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 6,
+        "freight": 600,
+        "oda": 0,
+        "fuel": 552,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 1152,
+        "gst": 207.36,
+        "total": 1359.36
+      }
+    },
+    {
+      "case": {
+        "id": "duts-west-0.5kg",
+        "description": "DUTS to WEST at 0.5 kg",
+        "pincode": 334002,
+        "weight": 0.5,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 1,
+        "freight": 200,
+        "oda": 0,
+        "fuel": 184,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 384,
+        "gst": 69.12,
+        "total": 453.12
+      }
+    },
+    {
+      "case": {
+        "id": "duts-west-1kg",
+        "description": "DUTS to WEST at 1 kg",
+        "pincode": 334002,
+        "weight": 1,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 1,
+        "freight": 200,
+        "oda": 0,
+        "fuel": 184,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 384,
+        "gst": 69.12,
+        "total": 453.12
+      }
+    },
+    {
+      "case": {
+        "id": "duts-west-1.1kg",
+        "description": "DUTS to WEST at 1.1 kg",
+        "pincode": 334002,
+        "weight": 1.1,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 1.1,
+        "freight": 200,
+        "oda": 0,
+        "fuel": 184,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 384,
+        "gst": 69.12,
+        "total": 453.12
+      }
+    },
+    {
+      "case": {
+        "id": "duts-west-2kg",
+        "description": "DUTS to WEST at 2 kg",
+        "pincode": 334002,
+        "weight": 2,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 2,
+        "freight": 200,
+        "oda": 0,
+        "fuel": 184,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 384,
+        "gst": 69.12,
+        "total": 453.12
+      }
+    },
+    {
+      "case": {
+        "id": "duts-west-3kg",
+        "description": "DUTS to WEST at 3 kg",
+        "pincode": 334002,
+        "weight": 3,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 3,
+        "freight": 240,
+        "oda": 0,
+        "fuel": 220.8,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 460.8,
+        "gst": 82.944,
+        "total": 543.744
+      }
+    },
+    {
+      "case": {
+        "id": "duts-west-4.9kg",
+        "description": "DUTS to WEST at 4.9 kg",
+        "pincode": 334002,
+        "weight": 4.9,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 4.9,
+        "freight": 400,
+        "oda": 0,
+        "fuel": 368,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 768,
+        "gst": 138.24,
+        "total": 906.24
+      }
+    },
+    {
+      "case": {
+        "id": "duts-west-5kg",
+        "description": "DUTS to WEST at 5 kg",
+        "pincode": 334002,
+        "weight": 5,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 5,
+        "freight": 400,
+        "oda": 0,
+        "fuel": 368,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 768,
+        "gst": 138.24,
+        "total": 906.24
+      }
+    },
+    {
+      "case": {
+        "id": "duts-west-6kg",
+        "description": "DUTS to WEST at 6 kg",
+        "pincode": 334002,
+        "weight": 6,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 6,
+        "freight": 480,
+        "oda": 0,
+        "fuel": 441.6,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 921.6,
+        "gst": 165.888,
+        "total": 1087.488
+      }
+    },
+    {
+      "case": {
+        "id": "docs-north-2kg",
+        "description": "DOCs to NORTH at 2 kg",
+        "pincode": 110001,
+        "weight": 2,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "New Delhi GPO, Delhi",
+        "chargeableWeight": 2,
+        "freight": 232,
+        "oda": 0,
+        "fuel": 213.44,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 445.44,
+        "gst": 80.1792,
+        "total": 525.6192
+      }
+    },
+    {
+      "case": {
+        "id": "duts-north-2kg",
+        "description": "DUTS to NORTH at 2 kg",
+        "pincode": 110001,
+        "weight": 2,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "New Delhi GPO, Delhi",
+        "chargeableWeight": 2,
+        "freight": 200,
+        "oda": 0,
+        "fuel": 184,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 384,
+        "gst": 69.12,
+        "total": 453.12
+      }
+    },
+    {
+      "case": {
+        "id": "apex-north-30kg",
+        "description": "APEX to NORTH at 30 kg",
+        "pincode": 110001,
+        "weight": 30,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "New Delhi GPO, Delhi",
+        "chargeableWeight": 30,
+        "freight": 3700,
+        "oda": 0,
+        "fuel": 3404,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 7404,
+        "gst": 1332.72,
+        "total": 8736.72
+      }
+    },
+    {
+      "case": {
+        "id": "surface-north-30kg",
+        "description": "SURFACE to NORTH at 30 kg",
+        "pincode": 110001,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "New Delhi GPO, Delhi",
+        "chargeableWeight": 30,
+        "freight": 442.5,
+        "oda": 0,
+        "fuel": 287.625,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1030.125,
+        "gst": 185.4225,
+        "total": 1215.5475
+      }
+    },
+    {
+      "case": {
+        "id": "docs-ne-remote-2kg",
+        "description": "DOCs to NE & REMOTE at 2 kg",
+        "pincode": 180001,
+        "weight": 2,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NE & REMOTE",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "Jammu, Jammu And Kashmir",
+        "chargeableWeight": 2,
+        "freight": 300,
+        "oda": 0,
+        "fuel": 276,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 576,
+        "gst": 103.68,
+        "total": 679.68
+      }
+    },
+    {
+      "case": {
+        "id": "duts-ne-remote-2kg",
+        "description": "DUTS to NE & REMOTE at 2 kg",
+        "pincode": 180001,
+        "weight": 2,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NE & REMOTE",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "Jammu, Jammu And Kashmir",
+        "chargeableWeight": 2,
+        "freight": 240,
+        "oda": 0,
+        "fuel": 220.8,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 460.8,
+        "gst": 82.944,
+        "total": 543.744
+      }
+    },
+    {
+      "case": {
+        "id": "apex-ne-remote-30kg",
+        "description": "APEX to NE & REMOTE at 30 kg",
+        "pincode": 180001,
+        "weight": 30,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NE & REMOTE",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "Jammu, Jammu And Kashmir",
+        "chargeableWeight": 30,
+        "freight": 5625,
+        "oda": 0,
+        "fuel": 5175,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 11100,
+        "gst": 1998,
+        "total": 13098
+      }
+    },
+    {
+      "case": {
+        "id": "surface-ne-remote-30kg",
+        "description": "SURFACE to NE & REMOTE at 30 kg",
+        "pincode": 180001,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NE & REMOTE",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "Jammu, Jammu And Kashmir",
+        "chargeableWeight": 30,
+        "freight": 865,
+        "oda": 0,
+        "fuel": 562.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1727.25,
+        "gst": 310.905,
+        "total": 2038.155
+      }
+    },
+    {
+      "case": {
+        "id": "docs-west-2kg",
+        "description": "DOCs to WEST at 2 kg",
+        "pincode": 334002,
+        "weight": 2,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 2,
+        "freight": 200,
+        "oda": 0,
+        "fuel": 184,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 384,
+        "gst": 69.12,
+        "total": 453.12
+      }
+    },
+    {
+      "case": {
+        "id": "duts-west-2kg",
+        "description": "DUTS to WEST at 2 kg",
+        "pincode": 334002,
+        "weight": 2,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 2,
+        "freight": 200,
+        "oda": 0,
+        "fuel": 184,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 384,
+        "gst": 69.12,
+        "total": 453.12
+      }
+    },
+    {
+      "case": {
+        "id": "apex-west-30kg",
+        "description": "APEX to WEST at 30 kg",
+        "pincode": 334002,
+        "weight": 30,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 30,
+        "freight": 3700,
+        "oda": 0,
+        "fuel": 3404,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 7404,
+        "gst": 1332.72,
+        "total": 8736.72
+      }
+    },
+    {
+      "case": {
+        "id": "surface-west-30kg",
+        "description": "SURFACE to WEST at 30 kg",
+        "pincode": 334002,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 30,
+        "freight": 417.5,
+        "oda": 0,
+        "fuel": 271.375,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 988.875,
+        "gst": 177.9975,
+        "total": 1166.8725
+      }
+    },
+    {
+      "case": {
+        "id": "docs-south-2kg",
+        "description": "DOCs to SOUTH at 2 kg",
+        "pincode": 500001,
+        "weight": 2,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "SOUTH",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "Hyderabad G.P.O., Telangana",
+        "chargeableWeight": 2,
+        "freight": 232,
+        "oda": 0,
+        "fuel": 213.44,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 445.44,
+        "gst": 80.1792,
+        "total": 525.6192
+      }
+    },
+    {
+      "case": {
+        "id": "duts-south-2kg",
+        "description": "DUTS to SOUTH at 2 kg",
+        "pincode": 500001,
+        "weight": 2,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "SOUTH",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "Hyderabad G.P.O., Telangana",
+        "chargeableWeight": 2,
+        "freight": 208,
+        "oda": 0,
+        "fuel": 191.36,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 399.36,
+        "gst": 71.8848,
+        "total": 471.2448
+      }
+    },
+    {
+      "case": {
+        "id": "apex-south-30kg",
+        "description": "APEX to SOUTH at 30 kg",
+        "pincode": 500001,
+        "weight": 30,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "SOUTH",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "Hyderabad G.P.O., Telangana",
+        "chargeableWeight": 30,
+        "freight": 3700,
+        "oda": 0,
+        "fuel": 3404,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 7404,
+        "gst": 1332.72,
+        "total": 8736.72
+      }
+    },
+    {
+      "case": {
+        "id": "surface-south-30kg",
+        "description": "SURFACE to SOUTH at 30 kg",
+        "pincode": 500001,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "SOUTH",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "Hyderabad G.P.O., Telangana",
+        "chargeableWeight": 30,
+        "freight": 442.5,
+        "oda": 0,
+        "fuel": 287.625,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1030.125,
+        "gst": 185.4225,
+        "total": 1215.5475
+      }
+    },
+    {
+      "case": {
+        "id": "docs-east-2kg",
+        "description": "DOCs to EAST at 2 kg",
+        "pincode": 700001,
+        "weight": 2,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "EAST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "KOLKATA GPO, West Bengal",
+        "chargeableWeight": 2,
+        "freight": 276,
+        "oda": 0,
+        "fuel": 253.92,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 529.92,
+        "gst": 95.3856,
+        "total": 625.3056
+      }
+    },
+    {
+      "case": {
+        "id": "duts-east-2kg",
+        "description": "DUTS to EAST at 2 kg",
+        "pincode": 700001,
+        "weight": 2,
+        "service": "DUTS",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "EAST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "KOLKATA GPO, West Bengal",
+        "chargeableWeight": 2,
+        "freight": 220,
+        "oda": 0,
+        "fuel": 202.4,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 422.4,
+        "gst": 76.032,
+        "total": 498.432
+      }
+    },
+    {
+      "case": {
+        "id": "apex-east-30kg",
+        "description": "APEX to EAST at 30 kg",
+        "pincode": 700001,
+        "weight": 30,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "EAST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "KOLKATA GPO, West Bengal",
+        "chargeableWeight": 30,
+        "freight": 4320,
+        "oda": 0,
+        "fuel": 3974.4,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 8594.4,
+        "gst": 1546.992,
+        "total": 10141.392
+      }
+    },
+    {
+      "case": {
+        "id": "surface-east-30kg",
+        "description": "SURFACE to EAST at 30 kg",
+        "pincode": 700001,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "EAST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "KOLKATA GPO, West Bengal",
+        "chargeableWeight": 30,
+        "freight": 507.5,
+        "oda": 0,
+        "fuel": 329.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1137.375,
+        "gst": 204.7275,
+        "total": 1342.1025
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda0-30kg",
+        "description": "SURFACE to ODA NORTH (55 km) at 30 kg",
+        "pincode": 121103,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 55,
+        "destination": "Hathin, Haryana",
+        "chargeableWeight": 30,
+        "freight": 442.5,
+        "oda": 825,
+        "fuel": 823.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 2391.375,
+        "gst": 430.4475,
+        "total": 2821.8225
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda0-100kg",
+        "description": "SURFACE to ODA NORTH (55 km) at 100 kg",
+        "pincode": 121103,
+        "weight": 100,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 55,
+        "destination": "Hathin, Haryana",
+        "chargeableWeight": 100,
+        "freight": 1362.5,
+        "oda": 825,
+        "fuel": 1421.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 3909.375,
+        "gst": 703.6875,
+        "total": 4613.0625
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda0-101kg",
+        "description": "SURFACE to ODA NORTH (55 km) at 101 kg",
+        "pincode": 121103,
+        "weight": 101,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 55,
+        "destination": "Hathin, Haryana",
+        "chargeableWeight": 101,
+        "freight": 1375,
+        "oda": 1210,
+        "fuel": 1680.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 4565.25,
+        "gst": 821.745,
+        "total": 5386.995
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda0-250kg",
+        "description": "SURFACE to ODA NORTH (55 km) at 250 kg",
+        "pincode": 121103,
+        "weight": 250,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 55,
+        "destination": "Hathin, Haryana",
+        "chargeableWeight": 250,
+        "freight": 3237.5,
+        "oda": 1210,
+        "fuel": 2890.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 7638.375,
+        "gst": 1374.9075,
+        "total": 9013.2825
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda0-251kg",
+        "description": "SURFACE to ODA NORTH (55 km) at 251 kg",
+        "pincode": 121103,
+        "weight": 251,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 55,
+        "destination": "Hathin, Haryana",
+        "chargeableWeight": 251,
+        "freight": 3250,
+        "oda": 1375,
+        "fuel": 3006.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 7931.25,
+        "gst": 1427.625,
+        "total": 9358.875
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda0-500kg",
+        "description": "SURFACE to ODA NORTH (55 km) at 500 kg",
+        "pincode": 121103,
+        "weight": 500,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 55,
+        "destination": "Hathin, Haryana",
+        "chargeableWeight": 500,
+        "freight": 6362.5,
+        "oda": 1375,
+        "fuel": 5029.375,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 13066.875,
+        "gst": 2352.0375,
+        "total": 15418.9125
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda0-501kg",
+        "description": "SURFACE to ODA NORTH (55 km) at 501 kg",
+        "pincode": 121103,
+        "weight": 501,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 55,
+        "destination": "Hathin, Haryana",
+        "chargeableWeight": 501,
+        "freight": 6375,
+        "oda": 1650,
+        "fuel": 5216.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 13541.25,
+        "gst": 2437.425,
+        "total": 15978.675
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda0-1001kg",
+        "description": "SURFACE to ODA NORTH (55 km) at 1001 kg",
+        "pincode": 121103,
+        "weight": 1001,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 55,
+        "destination": "Hathin, Haryana",
+        "chargeableWeight": 1001,
+        "freight": 12625,
+        "oda": 1925,
+        "fuel": 9457.5,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 24307.5,
+        "gst": 4375.35,
+        "total": 28682.85
+      }
+    },
+    {
+      "case": {
+        "id": "apex-oda0-30kg",
+        "description": "APEX to ODA NORTH (55 km) at 30 kg",
+        "pincode": 121103,
+        "weight": 30,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 55,
+        "destination": "Hathin, Haryana",
+        "chargeableWeight": 30,
+        "freight": 3700,
+        "oda": 825,
+        "fuel": 4163,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 8988,
+        "gst": 1617.84,
+        "total": 10605.84
+      }
+    },
+    {
+      "case": {
+        "id": "docs-oda0-2kg",
+        "description": "DOCs to ODA NORTH -- no ODA is charged",
+        "pincode": 121103,
+        "weight": 2,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 55,
+        "destination": "Hathin, Haryana",
+        "chargeableWeight": 2,
+        "freight": 232,
+        "oda": 0,
+        "fuel": 213.44,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 445.44,
+        "gst": 80.1792,
+        "total": 525.6192
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda1-30kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 30 kg",
+        "pincode": 121105,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Aurangabad SO Faridabad, Haryana",
+        "chargeableWeight": 30,
+        "freight": 442.5,
+        "oda": 825,
+        "fuel": 823.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 2391.375,
+        "gst": 430.4475,
+        "total": 2821.8225
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda1-100kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 100 kg",
+        "pincode": 121105,
+        "weight": 100,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Aurangabad SO Faridabad, Haryana",
+        "chargeableWeight": 100,
+        "freight": 1362.5,
+        "oda": 825,
+        "fuel": 1421.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 3909.375,
+        "gst": 703.6875,
+        "total": 4613.0625
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda1-101kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 101 kg",
+        "pincode": 121105,
+        "weight": 101,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Aurangabad SO Faridabad, Haryana",
+        "chargeableWeight": 101,
+        "freight": 1375,
+        "oda": 1210,
+        "fuel": 1680.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 4565.25,
+        "gst": 821.745,
+        "total": 5386.995
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda1-250kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 250 kg",
+        "pincode": 121105,
+        "weight": 250,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Aurangabad SO Faridabad, Haryana",
+        "chargeableWeight": 250,
+        "freight": 3237.5,
+        "oda": 1210,
+        "fuel": 2890.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 7638.375,
+        "gst": 1374.9075,
+        "total": 9013.2825
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda1-251kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 251 kg",
+        "pincode": 121105,
+        "weight": 251,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Aurangabad SO Faridabad, Haryana",
+        "chargeableWeight": 251,
+        "freight": 3250,
+        "oda": 1375,
+        "fuel": 3006.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 7931.25,
+        "gst": 1427.625,
+        "total": 9358.875
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda1-500kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 500 kg",
+        "pincode": 121105,
+        "weight": 500,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Aurangabad SO Faridabad, Haryana",
+        "chargeableWeight": 500,
+        "freight": 6362.5,
+        "oda": 1375,
+        "fuel": 5029.375,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 13066.875,
+        "gst": 2352.0375,
+        "total": 15418.9125
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda1-501kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 501 kg",
+        "pincode": 121105,
+        "weight": 501,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Aurangabad SO Faridabad, Haryana",
+        "chargeableWeight": 501,
+        "freight": 6375,
+        "oda": 1650,
+        "fuel": 5216.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 13541.25,
+        "gst": 2437.425,
+        "total": 15978.675
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda1-1001kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 1001 kg",
+        "pincode": 121105,
+        "weight": 1001,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Aurangabad SO Faridabad, Haryana",
+        "chargeableWeight": 1001,
+        "freight": 12625,
+        "oda": 1925,
+        "fuel": 9457.5,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 24307.5,
+        "gst": 4375.35,
+        "total": 28682.85
+      }
+    },
+    {
+      "case": {
+        "id": "apex-oda1-30kg",
+        "description": "APEX to ODA NORTH (60 km) at 30 kg",
+        "pincode": 121105,
+        "weight": 30,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Aurangabad SO Faridabad, Haryana",
+        "chargeableWeight": 30,
+        "freight": 3700,
+        "oda": 825,
+        "fuel": 4163,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 8988,
+        "gst": 1617.84,
+        "total": 10605.84
+      }
+    },
+    {
+      "case": {
+        "id": "docs-oda1-2kg",
+        "description": "DOCs to ODA NORTH -- no ODA is charged",
+        "pincode": 121105,
+        "weight": 2,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Aurangabad SO Faridabad, Haryana",
+        "chargeableWeight": 2,
+        "freight": 232,
+        "oda": 0,
+        "fuel": 213.44,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 445.44,
+        "gst": 80.1792,
+        "total": 525.6192
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda2-30kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 30 kg",
+        "pincode": 121106,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Hodal, Haryana",
+        "chargeableWeight": 30,
+        "freight": 442.5,
+        "oda": 825,
+        "fuel": 823.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 2391.375,
+        "gst": 430.4475,
+        "total": 2821.8225
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda2-100kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 100 kg",
+        "pincode": 121106,
+        "weight": 100,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Hodal, Haryana",
+        "chargeableWeight": 100,
+        "freight": 1362.5,
+        "oda": 825,
+        "fuel": 1421.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 3909.375,
+        "gst": 703.6875,
+        "total": 4613.0625
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda2-101kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 101 kg",
+        "pincode": 121106,
+        "weight": 101,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Hodal, Haryana",
+        "chargeableWeight": 101,
+        "freight": 1375,
+        "oda": 1210,
+        "fuel": 1680.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 4565.25,
+        "gst": 821.745,
+        "total": 5386.995
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda2-250kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 250 kg",
+        "pincode": 121106,
+        "weight": 250,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Hodal, Haryana",
+        "chargeableWeight": 250,
+        "freight": 3237.5,
+        "oda": 1210,
+        "fuel": 2890.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 7638.375,
+        "gst": 1374.9075,
+        "total": 9013.2825
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda2-251kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 251 kg",
+        "pincode": 121106,
+        "weight": 251,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Hodal, Haryana",
+        "chargeableWeight": 251,
+        "freight": 3250,
+        "oda": 1375,
+        "fuel": 3006.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 7931.25,
+        "gst": 1427.625,
+        "total": 9358.875
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda2-500kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 500 kg",
+        "pincode": 121106,
+        "weight": 500,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Hodal, Haryana",
+        "chargeableWeight": 500,
+        "freight": 6362.5,
+        "oda": 1375,
+        "fuel": 5029.375,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 13066.875,
+        "gst": 2352.0375,
+        "total": 15418.9125
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda2-501kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 501 kg",
+        "pincode": 121106,
+        "weight": 501,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Hodal, Haryana",
+        "chargeableWeight": 501,
+        "freight": 6375,
+        "oda": 1650,
+        "fuel": 5216.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 13541.25,
+        "gst": 2437.425,
+        "total": 15978.675
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda2-1001kg",
+        "description": "SURFACE to ODA NORTH (60 km) at 1001 kg",
+        "pincode": 121106,
+        "weight": 1001,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Hodal, Haryana",
+        "chargeableWeight": 1001,
+        "freight": 12625,
+        "oda": 1925,
+        "fuel": 9457.5,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 24307.5,
+        "gst": 4375.35,
+        "total": 28682.85
+      }
+    },
+    {
+      "case": {
+        "id": "apex-oda2-30kg",
+        "description": "APEX to ODA NORTH (60 km) at 30 kg",
+        "pincode": 121106,
+        "weight": 30,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Hodal, Haryana",
+        "chargeableWeight": 30,
+        "freight": 3700,
+        "oda": 825,
+        "fuel": 4163,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 8988,
+        "gst": 1617.84,
+        "total": 10605.84
+      }
+    },
+    {
+      "case": {
+        "id": "docs-oda2-2kg",
+        "description": "DOCs to ODA NORTH -- no ODA is charged",
+        "pincode": 121106,
+        "weight": 2,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 60,
+        "destination": "Hodal, Haryana",
+        "chargeableWeight": 2,
+        "freight": 232,
+        "oda": 0,
+        "fuel": 213.44,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 445.44,
+        "gst": 80.1792,
+        "total": 525.6192
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda3-30kg",
+        "description": "SURFACE to ODA NORTH (69 km) at 30 kg",
+        "pincode": 121107,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 69,
+        "destination": "Hassanpur, Haryana",
+        "chargeableWeight": 30,
+        "freight": 442.5,
+        "oda": 825,
+        "fuel": 823.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 2391.375,
+        "gst": 430.4475,
+        "total": 2821.8225
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda3-100kg",
+        "description": "SURFACE to ODA NORTH (69 km) at 100 kg",
+        "pincode": 121107,
+        "weight": 100,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 69,
+        "destination": "Hassanpur, Haryana",
+        "chargeableWeight": 100,
+        "freight": 1362.5,
+        "oda": 825,
+        "fuel": 1421.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 3909.375,
+        "gst": 703.6875,
+        "total": 4613.0625
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda3-101kg",
+        "description": "SURFACE to ODA NORTH (69 km) at 101 kg",
+        "pincode": 121107,
+        "weight": 101,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 69,
+        "destination": "Hassanpur, Haryana",
+        "chargeableWeight": 101,
+        "freight": 1375,
+        "oda": 1210,
+        "fuel": 1680.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 4565.25,
+        "gst": 821.745,
+        "total": 5386.995
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda3-250kg",
+        "description": "SURFACE to ODA NORTH (69 km) at 250 kg",
+        "pincode": 121107,
+        "weight": 250,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 69,
+        "destination": "Hassanpur, Haryana",
+        "chargeableWeight": 250,
+        "freight": 3237.5,
+        "oda": 1210,
+        "fuel": 2890.875,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 7638.375,
+        "gst": 1374.9075,
+        "total": 9013.2825
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda3-251kg",
+        "description": "SURFACE to ODA NORTH (69 km) at 251 kg",
+        "pincode": 121107,
+        "weight": 251,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 69,
+        "destination": "Hassanpur, Haryana",
+        "chargeableWeight": 251,
+        "freight": 3250,
+        "oda": 1375,
+        "fuel": 3006.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 7931.25,
+        "gst": 1427.625,
+        "total": 9358.875
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda3-500kg",
+        "description": "SURFACE to ODA NORTH (69 km) at 500 kg",
+        "pincode": 121107,
+        "weight": 500,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 69,
+        "destination": "Hassanpur, Haryana",
+        "chargeableWeight": 500,
+        "freight": 6362.5,
+        "oda": 1375,
+        "fuel": 5029.375,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 13066.875,
+        "gst": 2352.0375,
+        "total": 15418.9125
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda3-501kg",
+        "description": "SURFACE to ODA NORTH (69 km) at 501 kg",
+        "pincode": 121107,
+        "weight": 501,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 69,
+        "destination": "Hassanpur, Haryana",
+        "chargeableWeight": 501,
+        "freight": 6375,
+        "oda": 1650,
+        "fuel": 5216.25,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 13541.25,
+        "gst": 2437.425,
+        "total": 15978.675
+      }
+    },
+    {
+      "case": {
+        "id": "surface-oda3-1001kg",
+        "description": "SURFACE to ODA NORTH (69 km) at 1001 kg",
+        "pincode": 121107,
+        "weight": 1001,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 69,
+        "destination": "Hassanpur, Haryana",
+        "chargeableWeight": 1001,
+        "freight": 12625,
+        "oda": 1925,
+        "fuel": 9457.5,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 24307.5,
+        "gst": 4375.35,
+        "total": 28682.85
+      }
+    },
+    {
+      "case": {
+        "id": "apex-oda3-30kg",
+        "description": "APEX to ODA NORTH (69 km) at 30 kg",
+        "pincode": 121107,
+        "weight": 30,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 69,
+        "destination": "Hassanpur, Haryana",
+        "chargeableWeight": 30,
+        "freight": 3700,
+        "oda": 825,
+        "fuel": 4163,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 8988,
+        "gst": 1617.84,
+        "total": 10605.84
+      }
+    },
+    {
+      "case": {
+        "id": "docs-oda3-2kg",
+        "description": "DOCs to ODA NORTH -- no ODA is charged",
+        "pincode": 121107,
+        "weight": 2,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "ODA 2",
+        "edlKm": 69,
+        "destination": "Hassanpur, Haryana",
+        "chargeableWeight": 2,
+        "freight": 232,
+        "oda": 0,
+        "fuel": 213.44,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 445.44,
+        "gst": 80.1792,
+        "total": 525.6192
+      }
+    },
+    {
+      "case": {
+        "id": "surface-far-oda0-30kg",
+        "description": "SURFACE to NORTH at 530 km -- the per-km path",
+        "pincode": 262728,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "Above Range (>500)",
+        "edlKm": 530,
+        "destination": "Nakha, Uttar Pradesh",
+        "chargeableWeight": 30,
+        "freight": 442.5,
+        "oda": 7420,
+        "fuel": 5110.625,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 13273.125,
+        "gst": 2389.1625,
+        "total": 15662.2875
+      }
+    },
+    {
+      "case": {
+        "id": "surface-far-oda0-300kg",
+        "description": "SURFACE to NORTH at 530 km -- the per-km path",
+        "pincode": 262728,
+        "weight": 300,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "Above Range (>500)",
+        "edlKm": 530,
+        "destination": "Nakha, Uttar Pradesh",
+        "chargeableWeight": 300,
+        "freight": 3862.5,
+        "oda": 7420,
+        "fuel": 7333.625,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 18916.125,
+        "gst": 3404.9025,
+        "total": 22321.0275
+      }
+    },
+    {
+      "case": {
+        "id": "surface-far-oda1-30kg",
+        "description": "SURFACE to NORTH at 560 km -- the per-km path",
+        "pincode": 272204,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "Above Range (>500)",
+        "edlKm": 560,
+        "destination": "Udairajganj, Uttar Pradesh",
+        "chargeableWeight": 30,
+        "freight": 442.5,
+        "oda": 7840,
+        "fuel": 5383.625,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 13966.125,
+        "gst": 2513.9025,
+        "total": 16480.0275
+      }
+    },
+    {
+      "case": {
+        "id": "surface-far-oda1-300kg",
+        "description": "SURFACE to NORTH at 560 km -- the per-km path",
+        "pincode": 272204,
+        "weight": 300,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "Above Range (>500)",
+        "edlKm": 560,
+        "destination": "Udairajganj, Uttar Pradesh",
+        "chargeableWeight": 300,
+        "freight": 3862.5,
+        "oda": 7840,
+        "fuel": 7606.625,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 19609.125,
+        "gst": 3529.6425,
+        "total": 23138.7675
+      }
+    },
+    {
+      "case": {
+        "id": "surface-below-range",
+        "description": "SURFACE to a 'Below Range (<20)' pincode",
+        "pincode": 124103,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "Below Range (<20)",
+        "edlKm": 0,
+        "destination": "Jhajjar, Haryana",
+        "chargeableWeight": 30,
+        "freight": 442.5,
+        "oda": 0,
+        "fuel": 287.625,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 1030.125,
+        "gst": 185.4225,
+        "total": 1215.5475
+      }
+    },
+    {
+      "case": {
+        "id": "apex-not-in-apex",
+        "description": "APEX to a 'Not in APEX' pincode",
+        "pincode": 143516,
+        "weight": 30,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "NORTH",
+        "odaStatus": "Not in APEX",
+        "edlKm": 0,
+        "destination": "Qadian, Punjab",
+        "chargeableWeight": 30,
+        "freight": 3700,
+        "oda": 0,
+        "fuel": 3404,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 7404,
+        "gst": 1332.72,
+        "total": 8736.72
+      }
+    },
+    {
+      "case": {
+        "id": "surface-fov-0",
+        "description": "SURFACE 30 kg, declared value Rs 0",
+        "pincode": 334002,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 0,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 30,
+        "freight": 417.5,
+        "oda": 0,
+        "fuel": 271.375,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 988.875,
+        "gst": 177.9975,
+        "total": 1166.8725
+      }
+    },
+    {
+      "case": {
+        "id": "surface-fov-1000",
+        "description": "SURFACE 30 kg, declared value Rs 1000",
+        "pincode": 334002,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 1000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 30,
+        "freight": 417.5,
+        "oda": 0,
+        "fuel": 271.375,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 988.875,
+        "gst": 177.9975,
+        "total": 1166.8725
+      }
+    },
+    {
+      "case": {
+        "id": "surface-fov-60606",
+        "description": "SURFACE 30 kg, declared value Rs 60606",
+        "pincode": 334002,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 60606,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 30,
+        "freight": 417.5,
+        "oda": 0,
+        "fuel": 271.375,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 988.875,
+        "gst": 177.9975,
+        "total": 1166.8725
+      }
+    },
+    {
+      "case": {
+        "id": "surface-fov-60607",
+        "description": "SURFACE 30 kg, declared value Rs 60607",
+        "pincode": 334002,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 60607,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 30,
+        "freight": 417.5,
+        "oda": 0,
+        "fuel": 271.375,
+        "awb": 100,
+        "fov": 200.0031,
+        "subTotal": 988.8781,
+        "gst": 177.998058,
+        "total": 1166.876158
+      }
+    },
+    {
+      "case": {
+        "id": "surface-fov-100000",
+        "description": "SURFACE 30 kg, declared value Rs 100000",
+        "pincode": 334002,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 100000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 30,
+        "freight": 417.5,
+        "oda": 0,
+        "fuel": 271.375,
+        "awb": 100,
+        "fov": 330,
+        "subTotal": 1118.875,
+        "gst": 201.3975,
+        "total": 1320.2725
+      }
+    },
+    {
+      "case": {
+        "id": "surface-fov-1000000",
+        "description": "SURFACE 30 kg, declared value Rs 1000000",
+        "pincode": 334002,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 1000000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 30,
+        "freight": 417.5,
+        "oda": 0,
+        "fuel": 271.375,
+        "awb": 100,
+        "fov": 3300,
+        "subTotal": 4088.875,
+        "gst": 735.9975,
+        "total": 4824.8725
+      }
+    },
+    {
+      "case": {
+        "id": "surface-fuel-zero",
+        "description": "SURFACE 30 kg with the fuel surcharge at zero",
+        "pincode": 334002,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 30,
+        "freight": 417.5,
+        "oda": 0,
+        "fuel": 0,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 717.5,
+        "gst": 129.15,
+        "total": 846.65
+      }
+    },
+    {
+      "case": {
+        "id": "apex-fuel-changed",
+        "description": "APEX 30 kg with air fuel at 50%",
+        "pincode": 334002,
+        "weight": 30,
+        "service": "APEX",
+        "declaredValue": 5000,
+        "fuelAir": 0.5,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 30,
+        "freight": 3700,
+        "oda": 0,
+        "fuel": 1850,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 5850,
+        "gst": 1053,
+        "total": 6903
+      }
+    },
+    {
+      "case": {
+        "id": "docs-fuel-changed",
+        "description": "DOCs 2 kg with air fuel at 50% -- documents use air fuel",
+        "pincode": 334002,
+        "weight": 2,
+        "service": "DOCs",
+        "declaredValue": 5000,
+        "fuelAir": 0.5,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "WEST",
+        "odaStatus": "Non-ODA",
+        "edlKm": 0,
+        "destination": "NDC BIKANER, Chhattisgarh",
+        "chargeableWeight": 2,
+        "freight": 200,
+        "oda": 0,
+        "fuel": 100,
+        "awb": 0,
+        "fov": 0,
+        "subTotal": 300,
+        "gst": 54,
+        "total": 354
+      }
+    },
+    {
+      "case": {
+        "id": "unknown-pincode",
+        "description": "A pincode that is not in the master",
+        "pincode": 999999,
+        "weight": 30,
+        "service": "SURFACE",
+        "declaredValue": 5000,
+        "fuelAir": 0.92,
+        "fuelSurface": 0.65
+      },
+      "expected": {
+        "zone": "PIN NOT FOUND",
+        "odaStatus": null,
+        "edlKm": 0,
+        "destination": null,
+        "chargeableWeight": 30,
+        "freight": 0,
+        "oda": 0,
+        "fuel": 0,
+        "awb": 100,
+        "fov": 200,
+        "subTotal": 300,
+        "gst": 54,
+        "total": 354
+      }
+    }
+  ]
+}

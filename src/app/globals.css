@@ -1,0 +1,1827 @@
+/*
+ * DNS Pricing Config — design system
+ *
+ * Aesthetic direction: industrial / utilitarian. This is a spreadsheet, and it is
+ * meant to read as one — hairline rules, dense rows, tabular numerals, the paper
+ * warmth of a printed rate card rather than the flat grey of a generic dashboard.
+ * Every colour below is deliberate; nothing is a framework default.
+ */
+
+:root {
+  /* Paper and ink: slightly warm, like a printed tariff sheet. */
+  --paper: #fcfcfa;
+  --paper-sunk: #f4f4f0;
+  --band: #ecece6;
+  --band-strong: #e0e0d8;
+  --ink: #1a1a17;
+  --ink-soft: #55554e;
+  --ink-faint: #8a8a80;
+
+  /* Hairlines. Two weights only: the grid, and structural dividers. */
+  --rule: #dcdcd4;
+  --rule-strong: #b8b8ae;
+
+  /* The spreadsheet's own convention: yellow means you may type here. */
+  --editable: #fdf8d0;
+  --editable-edge: #e8dfa0;
+  --editable-focus: #fbf3ac;
+
+  /* State. One hue each, used sparingly and never decoratively. */
+  --dirty: #1d6f8b;
+  --dirty-wash: #e2f1f6;
+  --pending: #a86416;
+  --pending-wash: #faeedd;
+  --rejected: #9d2f22;
+  --rejected-wash: #f9e6e3;
+  --approved: #2c6a4a;
+  --approved-wash: #e4f0e9;
+
+  --accent: #1d4f6f;
+  --accent-ink: #ffffff;
+
+  --selection: rgba(29, 79, 111, 0.1);
+  --selection-edge: #1d4f6f;
+
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-serif: 'IBM Plex Serif', ui-serif, serif;
+
+  /* Row height is the single most important number for spreadsheet feel. */
+  --row-h: 23px;
+  --gutter-w: 44px;
+  --shadow-float: 0 1px 2px rgba(26, 26, 23, 0.08), 0 8px 24px rgba(26, 26, 23, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #16181a;
+    --paper-sunk: #101214;
+    --band: #21252a;
+    --band-strong: #2a2f35;
+    --ink: #e8e8e2;
+    --ink-soft: #a8a8a0;
+    --ink-faint: #75756d;
+
+    --rule: #2c3238;
+    --rule-strong: #414850;
+
+    --editable: #2e2a16;
+    --editable-edge: #4a4324;
+    --editable-focus: #3a3419;
+
+    --dirty: #6fc3dd;
+    --dirty-wash: #16303a;
+    --pending: #e0a259;
+    --pending-wash: #33260f;
+    --rejected: #e08072;
+    --rejected-wash: #351a16;
+    --approved: #74c39a;
+    --approved-wash: #16301f;
+
+    --accent: #7fb4d6;
+    --accent-ink: #0d1114;
+
+    --selection: rgba(127, 180, 214, 0.14);
+    --selection-edge: #7fb4d6;
+    --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+}
+
+:root[data-theme='dark'] {
+  --paper: #16181a;
+  --paper-sunk: #101214;
+  --band: #21252a;
+  --band-strong: #2a2f35;
+  --ink: #e8e8e2;
+  --ink-soft: #a8a8a0;
+  --ink-faint: #75756d;
+  --rule: #2c3238;
+  --rule-strong: #414850;
+  --editable: #2e2a16;
+  --editable-edge: #4a4324;
+  --editable-focus: #3a3419;
+  --dirty: #6fc3dd;
+  --dirty-wash: #16303a;
+  --pending: #e0a259;
+  --pending-wash: #33260f;
+  --rejected: #e08072;
+  --rejected-wash: #351a16;
+  --approved: #74c39a;
+  --approved-wash: #16301f;
+  --accent: #7fb4d6;
+  --accent-ink: #0d1114;
+  --selection: rgba(127, 180, 214, 0.14);
+  --selection-edge: #7fb4d6;
+  --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--paper-sunk);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------------------------------------------------------------- app shell */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 9px 16px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule-strong);
+  flex: none;
+}
+
+.masthead h1 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.masthead .sub {
+  color: var(--ink-faint);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.masthead nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.masthead nav a {
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 4px 9px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.masthead nav a:hover {
+  background: var(--band);
+  color: var(--ink);
+}
+
+.masthead nav a[aria-current='page'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/*
+ * Grouped navigation.
+ *
+ * The page set outgrew a flat list of links: base-card editing, customer management and
+ * tools all sat at one level, which made the bar longer every time something was built
+ * and said nothing about how the pages relate. A group is a <details> rather than a
+ * scripted menu, so it works before hydration and closes with Escape without any code.
+ */
+.masthead nav details {
+  position: relative;
+}
+
+.masthead nav details > summary {
+  list-style: none;
+  cursor: pointer;
+  color: var(--ink-soft);
+  padding: 4px 9px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.masthead nav details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.masthead nav details > summary:hover,
+.masthead nav details[open] > summary {
+  background: var(--band);
+  color: var(--ink);
+}
+
+.masthead nav details > .menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px;
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.09);
+}
+
+.masthead nav details > .menu a {
+  white-space: nowrap;
+}
+
+.whoami {
+  font-size: 11px;
+  color: var(--ink-faint);
+  padding-left: 10px;
+  margin-left: 6px;
+  border-left: 1px solid var(--rule);
+}
+
+/* --------------------------------------------------------------- card picker */
+
+.cardbar {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--paper-sunk);
+  border-bottom: 1px solid var(--rule);
+  flex: none;
+  overflow-x: auto;
+}
+
+.cardbar a {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 15px;
+  text-decoration: none;
+  color: var(--ink-soft);
+  border-right: 1px solid var(--rule);
+  min-width: 168px;
+  white-space: nowrap;
+}
+
+.cardbar a:hover {
+  background: var(--band);
+}
+
+.cardbar a[aria-current='page'] {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.cardbar .name {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.cardbar .method {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: -0.02em;
+}
+
+/* ------------------------------------------------------------------ toolbar */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  flex: none;
+}
+
+.namebox {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  min-width: 74px;
+  padding: 3px 7px;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.valuebar {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 3px 9px;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  min-height: 24px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.valuebar .fx {
+  color: var(--ink-faint);
+  padding-right: 8px;
+  border-right: 1px solid var(--rule);
+  margin-right: 8px;
+}
+
+/* -------------------------------------------------------------------- button */
+
+button,
+.btn {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  padding: 4px 11px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 90ms ease, border-color 90ms ease;
+}
+
+button:hover:not(:disabled),
+.btn:hover {
+  background: var(--band);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  font-weight: 500;
+}
+
+button.primary:hover:not(:disabled) {
+  filter: brightness(1.12);
+  background: var(--accent);
+}
+
+button.approve {
+  background: var(--approved);
+  border-color: var(--approved);
+  color: #fff;
+  font-weight: 500;
+}
+
+button.reject {
+  background: var(--paper);
+  border-color: var(--rejected);
+  color: var(--rejected);
+  font-weight: 500;
+}
+
+/* ----------------------------------------------------------------- tab strip */
+
+.tabstrip {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--paper-sunk);
+  border-top: 1px solid var(--rule-strong);
+  flex: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tabstrip a {
+  padding: 5px 13px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-right: 1px solid var(--rule);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tabstrip a:hover {
+  background: var(--band);
+  color: var(--ink);
+}
+
+.tabstrip a[aria-current='page'] {
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.tabstrip a .derived-mark {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--ink-faint);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  padding: 0 3px;
+  letter-spacing: 0.04em;
+}
+
+/* ---------------------------------------------------------------- the grid */
+
+.gridwrap {
+  flex: 1;
+  overflow: auto;
+  background: var(--paper);
+  position: relative;
+  outline: none;
+}
+
+table.grid {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: 12px;
+}
+
+table.grid th,
+table.grid td {
+  height: var(--row-h);
+  padding: 0;
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Column letters and row numbers: the spreadsheet's frame of reference. */
+table.grid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--band);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  text-align: center;
+  border-bottom: 1px solid var(--rule-strong);
+  user-select: none;
+}
+
+table.grid tbody th.rownum {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: var(--gutter-w);
+  min-width: var(--gutter-w);
+  background: var(--band);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  text-align: center;
+  border-right: 1px solid var(--rule-strong);
+  user-select: none;
+}
+
+table.grid thead th.corner {
+  left: 0;
+  z-index: 4;
+  width: var(--gutter-w);
+  min-width: var(--gutter-w);
+}
+
+table.grid thead th.active-col,
+table.grid tbody th.rownum.active-row {
+  background: var(--band-strong);
+  color: var(--ink);
+}
+
+.cell {
+  padding: 0 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell.k-value,
+.cell.k-derived {
+  font-family: var(--font-mono);
+  text-align: right;
+  letter-spacing: -0.01em;
+}
+
+.cell.k-value.text-cell {
+  text-align: left;
+  font-family: var(--font-sans);
+}
+
+.cell.k-title {
+  font-weight: 600;
+  font-family: var(--font-serif);
+  font-size: 12.5px;
+  background: var(--paper);
+  border-right-color: transparent;
+}
+
+.cell.k-note {
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  border-right-color: transparent;
+  text-align: left;
+}
+
+.cell.k-header {
+  background: var(--band);
+  font-weight: 600;
+  text-align: center;
+  color: var(--ink);
+  font-size: 11px;
+}
+
+/* A header that spans to the sheet edge is a section title or a panel heading,
+   not a column label, so it reads from the left as it does in the workbook. */
+.cell.k-header.spanned {
+  text-align: left;
+}
+
+.cell.k-rowLabel {
+  background: var(--paper-sunk);
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--ink);
+}
+
+/* Yellow is the workbook's own signal that a cell accepts typing. */
+.cell.editable {
+  background: var(--editable);
+  box-shadow: inset 0 0 0 1px var(--editable-edge);
+  cursor: cell;
+}
+
+.cell.k-derived {
+  color: var(--ink-soft);
+  font-style: italic;
+  background: var(--paper-sunk);
+}
+
+.cell.locked {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--editable),
+    var(--editable) 4px,
+    var(--paper-sunk) 4px,
+    var(--paper-sunk) 8px
+  );
+  cursor: not-allowed;
+}
+
+.cell.unavailable {
+  color: var(--ink-faint);
+}
+
+.cell.dirty {
+  background: var(--dirty-wash);
+  box-shadow: inset 0 0 0 1px var(--dirty);
+}
+
+.cell.pending {
+  background: var(--pending-wash);
+  box-shadow: inset 0 0 0 1px var(--pending);
+}
+
+.cell.rejected {
+  background: var(--rejected-wash);
+  box-shadow: inset 0 0 0 1px var(--rejected);
+}
+
+.cell.flagged::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-top: 6px solid var(--pending);
+  border-left: 6px solid transparent;
+}
+
+.cell.in-range {
+  background-image: linear-gradient(var(--selection), var(--selection));
+}
+
+.cell.active {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--selection-edge);
+  outline-offset: -2px;
+}
+
+.cell-editor {
+  position: absolute;
+  z-index: 6;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 0 5px;
+  border: 2px solid var(--selection-edge);
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+  text-align: right;
+  border-radius: 0;
+}
+
+/* --------------------------------------------------------------- status bar */
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 12px;
+  background: var(--band);
+  border-top: 1px solid var(--rule-strong);
+  font-size: 11px;
+  color: var(--ink-soft);
+  flex: none;
+}
+
+.statusbar .spacer {
+  margin-left: auto;
+}
+
+.statusbar kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+/* ------------------------------------------------------------------- chips */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 2px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+
+.chip.live {
+  color: var(--approved);
+  background: var(--approved-wash);
+}
+
+.chip.draft {
+  color: var(--dirty);
+  background: var(--dirty-wash);
+}
+
+.chip.pending {
+  color: var(--pending);
+  background: var(--pending-wash);
+}
+
+.chip.rejected {
+  color: var(--rejected);
+  background: var(--rejected-wash);
+}
+
+.chip.count {
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--font-mono);
+}
+
+/* -------------------------------------------------------------- page layout */
+
+.page {
+  flex: 1;
+  overflow: auto;
+  padding: 22px 26px 60px;
+}
+
+.page-inner {
+  max-width: 1180px;
+}
+
+.page h2 {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 600;
+  margin: 0 0 3px;
+  letter-spacing: -0.01em;
+}
+
+.page .lede {
+  color: var(--ink-soft);
+  margin: 0 0 20px;
+  max-width: 66ch;
+}
+
+.page h3 {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 26px 0 9px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* ------------------------------------------------------------- data tables */
+
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+}
+
+table.data th {
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+  padding: 7px 10px;
+  background: var(--band);
+  border-bottom: 1px solid var(--rule-strong);
+  white-space: nowrap;
+}
+
+table.data td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+table.data tbody tr:hover {
+  background: var(--paper-sunk);
+}
+
+table.data td.num {
+  font-family: var(--font-mono);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+table.data td.ref {
+  font-family: var(--font-mono);
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+
+.delta.up {
+  color: var(--rejected);
+  font-weight: 600;
+}
+
+.delta.down {
+  color: var(--approved);
+  font-weight: 600;
+}
+
+.scroll-x {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.scroll-x table.data {
+  border: 0;
+}
+
+/* --------------------------------------------------------------- callouts */
+
+.callout {
+  border-left: 3px solid var(--pending);
+  background: var(--pending-wash);
+  padding: 10px 14px;
+  margin: 0 0 16px;
+  font-size: 12px;
+}
+
+.callout.info {
+  border-left-color: var(--accent);
+  background: var(--dirty-wash);
+}
+
+.callout.bad {
+  border-left-color: var(--rejected);
+  background: var(--rejected-wash);
+}
+
+.callout strong {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.callout ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+/* ------------------------------------------------------------------- forms */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 12px;
+}
+
+.field label {
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+input[type='search'],
+select,
+textarea {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  padding: 5px 8px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--selection-edge);
+  outline-offset: -1px;
+  border-color: var(--selection-edge);
+}
+
+.inline-form {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.inline-form .field {
+  margin-bottom: 0;
+}
+
+/* -------------------------------------------------------------- sign-in */
+
+.signin {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--paper-sunk);
+  background-image:
+    linear-gradient(var(--rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+  background-size: 100% var(--row-h), 84px 100%;
+}
+
+.signin form {
+  width: 340px;
+  padding: 26px;
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  box-shadow: var(--shadow-float);
+}
+
+.signin h1 {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  margin: 0 0 2px;
+}
+
+.signin .sub {
+  color: var(--ink-faint);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 20px;
+}
+
+.signin button {
+  width: 100%;
+  justify-content: center;
+  padding: 7px;
+  margin-top: 6px;
+}
+
+.error {
+  color: var(--rejected);
+  background: var(--rejected-wash);
+  border-left: 3px solid var(--rejected);
+  padding: 7px 10px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+/* ------------------------------------------------------- quote comparison */
+
+.quote-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.quote-card {
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+}
+
+.quote-card header {
+  padding: 8px 12px;
+  background: var(--band);
+  border-bottom: 1px solid var(--rule-strong);
+  /* Reserved so the "lowest total" badge cannot shift one card's rows out of
+     line with the others — comparing them line by line is the whole point. */
+  min-height: 58px;
+}
+
+.quote-card header .name {
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.quote-card header .method {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+
+.quote-card table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.quote-card td {
+  padding: 3px 12px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.quote-card td:last-child {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Charge names carry a qualifier — what fuel rode on, whether a charge sits outside
+   GST, which SAC applies. Kept quiet so the figures still read down the column. */
+.quote-card td .hint {
+  color: var(--ink-faint);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+/* The row you drilled into, so the list still shows where you are. */
+table.data tr.selected > td {
+  background: var(--selection);
+  box-shadow: inset 2px 0 0 var(--selection-edge);
+}
+
+.quote-note {
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--rule);
+  background: var(--paper-sunk);
+}
+
+.quote-note.bad {
+  color: var(--rejected);
+  background: var(--rejected-wash);
+}
+
+.quote-card tr.total td {
+  font-weight: 700;
+  font-size: 13.5px;
+  background: var(--paper-sunk);
+  border-top: 1px solid var(--rule-strong);
+  border-bottom: 0;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.quote-card tr.rule td {
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.quote-card .cheapest {
+  color: var(--approved);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.quote-card.unavailable td {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--ink-soft);
+  padding: 8px 0;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* ============================================================================
+   CONSOLE — the second UI.
+   A pricing operations console rather than a spreadsheet: work is organised by
+   what you are changing (a lane, a parameter, a contract), not by where the
+   number happens to sit on a grid. Denser chrome, calmer surfaces, and every
+   edit is a labelled field with a live consequence shown beside it.
+   ========================================================================= */
+
+.console {
+  display: grid;
+  grid-template-columns: 216px 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.console-rail {
+  background: var(--paper);
+  border-right: 1px solid var(--rule-strong);
+  padding: 14px 0;
+  overflow-y: auto;
+}
+
+.console-rail .group {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 14px 16px 5px;
+}
+
+.console-rail a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 16px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 12.5px;
+  border-left: 2px solid transparent;
+}
+
+.console-rail a:hover {
+  background: var(--paper-sunk);
+  color: var(--ink);
+}
+
+.console-rail a[aria-current='page'] {
+  background: var(--paper-sunk);
+  border-left-color: var(--accent);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.console-main {
+  overflow-y: auto;
+  padding: 20px 26px 70px;
+  background: var(--paper-sunk);
+}
+
+.console-main > .inner {
+  max-width: 1120px;
+}
+
+/* Editing surface: a bordered card per concern. */
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  margin-bottom: 16px;
+}
+
+.panel > header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--rule);
+  background: linear-gradient(var(--paper), var(--paper-sunk));
+}
+
+.panel > header h3 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+
+.panel > header .hint {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+}
+
+.panel > .body {
+  padding: 15px;
+}
+
+/* The selector row: mode / origin / destination as plain dropdowns. */
+.selector {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.selector .field {
+  margin: 0;
+  min-width: 148px;
+}
+
+.selector select,
+.selector input {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 6px 8px;
+}
+
+.arrow {
+  align-self: center;
+  padding-bottom: 6px;
+  color: var(--ink-faint);
+  font-size: 15px;
+}
+
+/* Rate fields: four labelled inputs, not four anonymous cells. */
+.rate-fields {
+  display: grid;
+  /* Four abreast so the tiers read as one row of a rate table. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 1180px) {
+  .rate-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.rate-field label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rate-field {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 10px 12px;
+  background: var(--paper);
+}
+
+.rate-field.changed {
+  border-color: var(--dirty);
+  background: var(--dirty-wash);
+}
+
+.rate-field.overridden {
+  border-color: var(--approved);
+  background: var(--approved-wash);
+}
+
+.rate-field label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 5px;
+}
+
+.rate-field .unit {
+  color: var(--ink-faint);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.rate-field input {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  padding: 5px 7px;
+  text-align: right;
+}
+
+.rate-field .baseline {
+  margin-top: 5px;
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  min-height: 14px;
+}
+
+.rate-field .baseline strong {
+  color: var(--dirty);
+}
+
+/* Consequence panel: what this lane now quotes. */
+.consequence {
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 12px 14px;
+}
+
+.consequence table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.consequence td {
+  padding: 2px 0;
+}
+
+.consequence td:last-child {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.consequence tr.headline td {
+  font-weight: 700;
+  font-size: 14px;
+  padding-top: 6px;
+  border-top: 1px solid var(--rule-strong);
+}
+
+.consequence .was {
+  color: var(--ink-faint);
+  text-decoration: line-through;
+  padding-right: 7px;
+  font-size: 11px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+/* The consequence panel stays put while you work down the fields. */
+.two-col > .panel:last-child {
+  position: sticky;
+  top: 0;
+}
+
+@media (max-width: 900px) {
+  .console {
+    grid-template-columns: 1fr;
+  }
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Served / not served — a real switch, because it is a real decision. */
+.served-toggle {
+  display: inline-flex;
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.served-toggle button {
+  border: 0;
+  border-radius: 0;
+  padding: 5px 13px;
+  font-size: 12px;
+  background: var(--paper);
+}
+
+.served-toggle button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.served-toggle button[aria-pressed='true'].off {
+  background: var(--rejected);
+  border-color: var(--rejected);
+}
+
+/*
+ * Panel footer. Deliberately NOT sticky: on a tall panel a viewport-pinned bar
+ * lands mid-content and reads as if it belongs to whichever section it happens to
+ * be floating over. The draft bar at the top of the page carries the always-visible
+ * state instead.
+ */
+.actionbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  background: var(--paper);
+  border-top: 1px solid var(--rule-strong);
+  box-shadow: 0 -3px 12px rgba(26, 26, 23, 0.06);
+  z-index: 5;
+}
+
+.actionbar .spacer {
+  margin-left: auto;
+}
+
+/* Compact lane table with inline fields. */
+table.lanes {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+table.lanes th {
+  position: sticky;
+  top: 0;
+  background: var(--band);
+  text-align: right;
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--rule-strong);
+  white-space: nowrap;
+}
+
+table.lanes th:first-child,
+table.lanes th.left {
+  text-align: left;
+}
+
+table.lanes td {
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--rule);
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+table.lanes td.left {
+  text-align: left;
+  font-family: var(--font-sans);
+}
+
+table.lanes tbody tr:hover {
+  background: var(--paper-sunk);
+}
+
+table.lanes input {
+  width: 74px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 2px 5px;
+  text-align: right;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 2px;
+}
+
+table.lanes input:hover {
+  border-color: var(--rule-strong);
+  background: var(--paper);
+}
+
+table.lanes input:focus {
+  border-color: var(--selection-edge);
+  background: var(--paper);
+}
+
+table.lanes input.changed {
+  background: var(--dirty-wash);
+  border-color: var(--dirty);
+}
+
+table.lanes input.overridden {
+  background: var(--approved-wash);
+  border-color: var(--approved);
+}
+
+table.lanes tr.unserved td {
+  color: var(--ink-faint);
+}
+
+/* UI mode switch in the masthead. */
+.uiswitch {
+  display: inline-flex;
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-left: 8px;
+}
+
+.uiswitch a {
+  padding: 3px 10px !important;
+  font-size: 11px !important;
+  border-radius: 0 !important;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.uiswitch a[aria-current='page'] {
+  background: var(--ink) !important;
+  color: var(--paper) !important;
+  font-weight: 600;
+}
+
+/* Stat strip. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.stat {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 11px 13px;
+}
+
+.stat .k {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.stat .v {
+  font-family: var(--font-mono);
+  font-size: 21px;
+  font-variant-numeric: tabular-nums;
+  margin-top: 3px;
+}
+
+.stat .v.muted {
+  color: var(--ink-faint);
+}
+
+.stat .sub {
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  margin-top: 1px;
+}
+
+/* Bulk operation preview. */
+.preview-box {
+  border: 1px dashed var(--rule-strong);
+  border-radius: 3px;
+  padding: 12px 14px;
+  background: var(--paper-sunk);
+  font-size: 12px;
+}
+
+.preview-box .count {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.pill {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 10px;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.pill.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.empty {
+  padding: 26px;
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 12.5px;
+}
+
+/* ---------------------------------------------------------- smart geography
+ *
+ * A rule is authored at whatever level the negotiation happened at, so the level of
+ * each result has to be legible at a glance. The mockup used six pastel chips; those
+ * would read as a different product next to the rest of this, so the levels borrow the
+ * hues already defined above and separate themselves by weight instead of by hue.
+ */
+
+.geo-picking {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.geo-picking .chip {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+  padding: 0.35rem 0.75rem;
+  border-radius: 2px;
+}
+
+.geo-picking .chip.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.geo-results {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  border: 1px solid var(--rule);
+  max-height: 19rem;
+  overflow-y: auto;
+  background: var(--paper);
+}
+
+.geo-results li + li {
+  border-top: 1px solid var(--rule);
+}
+
+.geo-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0.45rem 0.7rem;
+}
+
+.geo-item:hover,
+.geo-item:focus-visible {
+  background: var(--paper-sunk);
+}
+
+.geo-item .lbl {
+  flex: 1;
+  font-weight: 600;
+}
+
+.geo-item .meta,
+.geo-coverage .meta,
+.precedence-row .meta {
+  color: var(--ink-faint);
+  font-size: 0.82rem;
+}
+
+/* Specificity reads as weight: the sharper the level, the heavier the chip. */
+.lvl {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--rule-strong);
+  min-width: 4.6rem;
+  text-align: center;
+}
+
+.lvl-pincode {
+  background: var(--rejected-wash);
+  border-color: var(--rejected);
+  color: var(--rejected);
+  font-weight: 700;
+}
+
+.lvl-city {
+  background: var(--dirty-wash);
+  border-color: var(--dirty);
+  color: var(--dirty);
+  font-weight: 700;
+}
+
+.lvl-state {
+  background: var(--approved-wash);
+  border-color: var(--approved);
+  color: var(--approved);
+}
+
+.lvl-zone {
+  background: var(--pending-wash);
+  border-color: var(--pending);
+  color: var(--pending);
+}
+
+.lvl-group {
+  background: var(--band);
+  color: var(--ink-soft);
+}
+
+.lvl-any {
+  background: var(--paper-sunk);
+  color: var(--ink-faint);
+}
+
+.geo-coverage {
+  margin: 0.9rem 0;
+}
+
+.geo-coverage details {
+  border: 1px solid var(--rule);
+  padding: 0.5rem 0.7rem;
+  margin-bottom: 0.4rem;
+  background: var(--paper);
+}
+
+.geo-coverage summary {
+  cursor: pointer;
+}
+
+.geo-coverage ul {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  columns: 2;
+}
+
+.geo-coverage li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.15rem 0;
+  break-inside: avoid;
+}
+
+.precedence {
+  list-style: none;
+  margin: 0 0 1.4rem;
+  padding: 0;
+}
+
+.precedence-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  border: 1px solid var(--rule);
+  padding: 0.55rem 0.7rem;
+  margin-bottom: 0.35rem;
+  background: var(--paper);
+}
+
+.precedence-row.default {
+  background: var(--paper-sunk);
+  color: var(--ink-soft);
+}
+
+.precedence-row .rank {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.precedence-row.default .rank {
+  background: var(--rule-strong);
+  color: var(--ink-soft);
+}
+
+.precedence-row .what {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.cascade-trail {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+}
+
+.cascade-trail li {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.cascade-trail .mark {
+  width: 1rem;
+  text-align: center;
+}
+
+.cascade-trail .hit {
+  font-weight: 700;
+}
+
+.cascade-trail .miss {
+  color: var(--ink-faint);
+}
+
+.rule-preview {
+  margin: 0.9rem 0;
+  border: 1px solid var(--rule);
+  padding: 0.7rem;
+  background: var(--paper);
+}
+
+.rule-preview .lede {
+  margin: 0 0 0.6rem;
+}
+
+.rule-preview td .chip {
+  margin-right: 0.4rem;
+}
