@@ -43,7 +43,7 @@ export function isBookableOneOff(charge: {
   return charge.bookableOneOff === true && !NOT_ONE_OFF.has(charge.basis);
 }
 
-const CHARGE_PATH = /^settlementCharges\.([^.]+)\./;
+const CHARGE_PATH = /^chargeCatalog\.([^.]+)\./;
 
 function chargeIdsIn(overrides: Record<string, unknown>): Set<string> {
   const ids = new Set<string>();
@@ -95,7 +95,7 @@ export function chargeLibrary(
   };
 
   for (const card of cards) {
-    const declared = (card as { settlementCharges?: Record<string, unknown> }).settlementCharges;
+    const declared = card.chargeCatalog;
     if (!declared) continue;
     for (const [id, value] of Object.entries(declared)) {
       const charge = value as { name?: string; basis?: string };
@@ -105,8 +105,8 @@ export function chargeLibrary(
 
   for (const overrides of contracts) {
     for (const id of chargeIdsIn(overrides)) {
-      const name = overrides[`settlementCharges.${id}.name`];
-      const basis = overrides[`settlementCharges.${id}.basis`];
+      const name = overrides[`chargeCatalog.${id}.name`];
+      const basis = overrides[`chargeCatalog.${id}.basis`];
       note(id, typeof name === 'string' ? name : undefined, typeof basis === 'string' ? basis : undefined);
     }
   }

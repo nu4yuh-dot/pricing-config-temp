@@ -310,13 +310,6 @@ export async function payInvoice(
   }
 }
 
-export async function setUiMode(mode: 'sheet' | 'console') {
-  (await cookies()).set('ui_mode', mode, {
-    path: '/',
-    maxAge: 60 * 60 * 24 * 365,
-    sameSite: 'lax',
-  });
-}
 
 /* ------------------------------------------------------------------ templates */
 
@@ -752,7 +745,7 @@ export async function createLibraryCharge(
   },
 ) {
   const user = await authorise('edit-draft');
-  const path = `settlementCharges.${definition.id}`;
+  const path = `chargeCatalog.${definition.id}`;
 
   await editDraftCells(
     cardKey,
@@ -1031,51 +1024,6 @@ export async function changeCustomerSetup(
   const result = await changeSetup(currentCode, next, toActor(user));
   revalidatePath('/customers', 'layout');
   return result;
-}
-
-/* ------------------------------------------------------------- online signups */
-
-/**
- * Activate a signup onto a product.
- *
- * "Ready to book in one click" describes the data entry, not the review: the product's
- * terms land in the new customer's draft and go to an approver like any other contract.
- * A self-serve account priced from a standard product still has a person behind the
- * decision to sell it.
- */
-export async function activateSignups(
-  references: string[],
-  productKey: string,
-  baseCardKey: string,
-): Promise<import('../data/signups').ActivationResult[]> {
-  const user = await authorise('edit-draft');
-  const { activateSignup } = await import('../data/signups');
-  const actor = toActor(user);
-
-  const results = [];
-  for (const reference of references) {
-    try {
-      results.push(await activateSignup({ reference, productKey, baseCardKey, actor }));
-    } catch (cause) {
-      results.push({
-        reference,
-        customerCode: '',
-        applied: 0,
-        skipped: cause instanceof Error ? cause.message : 'could not be activated',
-      });
-    }
-  }
-
-  revalidatePath('/signups');
-  revalidatePath('/customers', 'layout');
-  return results;
-}
-
-export async function declineSignup(reference: string, why: string) {
-  const user = await authorise('edit-draft');
-  const { rejectSignup } = await import('../data/signups');
-  await rejectSignup(reference, why, toActor(user));
-  revalidatePath('/signups');
 }
 
 /* -------------------------------------------------------------------- offers */

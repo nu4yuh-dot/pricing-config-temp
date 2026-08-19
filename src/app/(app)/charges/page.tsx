@@ -40,13 +40,15 @@ export default async function ChargeLibraryPage() {
           fourth spelling of the same idea.
         </p>
 
-        <div className="scroll-x">
-          <table>
+        <div className="gridscroll">
+          <table className="data">
             <thead>
               <tr>
                 <th>Charge</th>
+                <th>Code</th>
                 <th>How it is charged</th>
-                <th>Treatment</th>
+                <th>GST</th>
+                <th>Fuel</th>
                 <th>One-off</th>
                 <th className="num">In use</th>
               </tr>
@@ -56,12 +58,25 @@ export default async function ChargeLibraryPage() {
                 <tr key={charge.id}>
                   <td>
                     <strong>{charge.name}</strong>
-                    <span className="meta"> {charge.id}</span>
                   </td>
+                  <td className="ref">{charge.id}</td>
                   <td>{BASIS_LABELS[charge.basis] ?? charge.basis}</td>
+                  {/* Only the exception is worth a chip. Marking every charge "in GST"
+                      when almost all of them are put six identical badges on the screen
+                      and made the one that is not harder to spot, not easier. */}
                   <td>
-                    <span className="chip">{charge.gstApplies === false ? 'outside GST' : 'in GST'}</span>{' '}
-                    {charge.fuelApplies ? <span className="chip">fuel applies</span> : null}
+                    {charge.gstApplies === false ? (
+                      <span className="chip pending">outside GST</span>
+                    ) : (
+                      <span className="meta">in GST</span>
+                    )}
+                  </td>
+                  <td>
+                    {charge.fuelApplies ? (
+                      <span className="chip">applies</span>
+                    ) : (
+                      <span className="meta">—</span>
+                    )}
                   </td>
                   <td>
                     {isBookableOneOff(charge) ? (
@@ -85,20 +100,27 @@ export default async function ChargeLibraryPage() {
 
         <div className="two-col" style={{ marginTop: '1.4rem' }}>
           <div className="panel">
-            <h3>Attached as a standing term</h3>
-            <p>
-              Switched on for a card or negotiated onto a contract, where it appears on every
-              quote that matches its modes — automatically, and priced the same way every
-              time.
-            </p>
+            <header>
+              <h3>Attached as a standing term</h3>
+            </header>
+            <div className="body">
+              <p style={{ marginBottom: 0 }}>
+                Switched on for a card or negotiated onto a contract, where it appears on every
+                quote that matches its modes — automatically, and priced the same way every time.
+              </p>
+            </div>
           </div>
           <div className="panel">
-            <h3>Added one-off at a booking</h3>
-            <p>
-              Attached to a single consignment for a customer with no standing term for it.
-              It touches no contract, so it cannot quietly become permanent. Only a charge
-              with one amount to ask for can be used this way.
-            </p>
+            <header>
+              <h3>Added one-off at a booking</h3>
+            </header>
+            <div className="body">
+              <p style={{ marginBottom: 0 }}>
+                Attached to a single consignment for a customer with no standing term for it. It
+                touches no contract, so it cannot quietly become permanent. Only a charge with one
+                amount to ask for can be used this way.
+              </p>
+            </div>
           </div>
         </div>
 

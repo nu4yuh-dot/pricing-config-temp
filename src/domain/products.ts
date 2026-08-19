@@ -54,7 +54,7 @@ export function productTerms(product: Product, template: RateTemplate): Contract
   // Attaching a charge switches it on and nothing more. Its amount and treatment come from
   // wherever it is defined, so a product cannot quietly reprice a charge for one segment.
   for (const id of product.charges) {
-    overrides[`settlementCharges.${id}.active`] = 'Yes';
+    overrides[`chargeCatalog.${id}.active`] = 'Yes';
   }
 
   return {

@@ -32,8 +32,8 @@ describe('turning a product into a contract', () => {
   test('the product attaches its charges as standing terms', () => {
     const terms = productTerms(ecom, template);
 
-    expect(terms.overrides['settlementCharges.cod-collection.active']).toBe('Yes');
-    expect(terms.overrides['settlementCharges.rto-handling.active']).toBe('Yes');
+    expect(terms.overrides['chargeCatalog.cod-collection.active']).toBe('Yes');
+    expect(terms.overrides['chargeCatalog.rto-handling.active']).toBe('Yes');
   });
 
   test('a product with no charges leaves the card charges alone', () => {

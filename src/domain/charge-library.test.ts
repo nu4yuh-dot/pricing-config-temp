@@ -1,11 +1,23 @@
 import { describe, test, expect } from 'vitest';
+import { chargesFrom } from '../pricing/card-config';
 import { chargeLibrary, isBookableOneOff } from './charge-library';
 import type { RateCardData } from './types';
 
 const card = (charges: Record<string, unknown>) =>
-  ({ charges: { docket: 100 }, settlementCharges: charges }) as unknown as RateCardData;
+  ({ charges: { docket: 100 }, chargeCatalog: charges }) as unknown as RateCardData;
 
 describe('the charge library', () => {
+
+  test('the library reads the same field the engine prices from', () => {
+    // These were two names for one thing: the library read `settlementCharges` while
+    // `chargesFrom` in pricing/card-config.ts reads `chargeCatalog`. Nothing was stored
+    // under the first, so every charge reported "not used" while being configured on
+    // every card, and a charge defined through the library could never be priced or
+    // switched on. The old tests asserted the wrong name too, which is why it survived.
+    const data = card({ 'site-levy': { name: 'Site levy', basis: 'per-shipment' } });
+    expect(chargesFrom(data).some((entry) => entry.id === 'site-levy')).toBe(true);
+    expect(chargeLibrary([data], []).some((entry) => entry.id === 'site-levy')).toBe(true);
+  });
   test('the standard charges are always in it, even when nobody has used one', () => {
     const names = chargeLibrary([], []).map((entry) => entry.id);
 
@@ -21,7 +33,7 @@ describe('the charge library', () => {
   });
 
   test('a charge a contract invented is in the library, so the next contract can reuse it', () => {
-    const library = chargeLibrary([], [{ 'settlementCharges.site-levy.name': 'Site levy' }]);
+    const library = chargeLibrary([], [{ 'chargeCatalog.site-levy.name': 'Site levy' }]);
 
     expect(library.find((entry) => entry.id === 'site-levy')?.name).toBe('Site levy');
   });
@@ -30,9 +42,9 @@ describe('the charge library', () => {
     const library = chargeLibrary(
       [card({ 'green-tax': { active: 'Yes' } })],
       [
-        { 'settlementCharges.green-tax.amount': 90 },
-        { 'settlementCharges.green-tax.amount': 75 },
-        { 'settlementCharges.handling.amount': 60 },
+        { 'chargeCatalog.green-tax.amount': 90 },
+        { 'chargeCatalog.green-tax.amount': 75 },
+        { 'chargeCatalog.handling.amount': 60 },
       ],
     );
 
@@ -46,8 +58,8 @@ describe('the charge library', () => {
 
   test('the most used charges come first, because that is the reuse the library is for', () => {
     const library = chargeLibrary([], [
-      { 'settlementCharges.handling.amount': 60 },
-      { 'settlementCharges.handling.amount': 60 },
+      { 'chargeCatalog.handling.amount': 60 },
+      { 'chargeCatalog.handling.amount': 60 },
     ]);
 
     expect(library[0]?.id).toBe('handling');
@@ -79,4 +91,5 @@ describe('which charges an operator may add to one booking', () => {
     if (!green) throw new Error('expected green-tax in the library');
     expect(isBookableOneOff(green)).toBe(false);
   });
+
 });
