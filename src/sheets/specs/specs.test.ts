@@ -219,17 +219,23 @@ describe('coverage of the stored rate card', () => {
       ['rail', SURFACE_ZONES],
     ] as const;
 
+    // Collected rather than asserted one by one: this covers 4,104 lane rates, and an
+    // `expect` per rate spent most of a five-second budget inside the matcher. Gathering
+    // the misses also fails with the whole list rather than the first one.
+    const missing: string[] = [];
     let checked = 0;
     for (const [mode, zones] of modes) {
       for (const grid of ['minCharge', 'tier1', 'tier2', 'tier3']) {
         for (const origin of zones) {
           for (const dest of zones) {
-            expect(reachable).toContain(`grids.${mode}.${grid}.${origin}.${dest}`);
+            const bind = `grids.${mode}.${grid}.${origin}.${dest}`;
+            if (!reachable.has(bind)) missing.push(bind);
             checked++;
           }
         }
       }
     }
+    expect(missing).toEqual([]);
     // 4 grids x (12x12 air + 21x21 surface + 21x21 rail)
     expect(checked).toBe(4 * (144 + 441 + 441));
   });

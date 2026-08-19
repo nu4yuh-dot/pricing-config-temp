@@ -78,6 +78,14 @@ export interface TableBlock {
   /** Path to the record holding one entry per row key. */
   bind?: BindPath;
   rowHeader?: string;
+  /**
+   * What to call a row, when its key is a path segment rather than a name.
+   *
+   * The UPS package table is addressed by array index, so the key is `19`. That is the
+   * right thing to write into a bind path and the wrong thing to show an approver, who
+   * needs to read "Package · 10 kg", not "19".
+   */
+  rowLabels?: Record<string, string>;
 }
 
 export interface ParamRow {
@@ -158,7 +166,7 @@ export interface SheetSpec {
    * Bluedart Rates would appear blank on a DNS card, and editing it there would write
    * franchise rates onto a card that does not price them.
    */
-  source?: 'dns' | 'bluedart';
+  source?: 'dns' | 'bluedart' | 'ups';
   /** Widest column the sheet uses, so the grid renders the same envelope as Excel. */
   columns: number;
   blocks: Block[];

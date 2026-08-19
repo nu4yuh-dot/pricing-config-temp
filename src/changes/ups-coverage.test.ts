@@ -9,7 +9,13 @@ import type { RateCard, RateCardData } from '../domain/types';
  * Proof that a UPS edit reaches an approver.
  *
  * The rule this system runs on: if it can change a price, prove it reaches `diffCardData`
- * with a test. The UPS tariff has no sheet specs, so the ordinary walk is blind to it —
+ * with a test. The UPS tariff used to have no sheet specs, so the ordinary walk was blind
+ * to it, and `ups-diff.ts` existed to produce its lines separately. The card has tabs now,
+ * built from its own data in `sheets/specs/ups.ts`, so the walk covers it like any other
+ * card — and these tests are what proved that before `ups-diff.ts` was removed. Running
+ * both produced two lines for one edit, which an approver could decide differently on.
+ *
+ * Originally written against `ups-diff.ts` —
  * these are the tests that would fail if somebody made the card editable and forgot to
  * say so to the approval queue.
  *
@@ -31,11 +37,13 @@ describe('a UPS edit reaches the approval diff', () => {
     expect(changes).toHaveLength(1);
     expect(changes[0]).toMatchObject({
       bind: 'ups.params.fuelRate',
-      sheet: 'UPS international',
+      // The tab it is actually on. `ups-diff` used a synthetic name because the card had
+      // no tabs; it has them now, so the change names the sheet like every other card.
+      sheet: 'Params',
       oldValue: 0.4675,
       newValue: 0.5,
     });
-    expect(changes[0]?.label).toContain('fuel surcharge');
+    expect(changes[0]?.label.toLowerCase()).toContain('fuel surcharge');
   });
 
   test('the margin, the surge discount and GST', () => {

@@ -1,10 +1,9 @@
 import { renderSheet, getByPath } from '../sheets/resolve';
 import { parseRef } from '../sheets/address';
-import { EDITABLE_SHEET_SPECS } from '../sheets/specs';
+import { editableSpecsFor } from '../sheets/specs';
 import type { RateCardData } from '../domain/types';
 import type { BindPath } from '../sheets/types';
 import { diffLaneRules } from './rule-diff';
-import { diffUpsCard } from './ups-diff';
 
 export type CellValue = string | number | null;
 
@@ -48,7 +47,15 @@ export interface EditableCell {
 export function allEditableCells(...versions: unknown[]): EditableCell[] {
   const byBind = new Map<BindPath, EditableCell>();
 
-  EDITABLE_SHEET_SPECS.forEach((spec, sheetOrder) => {
+  // Some specs are built from the data — the UPS tabs are, because the agreement decides
+  // how many zones and weight steps there are. Collect them across every version so a row
+  // present in one and not the other still produces a line.
+  const specs = new Map<string, ReturnType<typeof editableSpecsFor>[number]>();
+  for (const version of versions) {
+    for (const spec of editableSpecsFor(version)) specs.set(spec.id, spec);
+  }
+
+  [...specs.values()].forEach((spec, sheetOrder) => {
     for (const version of versions) {
       for (const cell of renderSheet(spec, version).cells.values()) {
         if (!cell.editable || !cell.bind || byBind.has(cell.bind)) continue;
@@ -100,10 +107,14 @@ export function diffCardData(before: RateCardData, after: RateCardData): Change[
     });
   }
 
-  // Rules and the UPS tariff live at no A1 address, so the sheet walk above cannot see
-  // either. Without this a rule would price a lane, or a fuel percentage would reprice
-  // every international shipment, and reach production without a line of review.
-  return [...changes, ...diffLaneRules(before, after), ...diffUpsCard(before, after)];
+  // A lane rule lives at no A1 address, so the sheet walk above cannot see one. Without
+  // this a rule would price a lane and reach production without a line of review.
+  //
+  // The UPS tariff used to need the same treatment for the same reason. It has its own
+  // tabs now, built from the card in `sheets/specs/ups.ts`, so the walk finds it like any
+  // other card — and running both produced two lines for one edit, which an approver could
+  // have decided differently on each.
+  return [...changes, ...diffLaneRules(before, after)];
 }
 
 /** Index by bind path, for validators that need to locate a cell they flagged. */

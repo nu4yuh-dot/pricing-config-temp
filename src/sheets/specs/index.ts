@@ -12,6 +12,8 @@ import {
 import { settlementSpec } from './settlement';
 import { ftlSpec } from './ftl';
 import { bluedartSpec } from './bluedart';
+import { upsSpecs } from './ups';
+import type { UpsCardData } from '../../domain/ups';
 
 /**
  * The four tabs the engine computes rather than stores. They carry no editable
@@ -136,6 +138,27 @@ export const SHEET_SPECS: SheetSpec[] = [
 
 export const SHEET_SPECS_BY_ID = new Map(SHEET_SPECS.map((spec) => [spec.id, spec]));
 
+/**
+ * The specs that apply to one card's data, including any built from it.
+ *
+ * The UPS tabs are generated rather than declared: the grid is eighteen zones by fifty-seven
+ * weight steps *today*, and a renegotiated agreement changes that. A hardcoded layout would
+ * stop covering the rows nobody told it about, and a row outside the layout is a rate that
+ * reaches production with no approval line — the exact failure `ups-diff.ts` was written to
+ * patch before these tabs existed.
+ */
+export function specsFor(data: unknown): SheetSpec[] {
+  const ups = (data as { ups?: UpsCardData } | null | undefined)?.ups;
+  return ups ? [...SHEET_SPECS, ...upsSpecs(ups)] : SHEET_SPECS;
+}
+
+/** The editable subset of `specsFor`, which is what the approval diff walks. */
+export function editableSpecsFor(data: unknown): SheetSpec[] {
+  return specsFor(data).filter(
+    (spec) => !spec.derived && spec.id !== 'pincode-master' && spec.id !== 'cover',
+  );
+}
+
 /** Tabs with editable data, i.e. everything the approval workflow covers. */
 export const EDITABLE_SHEET_SPECS = SHEET_SPECS.filter(
   (spec) => !spec.derived && spec.id !== 'pincode-master' && spec.id !== 'cover',
@@ -148,8 +171,8 @@ export const EDITABLE_SHEET_SPECS = SHEET_SPECS.filter(
  * A source with no spreadsheet representation gets an empty list rather than an error —
  * the UPS card is edited on its own console page and has no A1 grid to render.
  */
-export function sheetSpecsForSource(source: CardSource): SheetSpec[] {
-  return SHEET_SPECS.filter((spec) => (spec.source ?? 'dns') === source);
+export function sheetSpecsForSource(source: CardSource, data?: unknown): SheetSpec[] {
+  return specsFor(data).filter((spec) => (spec.source ?? 'dns') === source);
 }
 
 export function editableSpecsForSource(source: CardSource): SheetSpec[] {

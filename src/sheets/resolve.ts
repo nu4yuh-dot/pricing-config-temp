@@ -132,7 +132,8 @@ function renderBlock(sheet: RenderedSheet, block: Block, data: unknown, sheetNam
 
       block.rowKeys.forEach((rowKey, r) => {
         const rowRef = offsetRef(block.at, 0, r + 1);
-        put(sheet, text(rowRef, rowKey, 'rowLabel'));
+        const rowLabel = block.rowLabels?.[rowKey] ?? rowKey;
+        put(sheet, text(rowRef, rowLabel, 'rowLabel'));
         block.columns.forEach((column, c) => {
           const ref = offsetRef(rowRef, c + 1, 0);
           if (!column.field) {
@@ -147,7 +148,7 @@ function renderBlock(sheet: RenderedSheet, block: Block, data: unknown, sheetNam
             value: (value ?? null) as string | number | null,
             editable: !column.readOnly,
             bind,
-            label: `${sheetName} · ${column.header} · ${rowKey}`,
+            label: `${sheetName} · ${column.header} · ${rowLabel}`,
             ...(column.format ? { format: column.format } : {}),
           });
         });
