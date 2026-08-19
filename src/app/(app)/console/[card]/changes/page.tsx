@@ -6,6 +6,7 @@ import { draftVersion, liveVersion, findCard } from '../../../../../data/rate-ca
 import { diffCardData, type Change } from '../../../../../changes/diff';
 import { validateChanges, validateCard } from '../../../../../changes/validate';
 import { canEditDraft } from '../../../../../data/workflow';
+import { consoleHomeFor } from '../../../../../console/card-home';
 import { quote } from '../../../../../pricing/quote';
 import { findPincodePair } from '../../../../../data/pincodes';
 import SubmitBar from '../../../../../components/console/SubmitBar';
@@ -40,6 +41,8 @@ export default async function ChangesPage({ params }: { params: Promise<{ card: 
 
   const [draft, live] = await Promise.all([draftVersion(cardKey), liveVersion(cardKey)]);
   const frozen = !canEditDraft(draft.state);
+
+  const editHref = consoleHomeFor(card.source ?? 'dns', cardKey);
 
   const changes = diffCardData(live.data, draft.data);
   const findings = validateChanges(changes);
@@ -77,7 +80,7 @@ export default async function ChangesPage({ params }: { params: Promise<{ card: 
           <div className="empty">
             Nothing has changed — this card matches approved pricing.
             <div style={{ marginTop: 12 }}>
-              <Link className="btn" href={`/console/${cardKey}/rates`}>
+              <Link className="btn" href={editHref}>
                 Go and edit some rates →
               </Link>
             </div>

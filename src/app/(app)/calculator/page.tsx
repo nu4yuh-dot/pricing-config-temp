@@ -5,6 +5,7 @@ import { listCustomers, findCustomer, baseCardFor, contractedCard } from '../../
 import { checkContract, overrideCount } from '../../../customers/contract';
 import { quote, type QuoteResult } from '../../../pricing/quote';
 import { MODES, type Mode } from '../../../domain/types';
+import CalculatorTabs from '../../../components/CalculatorTabs';
 
 /**
  * The Rate Calculator, with every rate card priced side by side — which is the
@@ -132,6 +133,7 @@ export default async function CalculatorPage({
     <div className="page">
       <div className="page-inner">
         <h2>Rate Calculator</h2>
+        <CalculatorTabs active="/calculator" />
         <p className="lede">
           {customer
             ? `Priced on ${customer.name}'s contract — their card, their negotiated cells and their billing terms, with the standard price alongside for comparison.`

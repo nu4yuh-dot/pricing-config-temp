@@ -255,53 +255,17 @@ body {
   border-left: 1px solid var(--rule);
 }
 
-/* --------------------------------------------------------------- card picker */
+/* ------------------------------------------------------------------ toolbar */
 
-.cardbar {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  background: var(--paper-sunk);
-  border-bottom: 1px solid var(--rule);
-  flex: none;
-  overflow-x: auto;
-}
-
-.cardbar a {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 7px 15px;
-  text-decoration: none;
-  color: var(--ink-soft);
+.toolbar .cardname {
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--ink);
+  padding-right: 12px;
+  margin-right: 4px;
   border-right: 1px solid var(--rule);
-  min-width: 168px;
   white-space: nowrap;
 }
-
-.cardbar a:hover {
-  background: var(--band);
-}
-
-.cardbar a[aria-current='page'] {
-  background: var(--paper);
-  color: var(--ink);
-  box-shadow: inset 0 2px 0 var(--accent);
-}
-
-.cardbar .name {
-  font-weight: 600;
-  font-size: 12px;
-}
-
-.cardbar .method {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--ink-faint);
-  letter-spacing: -0.02em;
-}
-
-/* ------------------------------------------------------------------ toolbar */
 
 .toolbar {
   display: flex;
@@ -1824,4 +1788,207 @@ table.lanes tr.unserved td {
 
 .rule-preview td .chip {
   margin-right: 0.4rem;
+}
+
+/* ---------------------------------------------------------------- grid editor
+ *
+ * The console's matrix editors: transit times, per-zone cartage, the ODA bands and
+ * the zone names. A transit matrix is 21 columns wide, so the container scrolls on
+ * its own and the row-label column stays put — losing track of which row you are on
+ * is how the wrong lane gets edited.
+ */
+.gridscroll {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.gridscroll table.data {
+  border: 0;
+}
+
+table.data.gridedit td,
+table.data.gridedit th {
+  padding: 0;
+  border-right: 1px solid var(--rule);
+}
+
+table.data.gridedit th {
+  padding: 7px 8px;
+  text-align: center;
+}
+
+table.data.gridedit th:first-child,
+table.data.gridedit td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--band);
+  padding: 6px 10px;
+  white-space: nowrap;
+  border-right: 1px solid var(--rule-strong);
+}
+
+table.data.gridedit input {
+  width: 100%;
+  min-width: 68px;
+  border: 0;
+  background: transparent;
+  padding: 6px 8px;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--ink);
+}
+
+table.data.gridedit input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--paper);
+}
+
+table.data.gridedit input:disabled {
+  color: var(--ink-soft);
+}
+
+table.data.gridedit input::placeholder {
+  color: var(--ink-faint);
+}
+
+/* Changed against the draft you opened; overridden means the draft already differs
+ * from live. Same two states the lane and parameter editors use. */
+table.data.gridedit td.changed {
+  background: var(--dirty-wash);
+  box-shadow: inset 0 0 0 1px var(--dirty);
+}
+
+table.data.gridedit td.overridden {
+  box-shadow: inset 0 0 0 1px var(--approved);
+}
+
+table.data.gridedit td.gap {
+  text-align: center;
+  color: var(--rule-strong);
+  padding: 6px 8px;
+}
+
+/* A heading inside a nav menu — "Self-network" above the three models, "Partners"
+ * above Bluedart and UPS. Not a link, so clicking one does not dismiss the menu. */
+.masthead nav details > .menu .menu-group {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 7px 8px 3px;
+  cursor: default;
+}
+
+.masthead nav details > .menu .menu-group:not(:first-child) {
+  border-top: 1px solid var(--rule);
+  margin-top: 4px;
+}
+
+/* -------------------------------------------------------------- group tabs
+ *
+ * One group of a card's parameters at a time. The Bluedart card is five tables and
+ * a hundred-odd fields; stacked, reaching the last one is a long scroll past four
+ * you did not want.
+ *
+ * The count on a tab is the point of it: saving writes every change across every
+ * tab, so an edit made two tabs ago has to stay visible from here.
+ */
+.subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.subtabs button,
+.subtabs a {
+  display: inline-flex;
+  text-decoration: none;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 8px 13px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.subtabs button:hover,
+.subtabs a:hover {
+  color: var(--ink);
+  background: var(--band);
+}
+
+.subtabs button[aria-selected='true'],
+.subtabs a[aria-selected='true'] {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+/* A read-only column inside a grid — the derived value beside an editable one, such
+ * as "net after discount". Grid cells have no padding because an input fills them;
+ * text needs its own. */
+table.data.gridedit td.text {
+  padding: 6px 10px;
+  color: var(--ink-faint);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- sheet toggle
+ *
+ * Switches a rate card between the console and the workbook layout. It sits in the
+ * card's own status strip rather than the masthead, because it only means anything
+ * on a rate card — there is no spreadsheet view of a customer or an approval.
+ */
+.toolbar .viewtoggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 9px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.toolbar .viewtoggle:hover {
+  background: var(--band);
+  color: var(--ink);
+}
+
+.toolbar .viewtoggle .state {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 2px;
+  background: var(--band-strong);
+  color: var(--ink-faint);
+}
+
+.toolbar .viewtoggle[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.toolbar .viewtoggle[aria-pressed='true'] .state {
+  background: var(--accent);
+  color: var(--accent-ink);
 }

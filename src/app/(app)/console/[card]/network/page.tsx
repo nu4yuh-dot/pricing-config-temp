@@ -1,8 +1,12 @@
 import { notFound } from 'next/navigation';
 import { currentUser } from '../../../../../auth/session';
+import { can } from '../../../../../auth/roles';
 import { draftVersion, liveVersion, findCard } from '../../../../../data/rate-cards';
+import { canEditDraft } from '../../../../../data/workflow';
 import { AIR_ZONES, SURFACE_ZONES } from '../../../../../domain/zones';
 import type { StoredMode } from '../../../../../domain/types';
+import GridEditor, { type GridSpec } from '../../../../../components/console/GridEditor';
+import { saveParamEdits } from '../../../../../app/console-actions';
 
 /**
  * Network coverage: which lanes each mode actually serves.
@@ -15,9 +19,49 @@ export default async function NetworkPage({ params }: { params: Promise<{ card: 
   const user = await currentUser();
   if (!user) notFound();
   const card = await findCard(cardKey);
-  if (!card) notFound();
+  // Lane-shaped pages only exist for our own network. A franchise or export card
+  // has none of this data, and rendering an empty editor for one invites somebody
+  // to type rates into fields nothing will ever read.
+  if (!card || (card.source ?? 'dns') !== 'dns') notFound();
 
   const [draft, live] = await Promise.all([draftVersion(cardKey), liveVersion(cardKey)]);
+  const canEdit = can(user.role, 'edit-draft') && canEditDraft(draft.state);
+
+  // Zone codes are structural and live in domain/zones.ts; only their descriptions are
+  // card data, so only the descriptions are editable here.
+  const zoneLabels: GridSpec[] = [
+    {
+      key: 'zones',
+      title: 'Zones',
+      hint: 'renaming is a normal edit; adding or removing is a migration',
+      rowHeader: 'Code',
+      columns: ['Industrial belt', 'Air hub'],
+      note: `Adding or removing a zone reshapes every matrix — ${SURFACE_ZONES.length}×${SURFACE_ZONES.length} per grid — so it is handled as an explicit migration rather than an edit here.`,
+      rows: SURFACE_ZONES.map((zone) => ({
+        label: zone,
+        cells: [
+          {
+            bind: `zones.surface.${zone}.belt`,
+            value: draft.data.zones.surface[zone]?.belt ?? null,
+            liveValue: live.data.zones.surface[zone]?.belt ?? null,
+            kind: 'text' as const,
+            title: `${zone} — industrial belt`,
+          },
+          // A surface zone without an air hub has nothing to name, so it gets a gap
+          // rather than an empty box that looks like an omission.
+          AIR_ZONES.includes(zone as never)
+            ? {
+                bind: `zones.air.${zone}.city`,
+                value: draft.data.zones.air[zone]?.city ?? null,
+                liveValue: live.data.zones.air[zone]?.city ?? null,
+                kind: 'text' as const,
+                title: `${zone} — air hub city`,
+              }
+            : null,
+        ],
+      })),
+    },
+  ];
 
   const modes: StoredMode[] = ['surface', 'air', 'rail'];
 
@@ -117,43 +161,15 @@ export default async function NetworkPage({ params }: { params: Promise<{ card: 
         </div>
       ))}
 
-      <div className="panel">
-        <header>
-          <h3>Zones</h3>
-          <span className="hint">Renaming is a normal edit; adding or removing is a migration</span>
-        </header>
-        <div className="body">
-          <table className="data">
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Industrial belt</th>
-                <th>Air hub</th>
-              </tr>
-            </thead>
-            <tbody>
-              {SURFACE_ZONES.map((zone) => (
-                <tr key={zone}>
-                  <td>
-                    <strong>{zone}</strong>
-                  </td>
-                  <td>{draft.data.zones.surface[zone]?.belt ?? '—'}</td>
-                  <td style={{ color: 'var(--ink-faint)' }}>
-                    {AIR_ZONES.includes(zone as never)
-                      ? (draft.data.zones.air[zone]?.city ?? '—')
-                      : 'no air hub'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p style={{ color: 'var(--ink-faint)', fontSize: 11.5, marginBottom: 0 }}>
-            Adding or removing a zone reshapes every matrix — {SURFACE_ZONES.length}×
-            {SURFACE_ZONES.length} per grid — so it is handled as an explicit migration rather than
-            an edit here.
-          </p>
-        </div>
-      </div>
+      <GridEditor
+        grids={zoneLabels}
+        canEdit={canEdit}
+        consequence="Names only. No price moves when these change."
+        onSave={async (edits) => {
+          'use server';
+          await saveParamEdits(cardKey, edits);
+        }}
+      />
     </>
   );
 }

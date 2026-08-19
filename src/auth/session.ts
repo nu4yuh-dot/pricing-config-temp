@@ -141,6 +141,30 @@ export async function setUserRole(userId: string, role: Role): Promise<void> {
   await (await users()).updateOne({ _id: new ObjectId(userId) }, { $set: { role } });
 }
 
+/**
+ * Change a person's own password.
+ *
+ * The current password is verified here rather than by the caller, so a stolen session
+ * alone is not enough to lock the real owner out of their account.
+ */
+export async function changeOwnPassword(
+  userId: string,
+  currentPassword: string,
+  nextPassword: string,
+): Promise<void> {
+  const collection = await users();
+  const user = await collection.findOne({ _id: new ObjectId(userId) });
+  if (!user) throw new Error('That account no longer exists.');
+
+  const matches = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!matches) throw new Error('Your current password is not correct.');
+
+  await collection.updateOne(
+    { _id: user._id },
+    { $set: { passwordHash: await hashPassword(nextPassword) } },
+  );
+}
+
 export async function setUserActive(userId: string, active: boolean): Promise<void> {
   await (await users()).updateOne({ _id: new ObjectId(userId) }, { $set: { active } });
 }

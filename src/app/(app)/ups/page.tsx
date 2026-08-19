@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { currentUser } from '../../../auth/session';
 import { liveCardsFromSource } from '../../../data/rate-cards';
 import UpsCalculator from '../../../components/console/UpsCalculator';
+import CalculatorTabs from '../../../components/CalculatorTabs';
 
 /**
  * The UPS international calculator.
@@ -23,6 +24,7 @@ export default async function UpsPage() {
       <div className="page">
         <div className="page-inner">
           <h2>UPS international</h2>
+          <CalculatorTabs active="/ups" />
           <div className="panel">
             <div className="empty">
               The UPS card is not loaded on this environment. Build it with{' '}
@@ -61,6 +63,7 @@ export default async function UpsPage() {
     <div className="page">
       <div className="page-inner">
         <h2>UPS international — export from {data.params.origin}</h2>
+        <CalculatorTabs active="/ups" />
         <p className="lede">
           The MOVIN / UPS Express Saver agreement. A destination country decides the rate zone;
           a separate region of the world decides the per-kilogram surge; fuel is charged on

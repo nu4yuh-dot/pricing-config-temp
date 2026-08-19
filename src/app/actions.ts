@@ -17,6 +17,7 @@ import {
   createUser,
   setUserRole,
   setUserActive,
+  changeOwnPassword,
 } from '../auth/session';
 import { can, type Capability, type Role } from '../auth/roles';
 import { checkThrottle, recordFailure, recordSuccess } from '../auth/throttle';
@@ -68,7 +69,7 @@ export async function signIn(_previous: unknown, form: FormData) {
   recordSuccess(clientKey);
   await createSession(user);
   await recordAudit({ action: 'signed-in', actor: toActor(user), at: new Date() });
-  redirect('/sheets/model-1/surface');
+  redirect('/console/model-1/rates');
 }
 
 export async function signOut() {
@@ -82,13 +83,11 @@ export async function saveDraftEdits(
 ) {
   const user = await authorise('edit-draft');
   await editDraftCells(cardKey, edits, toActor(user));
-  revalidatePath('/sheets/[card]/[sheet]', 'page');
 }
 
 export async function discardDraft(cardKey: string) {
   const user = await authorise('edit-draft');
   await resetDraft(cardKey, toActor(user));
-  revalidatePath('/sheets/[card]/[sheet]', 'page');
 }
 
 export async function submitDraftForApproval(cardKey: string) {
@@ -125,8 +124,42 @@ export async function decideRequest(requestId: string, form: FormData) {
 
   await reviewRequest(requestId, decisions, toActor(user), comment);
   revalidatePath('/approvals');
-  revalidatePath('/sheets/[card]/[sheet]', 'page');
   redirect('/approvals');
+}
+
+/**
+ * Change your own password.
+ *
+ * Deliberately not an admin capability: an admin can disable an account or issue a new
+ * one, but cannot quietly take over an existing person's login, because setting a
+ * password here requires knowing the current one.
+ */
+export async function changePassword(_previous: unknown, form: FormData) {
+  const user = await currentUser();
+  if (!user) return { error: 'Your session has expired. Sign in again.' };
+
+  const current = String(form.get('current') ?? '');
+  const next = String(form.get('next') ?? '');
+  const confirm = String(form.get('confirm') ?? '');
+
+  if (next.length < 12) {
+    return { error: 'Choose a password of at least 12 characters.' };
+  }
+  if (next !== confirm) {
+    return { error: 'The two new passwords do not match.' };
+  }
+  if (next === current) {
+    return { error: 'That is your current password. Choose a different one.' };
+  }
+
+  try {
+    await changeOwnPassword(user.id, current, next);
+  } catch (cause) {
+    return { error: cause instanceof Error ? cause.message : 'Could not change your password.' };
+  }
+
+  await recordAudit({ action: 'password-changed', actor: toActor(user), at: new Date() });
+  return { ok: 'Your password has been changed.' };
 }
 
 export async function addUser(_previous: unknown, form: FormData) {

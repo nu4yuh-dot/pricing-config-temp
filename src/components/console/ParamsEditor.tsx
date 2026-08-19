@@ -34,9 +34,19 @@ const parseValue = (raw: string, unit: ParamField['unit']): number | null => {
 export default function ParamsEditor(props: {
   fields: ParamField[];
   canEdit: boolean;
+  /**
+   * Show one group at a time behind tabs instead of stacking every panel.
+   *
+   * For a card with five or six groups and a hundred fields, stacking them is a very
+   * long scroll. The save button stays global — it always writes every change across
+   * every tab — so each tab carries its own count, and an edit you made two tabs ago
+   * cannot be saved invisibly.
+   */
+  tabbed?: boolean;
   onSave: (edits: { bind: string; value: number | null }[]) => Promise<void>;
 }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -52,6 +62,10 @@ export default function ParamsEditor(props: {
   });
 
   const groups = [...new Set(props.fields.map((field) => field.group))];
+  const active = activeGroup ?? groups[0] ?? '';
+  const shownGroups = props.tabbed ? groups.filter((group) => group === active) : groups;
+  const changedIn = (group: string) =>
+    changed.filter((field) => field.group === group).length;
 
   const save = () => {
     setError(null);
@@ -68,7 +82,26 @@ export default function ParamsEditor(props: {
 
   return (
     <>
-      {groups.map((group) => (
+      {props.tabbed && groups.length > 1 && (
+        <div className="subtabs" role="tablist">
+          {groups.map((group) => {
+            const count = changedIn(group);
+            return (
+              <button
+                key={group}
+                role="tab"
+                aria-selected={group === active}
+                onClick={() => setActiveGroup(group)}
+              >
+                {group}
+                {count > 0 && <span className="chip draft count">{count}</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {shownGroups.map((group) => (
         <div className="panel" key={group}>
           <header>
             <h3>{group}</h3>

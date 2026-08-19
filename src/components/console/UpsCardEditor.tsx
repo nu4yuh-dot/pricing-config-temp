@@ -1,6 +1,24 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
+
+/**
+ * The card's four tables, one at a time.
+ *
+ * All four stacked is a very long page — the rates table alone is eighteen zones by
+ * fifty-eight steps. Saving still writes every change across every tab, so each tab
+ * carries its own count and an edit made on another one cannot be saved unseen.
+ */
+type UpsSection = 'params' | 'surge' | 'rates' | 'accessorials' | 'reference';
+
+/** `bind` is the prefix a tab's changes share. The reference tab edits nothing. */
+const SECTIONS: { key: UpsSection; label: string; bind?: string }[] = [
+  { key: 'params', label: 'Parameters', bind: 'ups.params.' },
+  { key: 'surge', label: 'Surge fees', bind: 'ups.surge.' },
+  { key: 'rates', label: 'Rates', bind: 'ups.rates.' },
+  { key: 'accessorials', label: 'Accessorial charges', bind: 'ups.accessorials.' },
+  { key: 'reference', label: 'Destinations & zones' },
+];
 import { saveParamEdits } from '../../app/console-actions';
 import type { UpsCardData } from '../../domain/ups';
 
@@ -26,13 +44,20 @@ export default function UpsCardEditor({
   cardKey,
   data,
   canEdit,
+  reference,
 }: {
   cardKey: string;
   data: UpsCardData;
   canEdit: boolean;
+  /**
+   * The destination-and-zone tables. They belong to this card but edit nothing, and on
+   * the page they sat below the editor — which meant they appeared under every tab.
+   */
+  reference?: React.ReactNode;
 }) {
   const [zone, setZone] = useState(data.zoneKeys[0] ?? 'Z1');
   const [dirty, setDirty] = useState<Record<string, string>>({});
+  const [section, setSection] = useState<UpsSection>('params');
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +81,9 @@ export default function UpsCardEditor({
     [dirty],
   );
 
+  const changedIn = (prefix?: string) =>
+    prefix === undefined ? 0 : edits.filter((edit) => edit.bind.startsWith(prefix)).length;
+
   const save = () => {
     setError(null);
     startTransition(async () => {
@@ -69,32 +97,62 @@ export default function UpsCardEditor({
     });
   };
 
-  const cell = (bind: string, stored: number | string | null | undefined, width = 110) => (
-    <input
-      value={value(bind, stored)}
-      disabled={!canEdit}
-      inputMode="decimal"
-      style={{
-        width,
-        textAlign: 'right',
-        fontFamily: 'var(--font-mono)',
-        ...(dirty[bind] === undefined ? {} : { background: 'var(--band)', fontWeight: 600 }),
-      }}
-      onChange={(event) => set(bind, event.target.value)}
-    />
+  /**
+   * A cell in a dense matrix, styled like the transit-times grid: the input fills the
+   * cell with no border of its own, and the changed state sits on the cell rather than
+   * inside the box. Twenty charges by three columns as bordered inputs is a wall.
+   */
+  const gridCell = (bind: string, stored: number | string | null | undefined, label: string) => (
+    <td className={dirty[bind] === undefined ? '' : 'changed'}>
+      <input
+        aria-label={label}
+        title={label}
+        value={value(bind, stored)}
+        disabled={!canEdit}
+        inputMode="decimal"
+        onChange={(event) => set(bind, event.target.value)}
+      />
+    </td>
   );
 
   const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 
   return (
     <>
+      <div className="subtabs" role="tablist">
+        {SECTIONS.map((entry) => {
+          const count = changedIn(entry.bind);
+          return (
+            <button
+              key={entry.key}
+              type="button"
+              role="tab"
+              aria-selected={entry.key === section}
+              onClick={() => setSection(entry.key)}
+            >
+              {entry.label}
+              {count > 0 && <span className="chip draft count">{count}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {section === 'params' && (
       <div className="panel">
         <header>
           <h3>Parameters</h3>
           <span className="hint">One number here moves every quote on the card</span>
         </header>
         <div className="body">
-          <table className="data" style={{ maxWidth: 640 }}>
+          <div className="gridscroll" style={{ maxWidth: 640 }}>
+          <table className="data gridedit">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+                <th>Stored as</th>
+              </tr>
+            </thead>
             <tbody>
               {(
                 [
@@ -112,40 +170,56 @@ export default function UpsCardEditor({
                 ] as [string, string, number, boolean][]
               ).map(([key, label, stored, isRate]) => (
                 <tr key={key}>
-                  <td>{label}</td>
-                  <td className="num">{cell(`ups.params.${key}`, stored)}</td>
-                  <td style={{ color: 'var(--ink-faint)', fontSize: 11.5 }}>
-                    {isRate ? `stored as a decimal — ${pct(stored)}` : ''}
+                  <td>
+                    <strong>{label}</strong>
                   </td>
+                  {gridCell(`ups.params.${key}`, stored, label)}
+                  <td className="text">{isRate ? `a decimal — ${pct(stored)}` : ''}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
+      )}
 
+      {section === 'surge' && (
       <div className="panel">
         <header>
           <h3>Surge fees</h3>
           <span className="hint">Published ₹/kg, before the discount</span>
         </header>
         <div className="body">
-          <table className="data" style={{ maxWidth: 640 }}>
+          <div className="gridscroll" style={{ maxWidth: 640 }}>
+          <table className="data gridedit">
+            <thead>
+              <tr>
+                <th>World region</th>
+                <th>Published ₹/kg</th>
+                <th>Net after discount</th>
+              </tr>
+            </thead>
             <tbody>
               {Object.entries(data.surge).map(([region, gross]) => (
                 <tr key={region}>
-                  <td>{region}</td>
-                  <td className="num">{cell(`ups.surge.${region}`, gross)}</td>
-                  <td style={{ color: 'var(--ink-faint)', fontSize: 11.5 }}>
-                    net {(gross * (1 - data.params.surgeDiscount)).toFixed(2)} after the discount
+                  <td>
+                    <strong>{region}</strong>
+                  </td>
+                  {gridCell(`ups.surge.${region}`, gross, `${region} — published per kg`)}
+                  <td className="text">
+                    {(gross * (1 - data.params.surgeDiscount)).toFixed(2)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
+      )}
 
+      {section === 'rates' && (
       <div className="panel">
         <header>
           <h3>Rates — one zone at a time</h3>
@@ -173,49 +247,73 @@ export default function UpsCardEditor({
           <div className="two-col">
             <div>
               <h4 style={{ margin: '0 0 6px' }}>Envelope &amp; Document</h4>
-              <table className="data">
-                <tbody>
-                  <tr>
-                    <td>UPS Envelope</td>
-                    <td className="num">{cell(`ups.rates.envelope.${zone}`, data.rates.envelope[zone])}</td>
-                  </tr>
-                  {data.rates.document.map((row, index) => (
-                    <tr key={`doc-${row.toKg}`}>
-                      <td>Document · {row.toKg} kg</td>
-                      <td className="num">
-                        {cell(`ups.rates.document.${index}.rates.${zone}`, row.rates[zone])}
-                      </td>
+              <div className="gridscroll">
+                <table className="data gridedit">
+                  <thead>
+                    <tr>
+                      <th>Step</th>
+                      <th>₹ for zone {zone}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <strong>UPS Envelope</strong>
+                      </td>
+                      {gridCell(`ups.rates.envelope.${zone}`, data.rates.envelope[zone], `Envelope — zone ${zone}`)}
+                    </tr>
+                    {data.rates.document.map((row, index) => (
+                      <tr key={`doc-${row.toKg}`}>
+                        <td>
+                          <strong>Document · {row.toKg} kg</strong>
+                        </td>
+                        {gridCell(`ups.rates.document.${index}.rates.${zone}`, row.rates[zone], `Document ${row.toKg} kg — zone ${zone}`)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               <h4 style={{ margin: '14px 0 6px' }}>Per-kilogram bands</h4>
-              <table className="data">
-                <tbody>
-                  {data.rates.bulk.map((band, index) => (
-                    <tr key={band.label}>
-                      <td>{band.label}</td>
-                      <td className="num">
-                        {cell(`ups.rates.bulk.${index}.rates.${zone}`, band.rates[zone])}
-                      </td>
+              <div className="gridscroll">
+                <table className="data gridedit">
+                  <thead>
+                    <tr>
+                      <th>Band</th>
+                      <th>₹/kg for zone {zone}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {data.rates.bulk.map((band, index) => (
+                      <tr key={band.label}>
+                        <td>
+                          <strong>{band.label}</strong>
+                        </td>
+                        {gridCell(`ups.rates.bulk.${index}.rates.${zone}`, band.rates[zone], `${band.label} — zone ${zone}`)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <div>
               <h4 style={{ margin: '0 0 6px' }}>Package</h4>
-              <div style={{ maxHeight: 460, overflowY: 'auto' }}>
-                <table className="data">
+              <div className="gridscroll" style={{ maxHeight: 460, overflowY: 'auto' }}>
+                <table className="data gridedit">
+                  <thead>
+                    <tr>
+                      <th>Up to</th>
+                      <th>₹ for zone {zone}</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {data.rates.package.map((row, index) => (
                       <tr key={`pkg-${row.toKg}`}>
-                        <td>{row.toKg} kg</td>
-                        <td className="num">
-                          {cell(`ups.rates.package.${index}.rates.${zone}`, row.rates[zone])}
+                        <td>
+                          <strong>{row.toKg} kg</strong>
                         </td>
+                        {gridCell(`ups.rates.package.${index}.rates.${zone}`, row.rates[zone], `Package ${row.toKg} kg — zone ${zone}`)}
                       </tr>
                     ))}
                   </tbody>
@@ -225,33 +323,45 @@ export default function UpsCardEditor({
           </div>
         </div>
       </div>
+      )}
 
+      {section === 'reference' && (
+      <div className="panel">
+        <header>
+          <h3>Destinations &amp; zones</h3>
+          <span className="hint">Read-only — rebuilt from the workbook</span>
+        </header>
+        <div className="body">{reference}</div>
+      </div>
+      )}
+
+      {section === 'accessorials' && (
       <div className="panel">
         <header>
           <h3>Accessorial charges</h3>
           <span className="hint">A waiver of 1 is fully waived</span>
         </header>
         <div className="body">
-          <div className="scroll-x">
-            <table className="data">
+          <div className="gridscroll">
+            <table className="data gridedit">
               <thead>
                 <tr>
                   <th>Charge</th>
-                  <th className="num">Minimum</th>
-                  <th className="num">Per kg</th>
-                  <th className="num">Waiver</th>
+                  <th>Minimum ₹</th>
+                  <th>Per kg ₹</th>
+                  <th>Waiver</th>
                 </tr>
               </thead>
               <tbody>
                 {data.accessorials.map((charge, index) => (
                   <tr key={charge.id}>
                     <td>
-                      {charge.name}
-                      <div style={{ color: 'var(--ink-faint)', fontSize: 11 }}>{charge.unit}</div>
+                      <strong>{charge.name}</strong>{' '}
+                      <span className="meta">{charge.unit}</span>
                     </td>
-                    <td className="num">{cell(`ups.accessorials.${index}.minimum`, charge.minimum, 100)}</td>
-                    <td className="num">{cell(`ups.accessorials.${index}.perKg`, charge.perKg, 80)}</td>
-                    <td className="num">{cell(`ups.accessorials.${index}.waiver`, charge.waiver, 80)}</td>
+                    {gridCell(`ups.accessorials.${index}.minimum`, charge.minimum, `${charge.name} — minimum`)}
+                    {gridCell(`ups.accessorials.${index}.perKg`, charge.perKg, `${charge.name} — per kg`)}
+                    {gridCell(`ups.accessorials.${index}.waiver`, charge.waiver, `${charge.name} — waiver`)}
                   </tr>
                 ))}
               </tbody>
@@ -259,6 +369,7 @@ export default function UpsCardEditor({
           </div>
         </div>
       </div>
+      )}
 
       <div className="panel">
         {error && <div className="error">{error}</div>}

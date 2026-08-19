@@ -22,7 +22,7 @@ const ACTION_LABELS: Record<string, string> = {
 export default async function HistoryPage() {
   const user = await currentUser();
   if (!user) redirect('/login');
-  if (!can(user.role, 'view-audit-log')) redirect('/sheets/model-1/surface');
+  if (!can(user.role, 'view-audit-log')) redirect('/console/model-1/rates');
 
   const [entries, cards] = await Promise.all([recentAudit(150), listCards()]);
   const histories = await Promise.all(

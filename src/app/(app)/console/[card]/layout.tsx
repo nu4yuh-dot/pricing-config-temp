@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { listCards, draftVersion, liveVersion, findCard } from '../../../../data/rate-cards';
+import { draftVersion, liveVersion, findCard } from '../../../../data/rate-cards';
 import { diffCardData } from '../../../../changes/diff';
 import { canEditDraft } from '../../../../data/workflow';
+import { sheetSpecsForSource } from '../../../../sheets/specs';
 import DraftBar from '../../../../components/console/DraftBar';
 
 export default async function ConsoleCardLayout({
@@ -16,35 +17,25 @@ export default async function ConsoleCardLayout({
   const card = await findCard(cardKey);
   if (!card) notFound();
 
-  const [cards, draft, live] = await Promise.all([
-    listCards(),
-    draftVersion(cardKey),
-    liveVersion(cardKey),
-  ]);
+  const [draft, live] = await Promise.all([draftVersion(cardKey), liveVersion(cardKey)]);
 
   const outstanding = diffCardData(live.data, draft.data);
   const frozen = !canEditDraft(draft.state);
-  const source = cards.find((entry) => entry.key === cardKey)?.source ?? 'dns';
+  // `findCard` normalises the legacy `product` field, so this is the card's real source.
+  const source = card.source ?? 'dns';
+
+  // The sheet view opens on a tab this card actually has. Surface Rates is the one people
+  // reach for on a DNS card; a card with no grid at all gets no toggle.
+  const tabs = sheetSpecsForSource(source, draft.data);
+  const firstTab = tabs.find((tab) => tab.id === 'surface') ?? tabs.find((tab) => !tab.derived);
+  const toggleHref = firstTab ? `/sheets/${cardKey}/${firstTab.id}` : undefined;
 
   return (
     <>
-      <div className="cardbar">
-        {cards.map((entry) => (
-          <Link
-            key={entry.key}
-            href={`/console/${entry.key}/rates`}
-            aria-current={entry.key === cardKey ? 'page' : undefined}
-          >
-            <span className="name">{entry.name}</span>
-            <span className="method">
-              {(entry.source ?? 'dns') === 'bluedart' ? 'DIRECTIONAL ZONES' : entry.freightMethod}
-            </span>
-          </Link>
-        ))}
-      </div>
-
       <DraftBar
         cardKey={cardKey}
+        cardName={card.name}
+        {...(toggleHref === undefined ? {} : { toggleHref })}
         outstandingCount={outstanding.length}
         frozen={frozen}
         {...(frozen && draft.changeRequestId
@@ -53,8 +44,10 @@ export default async function ConsoleCardLayout({
       />
 
       <div className="console">
+        {/* Only this card's own pages. Everything else — customers, approvals, money,
+            reference — is in the masthead, and repeating it here was two menus to keep
+            in step with each other. */}
         <nav className="console-rail">
-          <div className="group">Base rate card</div>
           {/* The DNS pages price lanes; Bluedart has none, so it gets its own editor. */}
           {source === 'bluedart' ? (
             <Link href={`/console/${cardKey}/bluedart`}>Bluedart rates</Link>
@@ -64,9 +57,12 @@ export default async function ConsoleCardLayout({
             <>
               <Link href={`/console/${cardKey}/rates`}>Lane rates</Link>
               <Link href={`/console/${cardKey}/geography`}>Smart geography</Link>
-              <Link href={`/console/${cardKey}/bulk`}>Bulk changes</Link>
+              <Link href={`/console/${cardKey}/bulk`}>Bulk changes &amp; discounts</Link>
               <Link href={`/console/${cardKey}/params`}>Charges &amp; surcharges</Link>
+              <Link href={`/console/${cardKey}/cartage`}>Cartage by zone</Link>
+              <Link href={`/console/${cardKey}/oda`}>ODA &amp; EDL matrix</Link>
               <Link href={`/console/${cardKey}/tax`}>Tax &amp; charges</Link>
+              <Link href={`/console/${cardKey}/transit`}>Transit times</Link>
               <Link href={`/console/${cardKey}/ftl`}>FTL rates</Link>
               <Link href={`/console/${cardKey}/network`}>Network &amp; serviceability</Link>
             </>
@@ -75,25 +71,6 @@ export default async function ConsoleCardLayout({
             Pending changes
             {outstanding.length > 0 && <span className="chip draft count">{outstanding.length}</span>}
           </Link>
-
-          <div className="group">Contracts</div>
-          <Link href="/customers">Customers</Link>
-          <Link href="/signups">Online signups</Link>
-          <Link href="/templates">Rate templates</Link>
-          <Link href="/products">Products</Link>
-          <Link href="/charges">Charge library</Link>
-          <Link href="/offers">Offers</Link>
-          <Link href="/coloaders">Co-loaders</Link>
-
-          <div className="group">Money</div>
-          <Link href="/money">Wallets &amp; credit</Link>
-
-          <div className="group">Review</div>
-          <Link href="/approvals">Approvals</Link>
-          <Link href="/calculator">Calculator</Link>
-
-          <div className="group">Help</div>
-          <Link href="/glossary">What the terms mean</Link>
         </nav>
 
         <div className="console-main">

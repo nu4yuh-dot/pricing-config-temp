@@ -7,6 +7,7 @@ import {
   MIN_WEIGHT,
   type BluedartService,
 } from '../../../domain/bluedart';
+import CalculatorTabs from '../../../components/CalculatorTabs';
 
 /**
  * The Bluedart calculator.
@@ -83,6 +84,7 @@ export default async function BluedartCalculatorPage({
     <div className="page">
       <div className="page-inner">
         <h2>Bluedart calculator</h2>
+        <CalculatorTabs active="/bluedart" />
         <p className="lede">
           The franchise card, ex-Pune. There is no origin to pick — the price depends on the
           destination zone, the service and the weight. All four services are priced together so

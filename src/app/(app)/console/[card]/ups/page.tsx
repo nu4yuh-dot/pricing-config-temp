@@ -42,9 +42,8 @@ export default async function UpsCardPage({ params }: { params: Promise<{ card: 
       <h2>UPS / MOVIN — international export</h2>
       <p className="lede">
         Ex-{data.params.origin}. The signed agreement priced by destination country, with three
-        products and a surge fee that follows a world region rather than the rate zone. Read-only
-        here: this tariff has no spreadsheet tabs yet, so an edit would move a price without
-        producing a line for an approver to read.
+        products and a surge fee that follows a world region rather than the rate zone. Editing
+        here writes to the draft and goes to an approver like any other rate.
       </p>
 
       <div className="callout info">
@@ -56,46 +55,53 @@ export default async function UpsCardPage({ params }: { params: Promise<{ card: 
         {frozen && ' This draft is with an approver, so it is read-only until they decide.'}
       </div>
 
-      <UpsCardEditor cardKey={cardKey} data={data} canEdit={canEdit} />
+      <UpsCardEditor
+        cardKey={cardKey}
+        data={data}
+        canEdit={canEdit}
+        reference={
+          <>
+    <h3>Destinations and zones</h3>
+    <p style={{ color: 'var(--ink-soft)', fontSize: 12, marginTop: 0 }}>
+      A destination with no surge region of its own falls to{' '}
+      <strong>{data.defaultSurgeRegion}</strong>. Rebuild from the workbook to change which
+      country sits in which zone.
+    </p>
 
-      <h3>Destinations and zones</h3>
-      <p style={{ color: 'var(--ink-soft)', fontSize: 12, marginTop: 0 }}>
-        A destination with no surge region of its own falls to{' '}
-        <strong>{data.defaultSurgeRegion}</strong>. Rebuild from the workbook to change which
-        country sits in which zone.
-      </p>
-
-      <h3>Destinations by rate zone</h3>
-      <div className="scroll-x">
-        <table className="data">
-          <thead>
-            <tr><th>Zone</th><th className="num">Destinations</th><th>Envelope</th><th>0.5 kg package</th><th>20 kg package</th></tr>
-          </thead>
-          <tbody>
-            {data.zoneKeys.map((zone) => (
-              <tr key={zone}>
-                <td><strong>{zone}</strong></td>
-                <td className="num">{byZone[zone] ?? 0}</td>
-                <td className="num">{data.rates.envelope[zone] === undefined ? '—' : money(data.rates.envelope[zone]!)}</td>
-                <td className="num">
-                  {data.rates.package[0]?.rates[zone] === undefined ? '—' : money(data.rates.package[0]!.rates[zone]!)}
-                </td>
-                <td className="num">
-                  {data.rates.package.at(-1)?.rates[zone] === undefined
-                    ? '—'
-                    : money(data.rates.package.at(-1)!.rates[zone]!)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p style={{ color: 'var(--ink-soft)', fontSize: 12 }}>
-        {data.rates.document.length} document steps to {data.rates.document.at(-1)?.toKg} kg,{' '}
-        {data.rates.package.length} package steps to {data.rates.package.at(-1)?.toKg} kg, then{' '}
-        {data.rates.bulk.length} per-kilogram bands.
-        {data.unserved.length > 0 && ` Not served: ${data.unserved.join(', ')}.`}
-      </p>
+    <h3>Destinations by rate zone</h3>
+    <div className="scroll-x">
+      <table className="data">
+        <thead>
+          <tr><th>Zone</th><th className="num">Destinations</th><th>Envelope</th><th>0.5 kg package</th><th>20 kg package</th></tr>
+        </thead>
+        <tbody>
+          {data.zoneKeys.map((zone) => (
+            <tr key={zone}>
+              <td><strong>{zone}</strong></td>
+              <td className="num">{byZone[zone] ?? 0}</td>
+              <td className="num">{data.rates.envelope[zone] === undefined ? '—' : money(data.rates.envelope[zone]!)}</td>
+              <td className="num">
+                {data.rates.package[0]?.rates[zone] === undefined ? '—' : money(data.rates.package[0]!.rates[zone]!)}
+              </td>
+              <td className="num">
+                {data.rates.package.at(-1)?.rates[zone] === undefined
+                  ? '—'
+                  : money(data.rates.package.at(-1)!.rates[zone]!)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p style={{ color: 'var(--ink-soft)', fontSize: 12 }}>
+      {data.rates.document.length} document steps to {data.rates.document.at(-1)?.toKg} kg,{' '}
+      {data.rates.package.length} package steps to {data.rates.package.at(-1)?.toKg} kg, then{' '}
+      {data.rates.bulk.length} per-kilogram bands.
+      {data.unserved.length > 0 && ` Not served: ${data.unserved.join(', ')}.`}
+    </p>
+          </>
+        }
+      />
 
       <p style={{ color: 'var(--ink-soft)', fontSize: 12 }}>
         Price a shipment on <Link href="/ups">the UPS calculator</Link>.

@@ -22,7 +22,10 @@ export default async function RatesPage({
   if (!user) notFound();
 
   const card = await findCard(cardKey);
-  if (!card) notFound();
+  // Lane-shaped pages only exist for our own network. A franchise or export card
+  // has none of this data, and rendering an empty editor for one invites somebody
+  // to type rates into fields nothing will ever read.
+  if (!card || (card.source ?? 'dns') !== 'dns') notFound();
 
   const [draft, live] = await Promise.all([draftVersion(cardKey), liveVersion(cardKey)]);
   const frozen = !canEditDraft(draft.state);

@@ -3,11 +3,12 @@ import { currentUser, listUsers } from '../../../auth/session';
 import { can, ROLES, ROLE_DESCRIPTIONS, ROLE_LABELS } from '../../../auth/roles';
 import AddUserForm from '../../../components/AddUserForm';
 import RoleSelect from '../../../components/RoleSelect';
+import ActiveToggle from '../../../components/ActiveToggle';
 
 export default async function UsersPage() {
   const user = await currentUser();
   if (!user) redirect('/login');
-  if (!can(user.role, 'manage-users')) redirect('/sheets/model-1/surface');
+  if (!can(user.role, 'manage-users')) redirect('/console/model-1/rates');
 
   const users = await listUsers();
 
@@ -16,8 +17,9 @@ export default async function UsersPage() {
       <div className="page-inner">
         <h2>Users</h2>
         <p className="lede">
-          Three roles. An admin can edit as well as approve, but nobody — admin included — can
-          approve their own change request, so the review always means a second pair of eyes.
+          Four roles. An admin or a manager can edit as well as approve; only an admin manages
+          accounts. Self-approval is recorded rather than blocked, so a request approved by the
+          person who raised it is visible as exactly that on the change and in the activity log.
         </p>
 
         <h3>Roles</h3>
@@ -42,6 +44,7 @@ export default async function UsersPage() {
               <th>Email</th>
               <th>Role</th>
               <th>Status</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -60,6 +63,13 @@ export default async function UsersPage() {
                   ) : (
                     <span className="chip rejected">disabled</span>
                   )}
+                </td>
+                <td>
+                  <ActiveToggle
+                    userId={entry._id.toHexString()}
+                    active={entry.active}
+                    self={entry._id.toHexString() === user.id}
+                  />
                 </td>
               </tr>
             ))}

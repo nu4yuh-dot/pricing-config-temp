@@ -153,6 +153,12 @@ export default async function PincodesPage({
                 </div>
               </>
             )}
+            {/* One thing at a time. Showing the state list under the areas meant a click
+                near the bottom of thirty-odd states left you looking at the same list,
+                with what you had asked for scrolled off the top — it read as nothing
+                having happened. Choosing a state now replaces the list; "all states"
+                brings it back. */}
+            {!params.state && (
             <div className="scroll-x" style={{ marginBottom: 18 }}>
               <table className="data">
                 <thead>
@@ -169,11 +175,7 @@ export default async function PincodesPage({
                   {byState.map((row) => {
                     const pct = row.total === 0 ? 0 : Math.round((row.serviceable / row.total) * 100);
                     return (
-                      <tr
-                        key={row.name}
-                        // The chosen state stays marked, so the list still shows where you are.
-                        className={row.name === params.state ? 'selected' : undefined}
-                      >
+                      <tr key={row.name}>
                         <td>
                           <strong>{row.name}</strong>
                         </td>
@@ -219,6 +221,7 @@ export default async function PincodesPage({
                 </tbody>
               </table>
             </div>
+            )}
 
           </>
         )}
