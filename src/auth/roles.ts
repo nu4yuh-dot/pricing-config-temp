@@ -1,5 +1,5 @@
 /**
- * Three roles, as agreed: the pricing team configures, an admin approves, and
+ * Four roles: the pricing team configures, an admin or a manager approves, and
  * everyone else reads.
  *
  * Capabilities are listed per role rather than derived from a hierarchy, so that
@@ -7,9 +7,14 @@
  * reasoning about inheritance. An admin can edit as well as approve — they run the
  * team — but `applyReview` still refuses to let anyone approve their own request,
  * so that remains a real second pair of eyes.
+ *
+ * A manager holds the admin's commercial authority — approving rate changes and
+ * moving money — but not `manage-users`. Handing out accounts and roles is how
+ * someone would grant themselves any of the rest, so it stays with the admin until
+ * asked otherwise.
  */
 
-export const ROLES = ['configurator', 'admin', 'viewer'] as const;
+export const ROLES = ['configurator', 'manager', 'admin', 'viewer'] as const;
 export type Role = (typeof ROLES)[number];
 
 export const CAPABILITIES = [
@@ -39,6 +44,16 @@ const GRANTS: Record<Role, readonly Capability[]> = {
     'submit-for-approval',
     'import-pincodes',
   ],
+  manager: [
+    'view-sheets',
+    'run-calculator',
+    'edit-draft',
+    'submit-for-approval',
+    'review-change-request',
+    'import-pincodes',
+    'view-audit-log',
+    'record-money',
+  ],
   admin: [
     'view-sheets',
     'run-calculator',
@@ -58,12 +73,14 @@ export function can(role: Role, capability: Capability): boolean {
 
 export const ROLE_LABELS: Record<Role, string> = {
   configurator: 'Configurator',
+  manager: 'Manager',
   admin: 'Admin',
   viewer: 'Viewer',
 };
 
 export const ROLE_DESCRIPTIONS: Record<Role, string> = {
   configurator: 'Edits rates and submits them for approval.',
+  manager: 'Approves or rejects submitted changes and records money in and out.',
   admin: 'Approves or rejects submitted changes, manages users, and records money in and out.',
   viewer: 'Reads the rate cards and runs quotes.',
 };

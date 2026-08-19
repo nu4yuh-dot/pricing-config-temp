@@ -39,6 +39,17 @@ describe('permissions', () => {
     }
   });
 
+  test('a manager may approve, like an admin', () => {
+    expect(can('manager', 'review-change-request')).toBe(true);
+    expect(can('manager', 'edit-draft')).toBe(true);
+    expect(can('manager', 'record-money')).toBe(true);
+    expect(can('manager', 'view-audit-log')).toBe(true);
+  });
+
+  test('a manager may not manage users — that stays with the admin', () => {
+    expect(can('manager', 'manage-users')).toBe(false);
+  });
+
   test('an unknown capability is denied rather than allowed', () => {
     // @ts-expect-error deliberately probing an unlisted capability
     expect(can('admin', 'delete-everything')).toBe(false);

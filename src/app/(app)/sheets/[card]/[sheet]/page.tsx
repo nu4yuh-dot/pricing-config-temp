@@ -79,22 +79,15 @@ export default async function SheetPage({
           // land on one the target card does not have — clicking Bluedart from a DNS tab
           // asked for a sheet that does not exist there. Keep the tab when it exists on
           // the other card, otherwise open that card's first tab.
-          //
-          // A card with no A1 grid at all (UPS) has no tab to fall back to, so it is
-          // edited on its console page instead. Falling back to the current tab there
-          // pointed at a sheet that card cannot have, which is a guaranteed 404.
           const entrySource = entry.source ?? 'dns';
           const entryTabs = sheetSpecsForSource(entrySource);
-          const firstTab = entryTabs[0];
-          const href = !firstTab
-            ? `/console/${entry.key}/${entrySource}`
-            : `/sheets/${entry.key}/${
-                entryTabs.some((tab) => tab.id === sheetId) ? sheetId : firstTab.id
-              }`;
+          const target = entryTabs.some((tab) => tab.id === sheetId)
+            ? sheetId
+            : (entryTabs[0]?.id ?? sheetId);
           return (
             <Link
               key={entry.key}
-              href={href}
+              href={`/sheets/${entry.key}/${target}`}
               aria-current={entry.key === cardKey ? 'page' : undefined}
             >
               <span className="name">{entry.name}</span>
