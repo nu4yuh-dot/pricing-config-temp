@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { ObjectId, type Collection } from 'mongodb';
 import { db, COLLECTIONS } from './mongo';
 import type { CardSource, FreightMethod, RateCard, RateCardData } from '../domain/types';
@@ -75,10 +76,22 @@ export async function listCards(): Promise<RateCardDoc[]> {
   return ((await cards()).find().sort({ key: 1 }).toArray()).then((rows) => rows.map(withSource));
 }
 
-export async function findCard(key: string): Promise<RateCardDoc | null> {
+/**
+ * Memoised for the length of one request.
+ *
+ * A console page fetches the same card document up to five times: once in the layout,
+ * once in the page, and once inside each of `draftVersion` and `liveVersion` on both.
+ * That was four wasted round trips, and with the service and the database in different
+ * regions a round trip is the whole cost of the page.
+ *
+ * Safe because nothing that writes the card document reads it back through here —
+ * `reviewRequest`, the only writer, looks the card up by `_id` directly. Edits write
+ * versions, not cards.
+ */
+export const findCard = cache(async (key: string): Promise<RateCardDoc | null> => {
   const card = await (await cards()).findOne({ key });
   return card === null ? null : withSource(card);
-}
+});
 
 async function versionById(id: ObjectId): Promise<RateCardVersionDoc> {
   const version = await (await versions()).findOne({ _id: id });
