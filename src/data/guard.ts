@@ -19,6 +19,16 @@ import { db, COLLECTIONS } from './mongo';
 /** Collections this project owns. Anything else in the target database is a red flag. */
 const OWNED = new Set<string>(Object.values(COLLECTIONS));
 
+/**
+ * Collections this project used to own and no longer writes to.
+ *
+ * A database seeded by an earlier version still carries them, empty. Their presence
+ * says "this is our database, from before that feature was dropped" — not "this is
+ * somebody else's" — so the guard must not refuse on them. They stay out of `OWNED`
+ * so that nothing starts writing to one again by accident.
+ */
+const RETIRED = new Set<string>(['signups']);
+
 /** A name is ours if it is exactly this, or this with an environment suffix. */
 const NAME_PATTERN = /^dns_pricing(_[a-z0-9-]+)?$/;
 
@@ -41,7 +51,7 @@ export async function assertOwnDatabase(intent: string): Promise<GuardResult> {
   }
 
   const collections = (await database.listCollections().toArray()).map((entry) => entry.name);
-  const foreign = collections.filter((entry) => !OWNED.has(entry));
+  const foreign = collections.filter((entry) => !OWNED.has(entry) && !RETIRED.has(entry));
 
   if (foreign.length > 0) {
     throw new Error(

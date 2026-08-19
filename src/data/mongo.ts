@@ -37,7 +37,6 @@ export const COLLECTIONS = {
   bookingExceptions: 'bookingExceptions',
   rateTemplates: 'rateTemplates',
   products: 'products',
-  signups: 'signups',
   offers: 'offers',
   ledger: 'ledger',
   invoices: 'invoices',
@@ -74,8 +73,6 @@ export async function ensureIndexes(): Promise<void> {
   await database.collection(COLLECTIONS.bookingExceptions).createIndex({ status: 1, requestedAt: -1 });
   await database.collection(COLLECTIONS.rateTemplates).createIndex({ key: 1 }, { unique: true });
   await database.collection(COLLECTIONS.products).createIndex({ key: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.signups).createIndex({ reference: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.signups).createIndex({ status: 1, signedUpAt: -1 });
   await database.collection(COLLECTIONS.offers).createIndex({ key: 1 }, { unique: true });
   // Read on the quote path: only offers live right now, never the whole history.
   await database.collection(COLLECTIONS.offers).createIndex({ enabled: 1, startsAt: 1, endsAt: 1 });
