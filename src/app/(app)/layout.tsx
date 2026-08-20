@@ -23,45 +23,46 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <h1>DNS Logistics</h1>
         <span className="sub">Pricing configuration</span>
         <nav>
-          {/* Grouped by the job somebody came here to do. Rate cards first, because
-              that is what this system is for; everything an admin needs to run the
-              tool rather than price with it sits at the end. */}
-          <NavMenu label="Rate cards">
-            <span className="menu-group">Self-network</span>
-            <Link href="/console/model-1/rates">Model 1 — cumulative slabs</Link>
-            <Link href="/console/model-2/rates">Model 2 — min plus excess</Link>
-            <Link href="/console/model-3/rates">Model 3 — max of min or full</Link>
-            <span className="menu-group">Partners</span>
-            <Link href="/console/bluedart/bluedart">Bluedart</Link>
-            <Link href="/console/ups/ups">UPS international</Link>
+          {/* Grouped by the job somebody came here to do, not by which screen was built
+              first. Pricing is everything that decides a number; Customers is who we
+              charge; Billing is money that has moved; the rest is reference and running
+              the tool. */}
+          <NavMenu label="Pricing" badge={waiting}>
+            {/* One way in. Which card you are on is a choice you keep making while you
+                work, so it belongs in the side rail beside the card's own pages, not in a
+                menu you have to reopen every time. */}
+            <Link href="/console/model-1/rates">Rate cards</Link>
+            <Link href="/calculator">Calculator</Link>
+            <Link href="/templates">Rate templates</Link>
+            <Link href="/offers">Offers</Link>
+            <Link href="/charges">Charge library</Link>
+            <Link href="/approvals">
+              Approvals
+              {waiting > 0 && (
+                <>
+                  {' '}
+                  <span className="chip pending count">{waiting}</span>
+                </>
+              )}
+            </Link>
           </NavMenu>
 
           <NavMenu label="Customers">
             <Link href="/customers">Contract customers</Link>
             <Link href="/customers/new">Add a customer</Link>
-            <Link href="/templates">Rate templates</Link>
             <Link href="/products">Products</Link>
-            <Link href="/offers">Offers</Link>
             <Link href="/coloaders">Co-loaders</Link>
           </NavMenu>
 
-          <Link href="/approvals">
-            Approvals
-            {waiting > 0 && (
-              <>
-                {' '}
-                <span className="chip pending count">{waiting}</span>
-              </>
-            )}
-          </Link>
-
-          {can(user.role, 'record-money') && <Link href="/money">Billing</Link>}
-
-          <Link href="/calculator">Calculator</Link>
+          {can(user.role, 'record-money') && (
+            <NavMenu label="Billing">
+              <Link href="/money">Wallets &amp; credit</Link>
+              <Link href="/settlement">Payment terms</Link>
+            </NavMenu>
+          )}
 
           <NavMenu label="Reference">
             <Link href="/pincodes">Pincodes</Link>
-            <Link href="/charges">Charge library</Link>
             <Link href="/glossary">What the terms mean</Link>
           </NavMenu>
 

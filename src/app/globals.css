@@ -1992,3 +1992,10 @@ table.data.gridedit td.text {
   background: var(--accent);
   color: var(--accent-ink);
 }
+
+/* The pending count on a nav group. Approvals lives inside Pricing now, and a queue you
+ * have to open a menu to notice is a queue that waits. */
+.masthead nav details > summary .chip.count {
+  margin-left: 6px;
+  vertical-align: baseline;
+}

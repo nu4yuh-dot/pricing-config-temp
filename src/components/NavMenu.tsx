@@ -17,9 +17,17 @@ import { useEffect, useRef } from 'react';
  */
 export default function NavMenu({
   label,
+  badge,
   children,
 }: {
   label: string;
+  /**
+   * A count worth seeing without opening the menu.
+   *
+   * Approvals sits inside a group now, and a queue you have to go looking for is a queue
+   * that waits. The number is on the group as well as on the item.
+   */
+  badge?: number;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDetailsElement>(null);
@@ -45,7 +53,10 @@ export default function NavMenu({
         });
       }}
     >
-      <summary>{label}</summary>
+      <summary>
+        {label}
+        {badge !== undefined && badge > 0 && <span className="chip pending count">{badge}</span>}
+      </summary>
       <div
         className="menu"
         onClick={(event) => {
