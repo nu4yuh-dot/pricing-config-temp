@@ -142,6 +142,26 @@ export async function setUserRole(userId: string, role: Role): Promise<void> {
 }
 
 /**
+ * Change your own display name.
+ *
+ * Only the name. Email is the login and role is what you may do, so both stay with an
+ * admin — a person renaming themselves is housekeeping, a person changing either of those
+ * is a privilege change.
+ *
+ * Records already written keep the name they were written with. An approval that says
+ * "approved by Priya Sharma" is a record of what was true then, and rewriting it because
+ * she later shortened her name would be falsifying the trail rather than tidying it.
+ */
+export async function changeOwnName(userId: string, name: string): Promise<SessionUser> {
+  const collection = await users();
+  const user = await collection.findOne({ _id: new ObjectId(userId) });
+  if (!user) throw new Error('That account no longer exists.');
+
+  await collection.updateOne({ _id: user._id }, { $set: { name } });
+  return { id: user._id.toHexString(), email: user.email, name, role: user.role };
+}
+
+/**
  * Change a person's own password.
  *
  * The current password is verified here rather than by the caller, so a stolen session

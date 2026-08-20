@@ -17,6 +17,7 @@ export interface AuditEntry {
     | 'user-role-changed'
     | 'signed-in'
     | 'password-changed'
+    | 'name-changed'
     | 'customer-registered'
     | 'contract-proposed'
     | 'contract-draft-reset'

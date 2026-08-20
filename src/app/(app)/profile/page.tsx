@@ -2,12 +2,17 @@ import { redirect } from 'next/navigation';
 import { currentUser } from '../../../auth/session';
 import { ROLE_DESCRIPTIONS, ROLE_LABELS } from '../../../auth/roles';
 import PasswordForm from '../../../components/PasswordForm';
+import NameForm from '../../../components/NameForm';
 
 /**
  * Your own account.
  *
- * Name, email and role are set by an admin — they decide who you are here and what you
- * may do. Your password is yours, and this is the only screen that changes it.
+ * Your name and your password are yours to change, whatever your role. Email and role are
+ * an admin's: one is how you sign in, the other is what you may do.
+ *
+ * Renaming yourself does not touch what is already recorded. An approval that reads
+ * "approved by" somebody keeps the name it was approved under, because that is what was
+ * true at the time.
  */
 export default async function ProfilePage() {
   const user = await currentUser();
@@ -23,7 +28,7 @@ export default async function ProfilePage() {
             <tr>
               <td style={{ width: 160 }}>Name</td>
               <td>
-                <strong>{user.name}</strong>
+                <NameForm name={user.name} />
               </td>
             </tr>
             <tr>

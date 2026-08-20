@@ -18,6 +18,7 @@ import {
   setUserRole,
   setUserActive,
   changeOwnPassword,
+  changeOwnName,
 } from '../auth/session';
 import { can, type Capability, type Role } from '../auth/roles';
 import { checkThrottle, recordFailure, recordSuccess } from '../auth/throttle';
@@ -125,6 +126,34 @@ export async function decideRequest(requestId: string, form: FormData) {
   await reviewRequest(requestId, decisions, toActor(user), comment);
   revalidatePath('/approvals');
   redirect('/approvals');
+}
+
+/**
+ * Change your own display name.
+ *
+ * Available to every role: a viewer has as much right to be called by their own name as
+ * an admin. The session is re-issued so the masthead updates now rather than at the next
+ * sign-in, since a change that appears not to have worked gets made twice.
+ */
+export async function changeName(_previous: unknown, form: FormData) {
+  const user = await currentUser();
+  if (!user) return { error: 'Your session has expired. Sign in again.' };
+
+  const name = String(form.get('name') ?? '').trim();
+  if (name.length < 2) return { error: 'Names need at least two characters.' };
+  if (name.length > 80) return { error: 'That name is too long — 80 characters at most.' };
+  if (name === user.name) return { ok: 'That is already your name.' };
+
+  const previousName = user.name;
+  const updated = await changeOwnName(user.id, name);
+  await createSession(updated);
+  await recordAudit({
+    action: 'name-changed',
+    actor: toActor(updated),
+    at: new Date(),
+    detail: { from: previousName, to: name },
+  });
+  return { ok: 'Your name has been updated.' };
 }
 
 /**
