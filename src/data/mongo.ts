@@ -41,6 +41,7 @@ export const COLLECTIONS = {
   ledger: 'ledger',
   invoices: 'invoices',
   settlementProfiles: 'settlementProfiles',
+  shipments: 'shipments',
 } as const;
 
 /**
@@ -83,6 +84,11 @@ export async function ensureIndexes(): Promise<void> {
   await database.collection(COLLECTIONS.ledger).createIndex({ id: 1 }, { unique: true });
   await database.collection(COLLECTIONS.ledger).createIndex({ reference: 1 });
   // Deterministic invoice numbers, so raising a period twice collides rather than duplicates.
+  // One AWB, one shipment: a retry from the core must not become a second billable line.
+  await database.collection(COLLECTIONS.shipments).createIndex({ awb: 1 }, { unique: true });
+  await database
+    .collection(COLLECTIONS.shipments)
+    .createIndex({ customerCode: 1, status: 1, bookedAt: 1 });
   await database.collection(COLLECTIONS.invoices).createIndex({ number: 1 }, { unique: true });
   await database.collection(COLLECTIONS.invoices).createIndex({ customerCode: 1, raisedAt: -1 });
 }
