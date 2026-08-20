@@ -40,6 +40,7 @@ export const COLLECTIONS = {
   offers: 'offers',
   ledger: 'ledger',
   invoices: 'invoices',
+  settlementProfiles: 'settlementProfiles',
 } as const;
 
 /**

@@ -18,6 +18,8 @@ export interface AuditEntry {
     | 'signed-in'
     | 'password-changed'
     | 'name-changed'
+    | 'settlement-profile-created'
+    | 'settlement-assigned'
     | 'customer-registered'
     | 'contract-proposed'
     | 'contract-draft-reset'

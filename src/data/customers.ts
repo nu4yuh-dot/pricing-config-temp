@@ -3,6 +3,7 @@ import { db, COLLECTIONS } from './mongo';
 import { liveCard } from './rate-cards';
 import { recordAudit } from './audit';
 import type { Actor } from './workflow';
+import type { SettlementOverrides } from '../billing/settlement';
 import type { CompanyProfile } from '../domain/company';
 import {
   EMPTY_TERMS,
@@ -34,6 +35,11 @@ export interface CustomerDoc extends Customer {
   draftTerms: ContractTerms;
   /** Set while a proposal is with an admin; the draft is frozen. */
   pendingProposalId?: ObjectId;
+  /**
+   * How this customer pays. Optional because a customer on no arrangement is a real
+   * state — and a different one from being on a permissive arrangement.
+   */
+  settlement?: { profileKey: string; overrides?: SettlementOverrides };
 }
 
 export interface ContractProposalDoc extends ContractProposal {
@@ -147,6 +153,37 @@ export async function saveProfile(
 }
 
 /** Commercial terms. These DO affect a quote, so they are audited. */
+/**
+ * Put a customer on a settlement arrangement, or change the one they are on.
+ *
+ * The overrides are sparse and replace whatever was there: a screen that writes the whole
+ * form back should send only the fields that actually depart from the profile, which is
+ * what `resolveSettlement` reports in `overridden`.
+ */
+export async function assignSettlement(
+  code: string,
+  settlement: { profileKey: string; overrides?: SettlementOverrides },
+  actor: Actor,
+): Promise<void> {
+  const customer = await findCustomer(code);
+  if (!customer) throw new Error(`No customer ${code}.`);
+
+  await (await customers()).updateOne(
+    { _id: customer._id },
+    { $set: { settlement } },
+  );
+  await recordAudit({
+    action: 'settlement-assigned',
+    actor,
+    at: new Date(),
+    detail: {
+      customer: customer.code,
+      profile: settlement.profileKey,
+      overrides: Object.keys(settlement.overrides ?? {}),
+    },
+  });
+}
+
 export async function saveCommercialTerms(
   code: string,
   commercial: CommercialTerms,

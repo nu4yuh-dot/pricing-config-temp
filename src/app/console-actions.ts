@@ -1,6 +1,13 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import type {
+  SettlementMode,
+  BillingCycle,
+  BreachAction,
+  CancelPolicy,
+  SettlementOverrides,
+} from '../billing/settlement';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { editDraftCells, saveDraftRule, deleteDraftRule } from '../data/rate-cards';
@@ -1024,6 +1031,50 @@ export async function changeCustomerSetup(
   const result = await changeSetup(currentCode, next, toActor(user));
   revalidatePath('/customers', 'layout');
   return result;
+}
+
+
+/* --------------------------------------------------------------- payment terms */
+
+/**
+ * Define a settlement arrangement.
+ *
+ * Saved as configuration, not applied to anybody: naming an arrangement and putting a
+ * customer on it are two decisions, and rolling them together is how fifty accounts end
+ * up on terms somebody was drafting.
+ */
+export async function createSettlementProfile(input: {
+  key: string;
+  name: string;
+  mode: SettlementMode;
+  cycle: BillingCycle;
+  onBreach: BreachAction;
+  cancelPolicy: CancelPolicy;
+  overrideRole?: string;
+  prepaid?: { negativeAllowance: number; lowBalanceAlertAt: number | null; minRecharge: number | null };
+  credit?: { limit: number; periodDays: number; graceDays: number };
+}) {
+  const user = await authorise('record-money');
+  const { createProfile } = await import('../data/settlement');
+  await createProfile(input, toActor(user));
+  revalidatePath('/settlement');
+}
+
+/** Put a customer on an arrangement, or move them to another one. */
+export async function assignSettlementProfile(
+  customerCode: string,
+  profileKey: string,
+  overrides?: SettlementOverrides,
+) {
+  const user = await authorise('record-money');
+  const { assignSettlement } = await import('../data/customers');
+  await assignSettlement(
+    customerCode,
+    { profileKey, ...(overrides === undefined ? {} : { overrides }) },
+    toActor(user),
+  );
+  revalidatePath('/settlement');
+  revalidatePath('/customers', 'layout');
 }
 
 /* -------------------------------------------------------------------- offers */

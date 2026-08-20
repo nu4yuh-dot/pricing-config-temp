@@ -1,3 +1,5 @@
+import { decideBooking } from '../billing/settlement-room';
+import type { EffectiveSettlement } from '../billing/settlement';
 import { db, COLLECTIONS } from './mongo';
 import {
   balance,
@@ -7,6 +9,7 @@ import {
   reverseOf,
   statement,
   type Bookability,
+  type BookingBlock,
   type CreditPosition,
   type CreditTerms,
   type EntryKind,
@@ -155,13 +158,57 @@ export async function billingFor(
 }
 
 /** Whether a shipment of this value can be booked against the customer's money. */
+/**
+ * May this customer book this shipment?
+ *
+ * With a settlement arrangement assigned, that arrangement decides: prepaid and credit
+ * measure room differently, and what happens when the room runs out is itself configured
+ * per profile. Without one, the older wallet-plus-limit check applies unchanged — a
+ * customer nobody has put on terms should not silently become permissive, and should not
+ * silently become blocked either.
+ */
 export async function canBook(
   customerCode: string,
   terms: CreditTerms,
   shipmentValue: number,
-): Promise<Bookability> {
+  settlement?: EffectiveSettlement | null,
+): Promise<Bookability & { overridable?: boolean; flagged?: boolean; clearsIf?: string[] }> {
   const entries = await entriesFor(customerCode);
-  return bookability(creditPosition(terms, entries), shipmentValue);
+  const position = creditPosition(terms, entries);
+
+  if (!settlement) return bookability(position, shipmentValue);
+
+  const decision = decideBooking(settlement, position, shipmentValue);
+  if (decision.allowed && !decision.flagged) {
+    return { allowed: true, ...(decision.lowBalance ? { message: lowBalanceNote(settlement) } : {}) };
+  }
+
+  // Which of the two problems to name. Overdue is reported first because it is the one
+  // that paying the shortfall would not fix.
+  const reason: BookingBlock =
+    position.overdue > 0 && settlement.mode === 'credit'
+      ? 'overdue'
+      : settlement.mode === 'prepaid'
+        ? 'insufficient-wallet'
+        : 'credit-limit-exceeded';
+
+  return {
+    allowed: decision.allowed,
+    reason,
+    shortfall: decision.shortfall,
+    message: [...decision.reasons, ...(decision.clearsIf.length ? [`Clears with ${decision.clearsIf.join(', or ')}.`] : [])].join(' '),
+    overridable: decision.overridable,
+    flagged: decision.flagged,
+    clearsIf: decision.clearsIf,
+  };
+}
+
+/** Said only when the arrangement asked to be warned. */
+function lowBalanceNote(settlement: EffectiveSettlement): string {
+  const suggestion = settlement.prepaid.minRecharge;
+  return suggestion
+    ? `This takes the balance to the alert level. A top-up of ₹${suggestion.toLocaleString('en-IN')} or more is the usual amount.`
+    : 'This takes the balance to the alert level.';
 }
 
 export async function invoicesFor(customerCode: string): Promise<Invoice[]> {

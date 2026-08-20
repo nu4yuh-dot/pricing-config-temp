@@ -9,6 +9,7 @@ import { quote } from '../../../pricing/quote';
 import { checkContract } from '../../../customers/contract';
 import { MODES, type Mode } from '../../../domain/types';
 import { canBook } from '../../../data/billing';
+import { settlementFor } from '../../../data/settlement';
 import { DEFAULT_COMMERCIAL_TERMS } from '../../../domain/customers';
 
 /**
@@ -206,10 +207,15 @@ export async function GET(request: Request) {
     // customer having the money for it — an exhausted limit or an overdue balance holds
     // the booking even though the rate is agreed.
     const terms = customer.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+    // The arrangement decides, when the customer is on one. `settlementFor` returns null
+    // for a customer nobody has put on terms, and the older wallet-plus-limit check then
+    // applies — which is what was deciding for them yesterday.
+    const arrangement = await settlementFor(customer.settlement);
     const funds = await canBook(
       customer.code,
       { creditLimit: terms.creditLimit, paymentTermsDays: terms.paymentTermsDays },
       contractQuote.breakdown.total,
+      arrangement,
     );
 
     return NextResponse.json(
@@ -224,12 +230,22 @@ export async function GET(request: Request) {
         baseTotal: baseQuote.available ? baseQuote.breakdown.total : null,
         billing: customer.commercial ?? null,
         account: funds.allowed
-          ? { clear: true }
+          ? {
+              clear: true,
+              // Present only when the arrangement let a breach through, so the booking
+              // site can show that this shipment grew the exposure rather than fitting.
+              ...(funds.flagged ? { flagged: true, message: funds.message } : {}),
+              ...(funds.message && !funds.flagged ? { note: funds.message } : {}),
+            }
           : {
               clear: false,
               reason: funds.reason,
               shortfall: funds.shortfall === undefined ? null : funds.shortfall / 100,
               message: funds.message,
+              // A named role could release this one booking. Additive: a caller that does
+              // not read it behaves exactly as before.
+              ...(funds.overridable ? { overridable: true } : {}),
+              ...(funds.clearsIf?.length ? { clearsIf: funds.clearsIf } : {}),
             },
         warnings: contractQuote.warnings,
       },
