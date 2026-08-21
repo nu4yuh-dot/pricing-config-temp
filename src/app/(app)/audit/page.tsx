@@ -76,7 +76,11 @@ export default async function AuditPage() {
                   const source = (first?.breakdown as { rateSource?: string } | undefined)?.rateSource;
                   return (
                     <tr key={quote.quoteId}>
-                      <td className="ref">{quote.quoteId}</td>
+                      <td className="ref">
+                        <Link href={`/audit/${encodeURIComponent(quote.quoteId)}`}>
+                          {quote.quoteId}
+                        </Link>
+                      </td>
                       <td>
                         {quote.createdAt.toLocaleDateString('en-IN', {
                           dateStyle: 'medium',
