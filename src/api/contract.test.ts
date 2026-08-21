@@ -35,12 +35,24 @@ describe('the published contract', () => {
     expect(missing).toEqual([]);
   });
 
-  test('additions are fine, and are reported so the file can be refreshed', () => {
+  test('everything published is recorded, so nothing is left unprotected', () => {
+    /**
+     * Additions are fine. **Unrecorded** additions are not.
+     *
+     * This used to report additions and pass, which let the file fall behind — and the guard
+     * only protects what the file knows about, so every entry added since the last refresh
+     * was quietly unguarded. It had drifted 52 entries that way: a whole endpoint, both
+     * paging parameters and a 403 could each have been deleted later without this noticing.
+     *
+     * So a new entry has to be written down. `npm run contract:record` does it, and the diff
+     * in review is the point: it is the list of what callers may now depend on.
+     */
     const added = current.filter((entry) => !recorded.includes(entry));
-    // Not an assertion about emptiness — new endpoints are the normal case. This exists so
-    // the diff is visible in the run rather than only in the file.
-    if (added.length > 0) console.info(`contract grew by ${added.length}:\n  ${added.join('\n  ')}`);
-    expect(Array.isArray(added)).toBe(true);
+    expect(
+      added,
+      `The published surface grew and was not recorded. Run \`npm run contract:record\` ` +
+        `and commit the diff.\n  ${added.join('\n  ')}`,
+    ).toEqual([]);
   });
 
   test('the deprecated field names are still accepted, because callers still send them', () => {

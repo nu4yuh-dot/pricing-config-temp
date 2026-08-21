@@ -2,18 +2,21 @@ DELETE /api/v1/customers/{code}/addresses
 DELETE /api/v1/customers/{code}/addresses -> 200
 DELETE /api/v1/customers/{code}/addresses -> 400
 DELETE /api/v1/customers/{code}/addresses -> 401
+DELETE /api/v1/customers/{code}/addresses -> 429
 DELETE /api/v1/customers/{code}/addresses ?code
 DELETE /api/v1/customers/{code}/addresses ?id
 DELETE /api/v1/customers/{code}/departments
 DELETE /api/v1/customers/{code}/departments -> 200
 DELETE /api/v1/customers/{code}/departments -> 400
 DELETE /api/v1/customers/{code}/departments -> 401
+DELETE /api/v1/customers/{code}/departments -> 429
 DELETE /api/v1/customers/{code}/departments ?code
 DELETE /api/v1/customers/{code}/departments ?id
 DELETE /api/v1/customers/{code}/plants
 DELETE /api/v1/customers/{code}/plants -> 200
 DELETE /api/v1/customers/{code}/plants -> 400
 DELETE /api/v1/customers/{code}/plants -> 401
+DELETE /api/v1/customers/{code}/plants -> 429
 DELETE /api/v1/customers/{code}/plants ?code
 DELETE /api/v1/customers/{code}/plants ?plantCode
 DELETE /api/v1/customers/{code}/team
@@ -21,16 +24,25 @@ DELETE /api/v1/customers/{code}/team -> 200
 DELETE /api/v1/customers/{code}/team -> 400
 DELETE /api/v1/customers/{code}/team -> 401
 DELETE /api/v1/customers/{code}/team -> 403
+DELETE /api/v1/customers/{code}/team -> 429
 DELETE /api/v1/customers/{code}/team ?actorRole
 DELETE /api/v1/customers/{code}/team ?code
 DELETE /api/v1/customers/{code}/team ?email
 GET /api/health
 GET /api/health -> 200
 GET /api/health -> 503
+GET /api/v1/billing/month-end
+GET /api/v1/billing/month-end -> 200
+GET /api/v1/billing/month-end -> 400
+GET /api/v1/billing/month-end -> 401
+GET /api/v1/billing/month-end -> 429
+GET /api/v1/billing/month-end ?from
+GET /api/v1/billing/month-end ?to
 GET /api/v1/bluedart/quotes
 GET /api/v1/bluedart/quotes -> 200
 GET /api/v1/bluedart/quotes -> 400
 GET /api/v1/bluedart/quotes -> 401
+GET /api/v1/bluedart/quotes -> 429
 GET /api/v1/bluedart/quotes ?breadth
 GET /api/v1/bluedart/quotes ?customer
 GET /api/v1/bluedart/quotes ?height
@@ -44,44 +56,62 @@ GET /api/v1/booking-exceptions
 GET /api/v1/booking-exceptions -> 200
 GET /api/v1/booking-exceptions -> 400
 GET /api/v1/booking-exceptions -> 401
+GET /api/v1/booking-exceptions -> 429
 GET /api/v1/booking-exceptions ?reference
 GET /api/v1/cities
 GET /api/v1/cities -> 200
 GET /api/v1/cities -> 400
 GET /api/v1/cities -> 401
+GET /api/v1/cities -> 429
 GET /api/v1/contract-requests
 GET /api/v1/contract-requests -> 200
 GET /api/v1/contract-requests -> 400
 GET /api/v1/contract-requests -> 401
 GET /api/v1/contract-requests -> 404
+GET /api/v1/contract-requests -> 429
 GET /api/v1/contract-requests ?reference
 GET /api/v1/customers
 GET /api/v1/customers -> 200
 GET /api/v1/customers -> 400
 GET /api/v1/customers -> 401
+GET /api/v1/customers -> 429
+GET /api/v1/customers ?cursor
+GET /api/v1/customers ?limit
 GET /api/v1/customers/{code}/account
 GET /api/v1/customers/{code}/account -> 200
 GET /api/v1/customers/{code}/account -> 400
 GET /api/v1/customers/{code}/account -> 401
 GET /api/v1/customers/{code}/account -> 404
+GET /api/v1/customers/{code}/account -> 429
 GET /api/v1/customers/{code}/account ?code
 GET /api/v1/customers/{code}/billing
 GET /api/v1/customers/{code}/billing -> 200
 GET /api/v1/customers/{code}/billing -> 400
 GET /api/v1/customers/{code}/billing -> 401
 GET /api/v1/customers/{code}/billing -> 404
+GET /api/v1/customers/{code}/billing -> 429
 GET /api/v1/customers/{code}/billing ?code
 GET /api/v1/customers/{code}/billing/{periodId}
 GET /api/v1/customers/{code}/billing/{periodId} -> 200
 GET /api/v1/customers/{code}/billing/{periodId} -> 400
 GET /api/v1/customers/{code}/billing/{periodId} -> 401
 GET /api/v1/customers/{code}/billing/{periodId} -> 404
+GET /api/v1/customers/{code}/billing/{periodId} -> 429
 GET /api/v1/customers/{code}/billing/{periodId} ?code
 GET /api/v1/customers/{code}/billing/{periodId} ?periodId
+GET /api/v1/customers/{code}/billing/{periodId}/pdf
+GET /api/v1/customers/{code}/billing/{periodId}/pdf -> 200
+GET /api/v1/customers/{code}/billing/{periodId}/pdf -> 400
+GET /api/v1/customers/{code}/billing/{periodId}/pdf -> 401
+GET /api/v1/customers/{code}/billing/{periodId}/pdf -> 404
+GET /api/v1/customers/{code}/billing/{periodId}/pdf -> 429
+GET /api/v1/customers/{code}/billing/{periodId}/pdf ?code
+GET /api/v1/customers/{code}/billing/{periodId}/pdf ?periodId
 GET /api/v1/customers/{code}/departments
 GET /api/v1/customers/{code}/departments -> 200
 GET /api/v1/customers/{code}/departments -> 400
 GET /api/v1/customers/{code}/departments -> 401
+GET /api/v1/customers/{code}/departments -> 429
 GET /api/v1/customers/{code}/departments ?code
 GET /api/v1/customers/{code}/departments ?plantCode
 GET /api/v1/customers/{code}/master
@@ -89,23 +119,27 @@ GET /api/v1/customers/{code}/master -> 200
 GET /api/v1/customers/{code}/master -> 400
 GET /api/v1/customers/{code}/master -> 401
 GET /api/v1/customers/{code}/master -> 404
+GET /api/v1/customers/{code}/master -> 429
 GET /api/v1/customers/{code}/master ?code
 GET /api/v1/customers/{code}/rates
 GET /api/v1/customers/{code}/rates -> 200
 GET /api/v1/customers/{code}/rates -> 400
 GET /api/v1/customers/{code}/rates -> 401
 GET /api/v1/customers/{code}/rates -> 404
+GET /api/v1/customers/{code}/rates -> 429
 GET /api/v1/customers/{code}/rates ?code
 GET /api/v1/customers/{code}/team
 GET /api/v1/customers/{code}/team -> 200
 GET /api/v1/customers/{code}/team -> 400
 GET /api/v1/customers/{code}/team -> 401
+GET /api/v1/customers/{code}/team -> 429
 GET /api/v1/customers/{code}/team ?activeOnly
 GET /api/v1/customers/{code}/team ?code
 GET /api/v1/network/ftl/quotes
 GET /api/v1/network/ftl/quotes -> 200
 GET /api/v1/network/ftl/quotes -> 400
 GET /api/v1/network/ftl/quotes -> 401
+GET /api/v1/network/ftl/quotes -> 429
 GET /api/v1/network/ftl/quotes ?customer
 GET /api/v1/network/ftl/quotes ?from
 GET /api/v1/network/ftl/quotes ?to
@@ -114,6 +148,7 @@ GET /api/v1/network/quotes
 GET /api/v1/network/quotes -> 200
 GET /api/v1/network/quotes -> 400
 GET /api/v1/network/quotes -> 401
+GET /api/v1/network/quotes -> 429
 GET /api/v1/network/quotes ?breadth
 GET /api/v1/network/quotes ?customer
 GET /api/v1/network/quotes ?from
@@ -129,23 +164,27 @@ GET /api/v1/pincodes/{pincode} -> 200
 GET /api/v1/pincodes/{pincode} -> 400
 GET /api/v1/pincodes/{pincode} -> 401
 GET /api/v1/pincodes/{pincode} -> 404
+GET /api/v1/pincodes/{pincode} -> 429
 GET /api/v1/pincodes/{pincode} ?pincode
 GET /api/v1/quotes/{quoteId}
 GET /api/v1/quotes/{quoteId} -> 200
 GET /api/v1/quotes/{quoteId} -> 400
 GET /api/v1/quotes/{quoteId} -> 401
 GET /api/v1/quotes/{quoteId} -> 404
+GET /api/v1/quotes/{quoteId} -> 429
 GET /api/v1/quotes/{quoteId} ?quoteId
 GET /api/v1/shipments/{awb}
 GET /api/v1/shipments/{awb} -> 200
 GET /api/v1/shipments/{awb} -> 400
 GET /api/v1/shipments/{awb} -> 401
 GET /api/v1/shipments/{awb} -> 404
+GET /api/v1/shipments/{awb} -> 429
 GET /api/v1/shipments/{awb} ?awb
 GET /api/v1/ups/quotes
 GET /api/v1/ups/quotes -> 200
 GET /api/v1/ups/quotes -> 400
 GET /api/v1/ups/quotes -> 401
+GET /api/v1/ups/quotes -> 429
 GET /api/v1/ups/quotes ?accessorials
 GET /api/v1/ups/quotes ?breadth
 GET /api/v1/ups/quotes ?country
@@ -160,6 +199,7 @@ PATCH /api/v1/shipments/{awb} -> 200
 PATCH /api/v1/shipments/{awb} -> 400
 PATCH /api/v1/shipments/{awb} -> 401
 PATCH /api/v1/shipments/{awb} -> 404
+PATCH /api/v1/shipments/{awb} -> 429
 PATCH /api/v1/shipments/{awb} ?awb
 PATCH /api/v1/shipments/{awb} body.deliveredAt
 PATCH /api/v1/shipments/{awb} body.pod
@@ -167,6 +207,7 @@ POST /api/v1/booking-exceptions
 POST /api/v1/booking-exceptions -> 200
 POST /api/v1/booking-exceptions -> 400
 POST /api/v1/booking-exceptions -> 401
+POST /api/v1/booking-exceptions -> 429
 POST /api/v1/booking-exceptions body.acceptedBy
 POST /api/v1/booking-exceptions body.acceptedTotal
 POST /api/v1/booking-exceptions body.customer
@@ -195,6 +236,7 @@ POST /api/v1/customers
 POST /api/v1/customers -> 200
 POST /api/v1/customers -> 400
 POST /api/v1/customers -> 401
+POST /api/v1/customers -> 429
 POST /api/v1/customers body.baseCardKey
 POST /api/v1/customers body.code
 POST /api/v1/customers body.name
@@ -203,6 +245,7 @@ POST /api/v1/customers/{code}/addresses -> 200
 POST /api/v1/customers/{code}/addresses -> 201
 POST /api/v1/customers/{code}/addresses -> 400
 POST /api/v1/customers/{code}/addresses -> 401
+POST /api/v1/customers/{code}/addresses -> 429
 POST /api/v1/customers/{code}/addresses ?code
 POST /api/v1/customers/{code}/addresses body.address
 POST /api/v1/customers/{code}/addresses body.addressLine
@@ -234,6 +277,7 @@ POST /api/v1/customers/{code}/billing/{periodId}/lines
 POST /api/v1/customers/{code}/billing/{periodId}/lines -> 200
 POST /api/v1/customers/{code}/billing/{periodId}/lines -> 400
 POST /api/v1/customers/{code}/billing/{periodId}/lines -> 401
+POST /api/v1/customers/{code}/billing/{periodId}/lines -> 429
 POST /api/v1/customers/{code}/billing/{periodId}/lines ?code
 POST /api/v1/customers/{code}/billing/{periodId}/lines ?periodId
 POST /api/v1/customers/{code}/billing/{periodId}/lines body.by
@@ -242,6 +286,7 @@ POST /api/v1/customers/{code}/billing/{periodId}/lines/{awb} -> 200
 POST /api/v1/customers/{code}/billing/{periodId}/lines/{awb} -> 400
 POST /api/v1/customers/{code}/billing/{periodId}/lines/{awb} -> 401
 POST /api/v1/customers/{code}/billing/{periodId}/lines/{awb} -> 404
+POST /api/v1/customers/{code}/billing/{periodId}/lines/{awb} -> 429
 POST /api/v1/customers/{code}/billing/{periodId}/lines/{awb} ?awb
 POST /api/v1/customers/{code}/billing/{periodId}/lines/{awb} ?code
 POST /api/v1/customers/{code}/billing/{periodId}/lines/{awb} ?periodId
@@ -253,8 +298,11 @@ POST /api/v1/customers/{code}/departments -> 200
 POST /api/v1/customers/{code}/departments -> 201
 POST /api/v1/customers/{code}/departments -> 400
 POST /api/v1/customers/{code}/departments -> 401
+POST /api/v1/customers/{code}/departments -> 429
 POST /api/v1/customers/{code}/departments ?code
+POST /api/v1/customers/{code}/departments body.active
 POST /api/v1/customers/{code}/departments body.id
+POST /api/v1/customers/{code}/departments body.isActive
 POST /api/v1/customers/{code}/departments body.name
 POST /api/v1/customers/{code}/departments body.plantCode
 POST /api/v1/customers/{code}/plants
@@ -262,6 +310,7 @@ POST /api/v1/customers/{code}/plants -> 200
 POST /api/v1/customers/{code}/plants -> 201
 POST /api/v1/customers/{code}/plants -> 400
 POST /api/v1/customers/{code}/plants -> 401
+POST /api/v1/customers/{code}/plants -> 429
 POST /api/v1/customers/{code}/plants ?code
 POST /api/v1/customers/{code}/plants body.active
 POST /api/v1/customers/{code}/plants body.code
@@ -290,6 +339,8 @@ POST /api/v1/quotes
 POST /api/v1/quotes -> 200
 POST /api/v1/quotes -> 400
 POST /api/v1/quotes -> 401
+POST /api/v1/quotes -> 403
+POST /api/v1/quotes -> 429
 POST /api/v1/quotes body.actualWeight
 POST /api/v1/quotes body.chargeableWeight
 POST /api/v1/quotes body.codValue
@@ -308,6 +359,7 @@ POST /api/v1/shipments -> 200
 POST /api/v1/shipments -> 400
 POST /api/v1/shipments -> 401
 POST /api/v1/shipments -> 409
+POST /api/v1/shipments -> 429
 POST /api/v1/shipments body.shipments
 auth signedServiceKey
 auth staticKey

@@ -32,10 +32,20 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: 'npx next start -p 3998',
+        /**
+         * The server production runs, rebuilt first.
+         *
+         * Not `next start`: `output: 'standalone'` is set, Next warns the two do not go
+         * together, and the Docker image runs `node server.js` from the standalone tree —
+         * so `next start` would test something that never ships. The script rebuilds before
+         * starting, because a running Next server keeps serving the previous build after a
+         * rebuild with no warning at all.
+         */
+        command: 'node scripts/standalone.mjs --port 3998',
         url: 'http://127.0.0.1:3998/api/health',
         reuseExistingServer: false,
-        timeout: 60_000,
+        // A full rebuild runs first, so this needs longer than starting a built server.
+        timeout: 240_000,
         env: {
           MONGODB_URI: process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017',
           MONGODB_DB: process.env.MONGODB_DB ?? 'dns_pricing',

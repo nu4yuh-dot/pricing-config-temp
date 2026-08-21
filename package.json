@@ -16,7 +16,10 @@
     "verify:workflow": "tsx scripts/verify-workflow.ts",
     "smoke": "tsx scripts/smoke.ts",
     "month-end": "tsx scripts/month-end.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "deploy": "tsx scripts/deploy.ts",
+    "start:standalone": "node scripts/standalone.mjs",
+    "contract:record": "tsx scripts/record-contract.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
