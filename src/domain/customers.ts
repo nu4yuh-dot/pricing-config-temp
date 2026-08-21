@@ -225,4 +225,26 @@ export interface BookingExceptionRequest {
   decisionComment?: string;
   /** Set when an admin also wants the lane folded into the contract permanently. */
   addToContract?: boolean;
+  /**
+   * The quote this was priced from, so the amount can be produced again later.
+   *
+   * Optional because an exception can be raised from a screen that quoted before quote
+   * identifiers existed. Where it is present, it is the proof of what was offered.
+   */
+  quoteId?: string;
+  /**
+   * The customer saying yes to a price that is not their contracted one.
+   *
+   * Separate from `requestedBy`, which is whoever operated the booking screen. When an
+   * enterprise customer is told "your contract does not cover this lane, it would cost
+   * ₹X" and goes ahead, that consent is the thing that makes the charge defensible — and
+   * an operator's own request is not consent on the customer's behalf.
+   */
+  customerAccepted?: {
+    /** Who accepted, as the portal knows them. */
+    by: string;
+    at: Date;
+    /** What they were shown when they accepted. Compared against `quotedTotal`. */
+    total: number;
+  };
 }

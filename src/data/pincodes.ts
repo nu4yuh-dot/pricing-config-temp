@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { db, COLLECTIONS } from './mongo';
 import { withCity } from '../domain/city';
 import type { Pincode } from '../domain/types';
@@ -186,3 +187,22 @@ export async function allPincodes(): Promise<Pincode[]> {
   cached = rows.map(withCity);
   return cached;
 }
+
+/**
+ * Every zone we actually serve.
+ *
+ * Read from the pincode master rather than kept as a list, because a list would be a
+ * second place for the truth to live and would go stale the first time a zone was added.
+ * Memoised for the request, since it is asked on the quoting path.
+ */
+export const knownZones = cache(async (): Promise<string[]> => {
+  const pincodes = await collection();
+  const [surface, air, rail] = await Promise.all([
+    pincodes.distinct('surface.zone'),
+    pincodes.distinct('air.zone'),
+    pincodes.distinct('rail.zone'),
+  ]);
+  return [...new Set([...surface, ...air, ...rail])].filter(
+    (zone): zone is string => typeof zone === 'string' && zone !== '',
+  );
+});

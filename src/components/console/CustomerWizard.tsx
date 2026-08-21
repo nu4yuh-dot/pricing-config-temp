@@ -48,6 +48,13 @@ export default function CustomerWizard({
 }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  /**
+   * Whether to negotiate now.
+   *
+   * Skipping is not an unfinished customer: until a contract exists they are priced at the
+   * base card, which is what most customers are on and a perfectly correct place to stay.
+   */
+  const [contractNow, setContractNow] = useState(true);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -91,17 +98,20 @@ export default function CustomerWizard({
 
   const save = (propose: boolean) => {
     setError(null);
+    // Skipping the contract means exactly that: no coverage limits and no starting pattern,
+    // even if something was chosen before going back and changing the answer.
     const scope = {
-      modes: modes.length > 0 ? modes : null,
+      modes: contractNow && modes.length > 0 ? modes : null,
       lanes: null,
       weightBands:
-        bandFrom.trim() === '' && bandTo.trim() === ''
+        !contractNow || (bandFrom.trim() === '' && bandTo.trim() === '')
           ? null
           : [{ from: Number(bandFrom || 0), to: bandTo.trim() === '' ? null : Number(bandTo) }],
     };
 
-    const startInput: WizardInput['start'] =
-      start === 'template' && templateKey !== ''
+    const startInput: WizardInput['start'] = !contractNow
+      ? { kind: 'blank' }
+      : start === 'template' && templateKey !== ''
         ? {
             kind: 'template',
             templateKey,
@@ -148,7 +158,7 @@ export default function CustomerWizard({
     <div className="panel">
       <header>
         <h3>
-          Step {step} of 4 —{' '}
+          Step {contractNow ? step : step === 1 ? 1 : 2} of {contractNow ? 4 : 2} —{' '}
           {['Identity', 'Pricing pattern', 'Coverage', 'Review'][step - 1]}
         </h3>
         <span className="hint">Nothing is saved until the last step</span>
@@ -236,6 +246,30 @@ export default function CustomerWizard({
               change what anybody is charged. The base card can, which is why it is here and not
               editable later.
             </p>
+
+            {/* The fork. A customer on base rates is a finished, correct state — most are —
+                so negotiating has to be optional rather than a wizard you abandon halfway. */}
+            <h4 style={{ marginBottom: 4 }}>Do they have negotiated rates?</h4>
+            <div className="pill-list" style={{ marginTop: 0 }}>
+              <button
+                type="button"
+                className={contractNow ? 'chosen' : ''}
+                onClick={() => setContractNow(true)}
+              >
+                Set up their contract now
+                <span className="hint">Choose a starting point and what it covers</span>
+              </button>
+              <button
+                type="button"
+                className={!contractNow ? 'chosen' : ''}
+                onClick={() => setContractNow(false)}
+              >
+                Not yet — base rates for now
+                <span className="hint">
+                  They are priced from {cards.find((card) => card.key === baseCardKey)?.name ?? 'the base card'}. A contract can be added any time.
+                </span>
+              </button>
+            </div>
           </>
         )}
 
@@ -431,18 +465,33 @@ export default function CustomerWizard({
                 </td>
               </tr>
               <tr>
-                <td>Starting point</td>
-                <td>{startLabel}</td>
-              </tr>
-              <tr>
-                <td>Coverage</td>
+                <td>Contract</td>
                 <td>
-                  {modes.length === 0 ? 'Every mode' : modes.join(', ')}
-                  {bandFrom || bandTo
-                    ? `, ${bandFrom || 0}–${bandTo || 'no limit'} kg`
-                    : ', all weights'}
+                  {contractNow ? (
+                    startLabel
+                  ) : (
+                    <>
+                      None yet — priced at{' '}
+                      {cards.find((card) => card.key === baseCardKey)?.name ?? baseCardKey}
+                      <div className="sub">
+                        Base rates apply until a contract is negotiated and approved. One can be
+                        added from their page at any time.
+                      </div>
+                    </>
+                  )}
                 </td>
               </tr>
+              {contractNow && (
+                <tr>
+                  <td>Coverage</td>
+                  <td>
+                    {modes.length === 0 ? 'Every mode' : modes.join(', ')}
+                    {bandFrom || bandTo
+                      ? `, ${bandFrom || 0}–${bandTo || 'no limit'} kg`
+                      : ', all weights'}
+                  </td>
+                </tr>
+              )}
               <tr>
                 <td>Identity</td>
                 <td style={{ color: 'var(--ink-soft)' }}>
@@ -458,7 +507,11 @@ export default function CustomerWizard({
 
       <div className="actionbar">
         {step > 1 && (
-          <button type="button" onClick={() => setStep(step - 1)} disabled={pending}>
+          <button
+            type="button"
+            onClick={() => setStep(!contractNow && step === 4 ? 1 : step - 1)}
+            disabled={pending}
+          >
             ← Back
           </button>
         )}
@@ -468,23 +521,36 @@ export default function CustomerWizard({
             type="button"
             className="primary"
             disabled={pending || (step === 1 && !identityReady)}
-            onClick={() => setStep(step + 1)}
+            onClick={() => setStep(!contractNow && step === 1 ? 4 : step + 1)}
           >
             Continue →
           </button>
         ) : (
           <>
-            <button type="button" onClick={() => save(false)} disabled={pending}>
-              {pending ? 'Saving…' : 'Save as draft'}
-            </button>
-            <button
-              type="button"
-              className="primary"
-              onClick={() => save(true)}
-              disabled={pending}
-            >
-              {pending ? 'Saving…' : 'Save and propose →'}
-            </button>
+            {contractNow ? (
+              <>
+                <button type="button" onClick={() => save(false)} disabled={pending}>
+                  {pending ? 'Saving…' : 'Save as draft'}
+                </button>
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => save(true)}
+                  disabled={pending}
+                >
+                  {pending ? 'Saving…' : 'Save and propose →'}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="primary"
+                onClick={() => save(false)}
+                disabled={pending}
+              >
+                {pending ? 'Adding…' : 'Add customer on base rates'}
+              </button>
+            )}
           </>
         )}
       </div>

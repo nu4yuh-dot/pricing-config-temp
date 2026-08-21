@@ -149,11 +149,24 @@ export default function CompanyProfileForm({
           <div className="body">
             {profileState?.error && <div className="error">{profileState.error}</div>}
             {profileState?.ok && (profileState.warnings?.length ?? 0) === 0 && (
-              <div className="callout info" style={{ marginTop: 0 }}>Saved.</div>
+              <div className="callout info" style={{ marginTop: 0 }}>
+                {profileState.submitted === false ? (
+                  'Nothing had changed, so there is nothing to review.'
+                ) : (
+                  <>
+                    <strong>Sent for approval.</strong> These details are unchanged until an
+                    admin accepts them
+                    {(profileState.changed?.length ?? 0) > 0 && (
+                      <> — they will be reviewing {profileState.changed?.join(', ')}</>
+                    )}
+                    . Once accepted, they are also sent to the SameX core.
+                  </>
+                )}
+              </div>
             )}
             {(profileState?.warnings?.length ?? 0) > 0 && (
               <div className="callout">
-                <strong>Saved, but these do not agree</strong>
+                <strong>Sent for approval, but these do not agree</strong>
                 <ul>{profileState?.warnings?.map((w, i) => <li key={i}>{w}</li>)}</ul>
               </div>
             )}
@@ -290,7 +303,7 @@ export default function CompanyProfileForm({
             <div className="actionbar">
               <span className="spacer" />
               <button className="primary" type="submit" disabled={profilePending}>
-                {profilePending ? 'Saving…' : 'Save company details'}
+                {profilePending ? 'Sending…' : 'Send company details for approval'}
               </button>
             </div>
           )}

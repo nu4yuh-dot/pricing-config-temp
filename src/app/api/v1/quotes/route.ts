@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireApiKey, badRequest } from '../../_auth';
+import { QuoteRequest } from '../../../../api/contracts';
+import { authenticatedJson, badRequest } from '../../_auth';
+import { recordQuote, fingerprint } from '../../../../data/quotes';
 import { findPincodePair } from '../../../../data/pincodes';
 import { liveCard } from '../../../../data/rate-cards';
 import { findCustomer, contractedCard } from '../../../../data/customers';
@@ -54,20 +56,13 @@ const TIERS: { service: string; mode: Mode; description: string; features: strin
   },
 ];
 
-const Body = z.object({
-  originPincode: z.union([z.string(), z.number()]),
-  destPincode: z.union([z.string(), z.number()]),
-  actualWeight: z.coerce.number().positive(),
-  length: z.coerce.number().nonnegative().optional(),
-  width: z.coerce.number().nonnegative().optional(),
-  height: z.coerce.number().nonnegative().optional(),
-  /** Our customer code. Absent quotes the base card. */
-  customerId: z.string().trim().min(1).optional(),
-  declaredValue: z.coerce.number().nonnegative().optional(),
-  codValue: z.coerce.number().nonnegative().optional(),
-  /** One of ECONOMY / EXPRESS / CRITICAL / RAIL, or a mode name. Absent returns all. */
-  transportMode: z.string().trim().optional(),
-});
+/** The canonical form of a request, whichever names it arrived under. */
+function canonical(input: z.infer<typeof QuoteRequest>) {
+  return {
+    destination: input.destinationPincode ?? input.destPincode,
+    customerCode: input.customerCode ?? input.customerId,
+  };
+}
 
 /**
  * The card a request prices against.
@@ -91,6 +86,14 @@ function fuelPctFor(card: RateCard, mode: Mode): number {
         ? charges.fuelSurface
         : charges.fuelAir;
   return round2((fraction ?? 0) * 100);
+}
+
+/** The volumetric divisor this mode bills on. Rail falls back to surface, as the engine does. */
+function divisorFor(card: RateCard, mode: Mode): number {
+  const charges = card.data.charges;
+  if (mode === 'air' || mode === 'nfo') return charges.volumetricDivisorAir;
+  if (mode === 'rail') return charges.volumetricDivisorRail ?? charges.volumetricDivisorSurface;
+  return charges.volumetricDivisorSurface;
 }
 
 const modeInfo = (pincode: Pincode, mode: Mode) =>
@@ -120,28 +123,27 @@ function pincodeInfo(pincode: Pincode, mode: Mode, transitDays: number | null) {
 }
 
 export async function POST(request: Request) {
-  const unauthorised = requireApiKey(request);
-  if (unauthorised) return unauthorised;
+  const auth = await authenticatedJson(request);
+  if (!auth.ok) return auth.response;
+  const raw = auth.body;
 
-  let raw: unknown;
-  try {
-    raw = await request.json();
-  } catch {
-    return badRequest('Body must be JSON.');
-  }
-
-  const parsed = Body.safeParse(raw);
+  const parsed = QuoteRequest.safeParse(raw);
   if (!parsed.success) {
     return badRequest(
-      'Missing or invalid fields. originPincode, destPincode and actualWeight are required.',
+      'Missing or invalid fields. originPincode, destinationPincode and actualWeight are required.',
       parsed.error.flatten(),
     );
   }
   const input = parsed.data;
+  const named = canonical(input);
+
+  if (named.destination === undefined) {
+    return badRequest('destinationPincode is required.');
+  }
 
   const { origin, destination } = await findPincodePair(
     Number(input.originPincode),
-    Number(input.destPincode),
+    Number(named.destination),
   );
   if (!origin || !destination) {
     return NextResponse.json(
@@ -157,17 +159,24 @@ export async function POST(request: Request) {
 
   let card: RateCard | null;
 
-  if (input.customerId) {
-    const customer = await findCustomer(input.customerId);
+  // Held so the quote record can say which terms priced it, not merely which customer.
+  let contract: { fingerprint: string; overrides: number } | null = null;
+
+  if (named.customerCode) {
+    const customer = await findCustomer(named.customerCode);
     if (!customer) {
       return NextResponse.json(
-        { success: false, message: `Unknown customer ${input.customerId}.` },
+        { success: false, message: `Unknown customer ${named.customerCode}.` },
         { status: 404 },
       );
     }
     // The contracted card is the base card with this customer's negotiated cells
     // applied, so a quote here is the price they were actually promised.
     card = await contractedCard(customer);
+    contract = {
+      fingerprint: fingerprint(customer.liveTerms),
+      overrides: Object.keys(customer.liveTerms.overrides).length,
+    };
   } else {
     card = await liveCard(DEFAULT_CARD_KEY);
   }
@@ -186,8 +195,12 @@ export async function POST(request: Request) {
     ? TIERS.filter((tier) => tier.service === wanted || tier.mode.toUpperCase() === wanted)
     : TIERS;
 
+  // A supplied chargeable weight is honoured by handing the engine a shipment that
+  // weighs it: the engine takes the greatest of actual, volumetric and the mode minimum,
+  // so passing it as the actual weight is what makes it the floor. The dimensions are
+  // still sent, so our own volumetric figure is computed and reported alongside.
   const shipment = {
-    actualWeight: input.actualWeight,
+    actualWeight: Math.max(input.actualWeight, input.chargeableWeight ?? 0),
     ...(input.length === undefined ? {} : { length: input.length }),
     ...(input.width === undefined ? {} : { breadth: input.width }),
     ...(input.height === undefined ? {} : { height: input.height }),
@@ -211,6 +224,10 @@ export async function POST(request: Request) {
           actualWeight: input.actualWeight,
           volumetricWeight: b.volumetricWeight,
           chargeableWeight: b.chargeableWeight,
+          /** Echoed when the caller sent one, so the two can be compared at a glance. */
+          ...(input.chargeableWeight === undefined
+            ? {}
+            : { chargeableWeightSupplied: input.chargeableWeight }),
           // Vehicle and carrier selection stay with the core: both need fleet and hub
           // knowledge this service does not have. Empty, never invented.
           vehicle: '',
@@ -220,7 +237,15 @@ export async function POST(request: Request) {
           vehicleMaxW: 0,
           vehicleMaxH: 0,
           vehicleCategory: '',
-          volDivisor: 0,
+          /**
+           * The divisor we actually used, not zero.
+           *
+           * This was reported as zero under the rule that fields the core owns are never
+           * invented — but this one is ours. It is the number needed to check a chargeable
+           * weight, and withholding it is what turns a reconcilable difference into an
+           * argument.
+           */
+          volDivisor: divisorFor(card, tier.mode),
           rateSource: b.laneProvenance.trace,
           /**
            * The per-kilogram tariff rate governing this weight.
@@ -281,9 +306,74 @@ export async function POST(request: Request) {
   const transit =
     tiers.length > 0 && tiers[0]?.estimatedDays ? Number(tiers[0].estimatedDays) : null;
 
+  /**
+   * Kept before it is returned, because the identifier has to name something that exists.
+   *
+   * If the write fails the quote is still answered — refusing to price a shipment because
+   * we could not file the paperwork would be the wrong trade for a booking desk. The
+   * response then carries no `quoteId` rather than one that resolves to nothing, which is
+   * the honest signal: absent means unprovable, and a caller can see that at the time
+   * instead of six weeks later.
+   */
+  let recorded: { quoteId: string; validUntil: Date } | null = null;
+  try {
+    recorded = await recordQuote({
+      caller: auth.caller.keyId,
+      request: {
+        originPincode: Number(input.originPincode),
+        destinationPincode: Number(named.destination),
+        actualWeight: input.actualWeight,
+        ...(input.length === undefined && input.width === undefined && input.height === undefined
+          ? {}
+          : {
+              dimensionsCm: {
+                ...(input.length === undefined ? {} : { length: input.length }),
+                ...(input.width === undefined ? {} : { breadth: input.width }),
+                ...(input.height === undefined ? {} : { height: input.height }),
+              },
+            }),
+        ...(input.chargeableWeight === undefined
+          ? {}
+          : { chargeableWeightSupplied: input.chargeableWeight }),
+        ...(named.customerCode === undefined ? {} : { customerCode: named.customerCode }),
+        ...(input.declaredValue === undefined ? {} : { declaredValue: input.declaredValue }),
+        ...(input.codValue === undefined ? {} : { codValue: input.codValue }),
+        ...(input.transportMode === undefined ? {} : { transportMode: input.transportMode }),
+      },
+      pricedAgainst: {
+        cardKey: card.key,
+        cardName: card.name,
+        ...(card.version === undefined ? {} : { cardVersion: card.version }),
+        ...(named.customerCode === undefined ? {} : { customerCode: named.customerCode }),
+        ...(contract === null
+          ? {}
+          : { contractFingerprint: contract.fingerprint, contractOverrides: contract.overrides }),
+      },
+      tiers: tiers.map((tier) => ({
+        service: tier.service,
+        mode: TIERS.find((entry) => entry.service === tier.service)?.mode ?? '',
+        total: tier.price,
+        chargeableWeight: tier.breakdown.chargeableWeight,
+        breakdown: tier.breakdown as unknown as Record<string, unknown>,
+      })),
+    });
+  } catch (error) {
+    console.error('quote could not be recorded', error);
+  }
+
   return NextResponse.json({
     success: true,
     data: {
+      // The identifier for this priced answer. The handbook asks for it by name: a number
+      // on an invoice has to be re-explainable long after the card has moved on.
+      ...(recorded === null
+        ? {}
+        : {
+            quoteId: recorded.quoteId,
+            // Rates and fuel move. Past this the quote has to be asked for again rather
+            // than honoured from memory.
+            validUntil: recorded.validUntil.toISOString(),
+          }),
       origin: pincodeInfo(origin, first, transit),
       destination: pincodeInfo(destination, first, transit),
       tiers,

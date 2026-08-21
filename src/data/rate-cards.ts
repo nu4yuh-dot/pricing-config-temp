@@ -113,6 +113,7 @@ export async function liveCard(key: string): Promise<RateCard | null> {
     name: card.name,
     freightMethod: card.freightMethod,
     source: card.source ?? 'dns',
+    version: version.version,
     data: version.data,
   };
 }

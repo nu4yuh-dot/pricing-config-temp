@@ -5,6 +5,7 @@ import { recordAudit } from './audit';
 import type { Actor } from './workflow';
 import type { SettlementOverrides } from '../billing/settlement';
 import type { CompanyProfile } from '../domain/company';
+import type { EnterpriseAccount } from '../domain/enterprise';
 import {
   EMPTY_TERMS,
   type CommercialTerms,
@@ -29,6 +30,44 @@ export interface CustomerDoc extends Customer {
   _id: ObjectId;
   /** Company master data. Optional so existing customers keep working. */
   profile?: CompanyProfile;
+  /**
+   * Whether the customer may transact.
+   *
+   * Absent means active, so every customer that predates this field keeps working. Closing
+   * an account never deletes it — the shipments, invoices and quotes attached to it have to
+   * stay readable, and a customer who returns should come back to their own history.
+   */
+  active?: boolean;
+  /**
+   * How many times this customer has been sent to the core.
+   *
+   * Rises on every approved change, and travels with the payload so the core can ignore a
+   * message that arrives out of order after a retry.
+   */
+  coreRevision?: number;
+  /**
+   * The customer's own account, as their enterprise portal presents it: team roster,
+   * address book, departments and the billing arrangement.
+   *
+   * Optional, because a customer who has never opened the portal has none of it, and an
+   * empty account is a different thing from an absent one.
+   */
+  enterprise?: EnterpriseAccount;
+  /**
+   * Which partner carriers this customer may be quoted, keyed by carrier id.
+   *
+   * Mirrors the core's `carrierAccess`, which an admin sets. Absent means we have not been
+   * told, and an absent *entry* for a named carrier is a refusal — see
+   * `customers/carrier-access.ts` for why we do not infer it.
+   */
+  carrierAccess?: Record<string, boolean>;
+  /**
+   * Whether SameX staff may find this account when booking on the customer's behalf.
+   *
+   * Off unless the customer turns it on. Stored here only if it turns out to be ours to
+   * hold — see the note in `core-payload.ts`.
+   */
+  adminBookingAccess?: boolean;
   /** The approved contract. Quotes always read this. */
   liveTerms: ContractTerms;
   /** Work in progress. Never priced until approved. */
@@ -126,6 +165,16 @@ export async function registerCustomer(input: {
     detail: { code, name: doc.name, baseCard: input.baseCardKey, source: input.source },
   });
 
+  // The customer master lives here now, so the core has to be told a customer exists —
+  // it is where their shipments attach and where the enterprise portal sign-in is issued.
+  // Queued rather than sent: creating a customer must not fail because the core is
+  // restarting, and the queue is durable. Later *edits* go through approval first; a
+  // creation does not, because a customer nobody can transact with yet has nothing to
+  // review, and one that exists here but not in the core cannot be booked for at all.
+  const { queueCustomerPush } = await import('./core-push');
+  const { toCorePayload } = await import('../customers/core-payload');
+  await queueCustomerPush(toCorePayload({ ...doc, coreRevision: 1 }));
+
   return { customer: doc, created: true };
 }
 
@@ -144,6 +193,16 @@ export async function saveProfile(
   if (!customer) throw new Error(`customer ${code} not found`);
 
   await (await customers()).updateOne({ _id: customer._id }, { $set: { profile } });
+
+  // Keeps the core in step when the profile is written as part of onboarding, before there
+  // is anything to approve. An approved *change* to an existing profile queues its own push.
+  const { queueCustomerPush: queuePush } = await import('./core-push');
+  const { toCorePayload: toPayload } = await import('../customers/core-payload');
+  await queuePush(toPayload({ ...customer, profile, coreRevision: (customer.coreRevision ?? 0) + 1 }));
+  await (await customers()).updateOne(
+    { _id: customer._id },
+    { $set: { coreRevision: (customer.coreRevision ?? 0) + 1 } },
+  );
   await recordAudit({
     action: 'customer-profile-updated',
     actor,

@@ -26,6 +26,7 @@ import {
   type Period,
 } from '../billing/invoice';
 import { recordAudit } from './audit';
+import { allocateNumber, recordGap } from './invoice-series';
 import type { Actor } from './workflow';
 
 /**
@@ -238,13 +239,38 @@ export async function raiseInvoices(
   const skipped: string[] = [];
 
   for (const invoice of built) {
-    const existing = await collection.findOne({ number: invoice.number });
+    /**
+     * The duplicate check comes first, and deliberately before the series is touched.
+     *
+     * A rerun of a bill run must not spend a number. If it allocated first and then found
+     * the invoice already existed, every retry would burn a number and leave a gap to
+     * explain — turning an ordinary re-run into paperwork.
+     */
+    const existing = await collection.findOne({ naturalKey: invoice.naturalKey });
     if (existing) {
-      skipped.push(invoice.number);
+      skipped.push(existing.number || invoice.naturalKey);
       continue;
     }
 
-    await collection.insertOne({ ...invoice });
+    const { number, sequence } = await allocateNumber(invoice.raisedAt);
+    const numbered = { ...invoice, number };
+
+    try {
+      await collection.insertOne(numbered);
+    } catch (cause) {
+      // The number is spent. It is not reused — that would put two documents at one
+      // position in the series — so it is recorded as a gap with a reason, and the series
+      // still reconciles.
+      await recordGap(
+        number,
+        sequence,
+        cause instanceof Error ? cause.message : 'invoice write failed',
+        invoice.raisedAt,
+      );
+      throw cause;
+    }
+
+    Object.assign(invoice, { number });
     // A reverse-charge invoice bills nothing, so nothing is owed and nothing is posted.
     if (invoice.totalPaise > 0) {
       await recordEntry(

@@ -247,6 +247,15 @@ export interface RateCard {
   key: string;
   name: string;
   freightMethod: FreightMethod;
+  /**
+   * The card version these numbers came from.
+   *
+   * Optional because a card assembled in a test or in memory has no version. Populated by
+   * `liveCard`, and it survives `effectiveCard`, so a contracted card still reports the
+   * base version its prices were built on — which is what a quote has to record to be
+   * explainable after the card moves on.
+   */
+  version?: number;
   /** Absent means `dns`, so every card that predates the distinction still reads right. */
   source?: CardSource;
   /**

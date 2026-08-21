@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { requireApiKey, badRequest } from '../../_auth';
+import { ShipmentIntakeBody } from '../../../../api/contracts';
+import { authenticatedJson, badRequest } from '../../_auth';
 import { receiveShipments, type ShipmentIntake } from '../../../../data/shipments';
 import { findCustomer } from '../../../../data/customers';
-import { MODES } from '../../../../domain/types';
 
 /**
  * Shipments in, from the core.
@@ -21,46 +20,12 @@ import { MODES } from '../../../../domain/types';
  * at the configuration in force that day. We do not reprice here — see `data/shipments.ts`.
  */
 
-const Amounts = z
-  .object({
-    taxableValue: z.number().nonnegative(),
-    gst: z.number().nonnegative(),
-    gstRate: z.number().min(0).max(1),
-    sac: z.string().trim().min(1, 'sac must not be empty'),
-    rcm: z.boolean(),
-    total: z.number().nonnegative(),
-  })
-  .strict();
-
-const Shipment = z
-  .object({
-    awb: z.string().trim().min(1, 'awb must not be empty'),
-    coreShipmentId: z.string().trim().min(1, 'coreShipmentId must not be empty'),
-    customerCode: z.string().trim().min(1, 'customerCode must not be empty'),
-    bookedAt: z.string().datetime({ offset: true }),
-    deliveredAt: z.string().datetime({ offset: true }).optional(),
-    mode: z.enum(MODES),
-    originPincode: z.string().trim().regex(/^\d{6}$/, 'originPincode must be six digits'),
-    destinationPincode: z.string().trim().regex(/^\d{6}$/, 'destinationPincode must be six digits'),
-    chargeableWeight: z.number().positive(),
-    booked: Amounts,
-  })
-  .strict();
-
-const Body = z.object({ shipments: z.array(Shipment).min(1).max(500) }).strict();
-
 export async function POST(request: Request) {
-  const unauthorised = requireApiKey(request);
-  if (unauthorised) return unauthorised;
+  const auth = await authenticatedJson(request);
+  if (!auth.ok) return auth.response;
+  const raw = auth.body;
 
-  let raw: unknown;
-  try {
-    raw = await request.json();
-  } catch {
-    return badRequest('Body must be JSON.');
-  }
-
-  const parsed = Body.safeParse(raw);
+  const parsed = ShipmentIntakeBody.safeParse(raw);
   if (!parsed.success) {
     // The whole batch is refused rather than the good half taken: a caller that thinks it
     // sent fifty and finds forty-one recorded has a reconciliation problem it cannot see.

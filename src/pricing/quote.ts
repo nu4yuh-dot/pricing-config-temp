@@ -18,6 +18,18 @@ import type { Overrides } from '../domain/customers';
 
 export interface QuoteInput {
   mode: Mode;
+  /**
+   * The service being sold, when it is not simply the mode.
+   *
+   * A service is a network plus a multiplier — which is what NFO has always been: air at
+   * twice the rate, hardcoded here as `mode === 'nfo'`. Passing one generalises that
+   * without changing it: a service whose multiplier is 1 prices exactly as its mode does,
+   * and an absent service leaves every existing caller behaving as before.
+   *
+   * It never widens what can be priced. The service must ride a network the card holds
+   * rates for, which is enforced where services are defined, not here.
+   */
+  service?: { key: string; mode: StoredMode; multiplier: number; transitAdjustmentDays?: number };
   actualWeight: number;
   length?: number;
   breadth?: number;
@@ -165,26 +177,30 @@ interface ModeRules {
   multiplier: number;
 }
 
-function rulesFor(mode: Mode, card: RateCard): ModeRules {
+function rulesFor(mode: Mode, card: RateCard, service?: QuoteInput['service']): ModeRules {
   const c = card.data.charges;
   // NFO is quoted on the air card, so it takes air's weight rules with it. Rail may state
   // its own; where it does not it falls back to surface, which is what the workbooks did.
-  const isAirLike = mode === 'air' || mode === 'nfo';
-  const railMinWeight = mode === 'rail' ? c.minWeightRail : undefined;
+  // A service rides its own network, whatever mode the caller named.
+  const riding = service?.mode ?? storedModeFor(mode);
+  const isAirLike = riding === 'air';
+  const railMinWeight = riding === 'rail' ? c.minWeightRail : undefined;
   // A divisor of zero is never a rule, it is an empty field — and dividing by it would
   // make every rail shipment weigh infinity. Zero falls back the same as absent.
   const railDivisor =
-    mode === 'rail' && c.volumetricDivisorRail ? c.volumetricDivisorRail : undefined;
+    riding === 'rail' && c.volumetricDivisorRail ? c.volumetricDivisorRail : undefined;
   return {
     minWeight: isAirLike ? c.minWeightAir : (railMinWeight ?? c.minWeightSurface),
     volumetricDivisor: isAirLike
       ? c.volumetricDivisorAir
       : (railDivisor ?? c.volumetricDivisorSurface),
-    fuel: mode === 'rail' ? c.fuelRail : isAirLike ? c.fuelAir : c.fuelSurface,
+    fuel: riding === 'rail' ? c.fuelRail : isAirLike ? c.fuelAir : c.fuelSurface,
     gst: isAirLike ? c.gstAir : c.gstSurface,
     pickupKey: isAirLike ? 'pickupAir' : 'pickupSurface',
     deliveryKey: isAirLike ? 'deliveryAir' : 'deliverySurface',
-    multiplier: mode === 'nfo' ? c.nfoMultiplier : 1,
+    // A named service states its own multiplier. NFO keeps taking the card's, so a card
+    // that has tuned `nfoMultiplier` still prices by it rather than by a default of 2.
+    multiplier: service ? service.multiplier : mode === 'nfo' ? c.nfoMultiplier : 1,
   };
 }
 
@@ -240,8 +256,8 @@ export function quote(
   }
 
   const { mode } = input;
-  const storedMode = storedModeFor(mode);
-  const rules = rulesFor(mode, card);
+  const storedMode = input.service?.mode ?? storedModeFor(mode);
+  const rules = rulesFor(mode, card, input.service);
   const originInfo = origin[storedMode];
   const destInfo = destination[storedMode];
 

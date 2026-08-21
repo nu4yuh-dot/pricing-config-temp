@@ -349,6 +349,10 @@ export interface CsvImportResult extends ActionResult {
 
 export interface ProfileResult extends ActionResult {
   warnings?: string[];
+  /** Set when the edit went to the approvals queue rather than taking effect. */
+  submitted?: boolean;
+  /** Named so the form can say what a reviewer will be looking at. */
+  changed?: string[];
 }
 
 /**
@@ -599,10 +603,26 @@ export async function saveCustomerProfile(
       stateName: profile.registeredAddress?.state,
     });
     // Warnings, not a block: a customer may legitimately be mid-registration.
-    const { saveProfile } = await import('../data/customers');
-    await saveProfile(code, profile, toActor(user));
+
+    // This no longer saves. Company details now decide who can sign in to the enterprise
+    // portal and what prints on a tax invoice, because an approved change is pushed into
+    // the core — so it goes through review like every other change that leaves this
+    // service. See `data/customer-profile-changes.ts`.
+    const { proposeProfileChange } = await import('../data/customer-profile-changes');
+    const { change, unchanged } = await proposeProfileChange(code, profile, toActor(user));
+
     revalidatePath('/customers/[code]', 'page');
-    return { ok: true as const, warnings: problems };
+    revalidatePath('/approvals', 'page');
+
+    if (unchanged) {
+      return { ok: true as const, warnings: problems, submitted: false, changed: [] };
+    }
+    return {
+      ok: true as const,
+      warnings: problems,
+      submitted: true,
+      changed: change?.changed ?? [],
+    };
   } catch (cause) {
     return { error: cause instanceof Error ? cause.message : 'Could not save the profile.' };
   }
@@ -1152,4 +1172,361 @@ export async function quoteUpsAction(input: {
     };
   }
   return quoteUps(input, data);
+}
+
+/* --------------------------------------------- customer master data review */
+
+/**
+ * Decide a proposed change to a customer's company details.
+ *
+ * Approving does two things that cannot be undone by editing a record back: it changes what
+ * prints on a tax invoice, and it queues the customer for the core, where it decides who may
+ * sign in to the enterprise portal. That is the whole reason this is a review rather than a
+ * save.
+ */
+export async function decideProfileChange(
+  _previous: ActionResult | null,
+  form: FormData,
+): Promise<ActionResult> {
+  const user = await authorise('review-change-request');
+  const id = String(form.get('id') ?? '');
+  const verdict = String(form.get('verdict') ?? '');
+  const comment = String(form.get('comment') ?? '').trim();
+
+  try {
+    const { approveProfileChange, rejectProfileChange } = await import(
+      '../data/customer-profile-changes'
+    );
+
+    if (verdict === 'approve') {
+      await approveProfileChange(id, toActor(user), comment || undefined);
+    } else if (verdict === 'reject') {
+      // A rejection without a reason is a dead end for whoever submitted it.
+      if (!comment) return { error: 'Say why, so the person who submitted it can fix it.' };
+      await rejectProfileChange(id, toActor(user), comment);
+    } else {
+      return { error: 'Choose approve or reject.' };
+    }
+
+    revalidatePath('/approvals', 'page');
+    revalidatePath('/customers/[code]', 'page');
+    return { ok: true as const };
+  } catch (cause) {
+    return { error: cause instanceof Error ? cause.message : 'Could not record that decision.' };
+  }
+}
+
+/**
+ * Send whatever is waiting for the core.
+ *
+ * Manual because there is no background worker here. Approving already queues the change;
+ * this is the button for when the core was down at that moment and somebody wants to know
+ * it has caught up.
+ */
+export async function sendQueuedToCore(): Promise<
+  ActionResult & { sent?: number; failed?: number; configured?: boolean }
+> {
+  await authorise('review-change-request');
+  try {
+    const { drainToCore } = await import('../core/client');
+    const report = await drainToCore();
+    revalidatePath('/approvals', 'page');
+
+    if (!report.configured) {
+      return {
+        error:
+          'The core connection is not configured yet, so changes are queued. They will send once CORE_API_URL and its key are set.',
+      };
+    }
+    return { ok: true as const, sent: report.sent, failed: report.failed, configured: true };
+  } catch (cause) {
+    return { error: cause instanceof Error ? cause.message : 'Could not reach the core.' };
+  }
+}
+
+/* ------------------------------------------- customer contract negotiations */
+
+/**
+ * Decide a request a customer raised from the enterprise portal.
+ *
+ * Accepting widens their **draft** contract and drops any rates they proposed into it. It
+ * does not change a price and does not go live — the existing contract approval does that.
+ * Two gates on purpose: the customer's ask and the rate we set for it are different
+ * decisions, made by different people, and rolling them together would let a customer's
+ * request write a price.
+ */
+export async function decideContractRequest(
+  _previous: ActionResult | null,
+  form: FormData,
+): Promise<ActionResult & { widened?: string[] }> {
+  const user = await authorise('review-change-request');
+  const reference = String(form.get('reference') ?? '');
+  const verdict = String(form.get('verdict') ?? '');
+  const comment = String(form.get('comment') ?? '').trim();
+
+  try {
+    const { acceptContractRequest, declineContractRequest } = await import(
+      '../data/contract-requests'
+    );
+
+    if (verdict === 'accept') {
+      const decided = await acceptContractRequest(reference, toActor(user), comment || undefined);
+      revalidatePath('/approvals', 'page');
+      revalidatePath('/customers/[code]', 'page');
+      return { ok: true as const, widened: decided.applied?.widened ?? [] };
+    }
+
+    if (verdict === 'decline') {
+      // The customer reads this. "No" without a reason is how a request gets raised again
+      // next week, identically.
+      if (!comment) return { error: 'Say why — the customer sees this.' };
+      await declineContractRequest(reference, toActor(user), comment);
+      revalidatePath('/approvals', 'page');
+      return { ok: true as const };
+    }
+
+    return { error: 'Choose accept or decline.' };
+  } catch (cause) {
+    return { error: cause instanceof Error ? cause.message : 'Could not record that decision.' };
+  }
+}
+
+/* --------------------------------------------------------------- carriers */
+
+/**
+ * Save a carrier.
+ *
+ * A carrier is data now rather than a union in the code, so adding one is a row and not a
+ * release. What still needs an engine is only a tariff we cannot already read — which is
+ * what `rateStructure` records, and why it is a field rather than a guess.
+ */
+export async function saveCarrierRecord(
+  _previous: ActionResult | null,
+  form: FormData,
+): Promise<ActionResult> {
+  const user = await authorise('edit-draft');
+  const text = (key: string) => String(form.get(key) ?? '').trim();
+  const carrierId = text('carrierId').toLowerCase();
+  const name = text('name');
+
+  if (!carrierId || !name) return { error: 'A code and a name are both required.' };
+  if (!/^[a-z0-9-]+$/.test(carrierId)) {
+    return { error: 'A carrier code is lower-case letters, numbers and hyphens.' };
+  }
+
+  const multiplier = text('rateMultiplier');
+  const maxWeight = text('maxWeightKg');
+
+  try {
+    const { saveCarrier, findCarrier } = await import('../data/carriers');
+    const existing = await findCarrier(carrierId);
+
+    await saveCarrier(
+      {
+        carrierId,
+        name,
+        active: form.get('active') !== null,
+        rateStructure: (text('rateStructure') || 'zoneWeight') as never,
+        // Cards are attached by loading a rate card for the carrier, not typed in here.
+        cardKeys: existing?.cardKeys ?? [],
+        ...(text('contactEmail') ? { contactEmail: text('contactEmail') } : {}),
+        ...(text('contactPhone') ? { contactPhone: text('contactPhone') } : {}),
+        ...(text('cutoffTime') ? { cutoffTime: text('cutoffTime') } : {}),
+        ...(maxWeight ? { maxWeightKg: Number(maxWeight) } : {}),
+        dgCertified: form.get('dgCertified') !== null,
+        ...(text('trackingUrlTemplate') ? { trackingUrlTemplate: text('trackingUrlTemplate') } : {}),
+        ...(multiplier ? { rateMultiplier: Number(multiplier) } : {}),
+        ...(text('notes') ? { notes: text('notes') } : {}),
+      },
+      toActor(user),
+    );
+
+    revalidatePath('/carriers', 'page');
+    return { ok: true as const };
+  } catch (cause) {
+    return { error: cause instanceof Error ? cause.message : 'Could not save that carrier.' };
+  }
+}
+
+export async function toggleCarrier(carrierId: string, active: boolean) {
+  const user = await authorise('edit-draft');
+  const { setCarrierActive } = await import('../data/carriers');
+  await setCarrierActive(carrierId, active, toActor(user));
+  revalidatePath('/carriers', 'page');
+}
+
+/* --------------------------------------------------------------- services */
+
+/**
+ * Save a service.
+ *
+ * A service is a network plus a multiplier plus a promise about transit. Adding one is
+ * arithmetic on a tariff that already exists, which is why this is editable while the four
+ * networks underneath it are not.
+ */
+export async function saveServiceRecord(
+  _previous: ActionResult | null,
+  form: FormData,
+): Promise<ActionResult> {
+  const user = await authorise('edit-draft');
+  const text = (key: string) => String(form.get(key) ?? '').trim();
+  const key = text('key').toLowerCase();
+
+  if (!key || !text('name')) return { error: 'A key and a name are both required.' };
+  if (!/^[a-z0-9-]+$/.test(key)) {
+    return { error: 'A service key is lower-case letters, numbers and hyphens.' };
+  }
+
+  const transit = text('transitAdjustmentDays');
+  const gstRate = text('gstRate');
+
+  try {
+    const { saveService } = await import('../data/services');
+    await saveService(
+      {
+        key,
+        name: text('name'),
+        mode: (text('mode') || 'surface') as never,
+        active: form.get('active') !== null,
+        multiplier: Number(text('multiplier') || '1'),
+        ...(transit ? { transitAdjustmentDays: Number(transit) } : {}),
+        ...(text('sacCode') ? { sacCode: text('sacCode') } : {}),
+        ...(gstRate ? { gstRate: Number(gstRate) } : {}),
+        ...(text('description') ? { description: text('description') } : {}),
+      },
+      toActor(user),
+    );
+
+    revalidatePath('/services', 'page');
+    return { ok: true as const };
+  } catch (cause) {
+    return { error: cause instanceof Error ? cause.message : 'Could not save that service.' };
+  }
+}
+
+export async function removeService(key: string) {
+  const user = await authorise('edit-draft');
+  const { deleteService } = await import('../data/services');
+  await deleteService(key, toActor(user));
+  revalidatePath('/services', 'page');
+}
+
+/* ------------------------------------------------------------- collections */
+
+/**
+ * Record money arriving.
+ *
+ * Typed by our staff, because nothing tells us. The core's only payment path is a demo
+ * button — Razorpay is an enum value there with nothing behind it — so a real bank
+ * transfer reaches this system when somebody enters it.
+ *
+ * Recorded as a draft, allocated oldest-first if asked, and changeable until it is posted.
+ */
+export async function recordReceiptAction(
+  _previous: ActionResult | null,
+  form: FormData,
+): Promise<ActionResult> {
+  const user = await authorise('record-money');
+  const text = (key: string) => String(form.get(key) ?? '').trim();
+  const customerCode = text('customerCode');
+  const amount = Number(text('amount'));
+
+  if (!customerCode) return { error: 'Which customer sent it?' };
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { error: 'An amount is required, and it has to be more than nothing.' };
+  }
+
+  try {
+    const { recordReceipt } = await import('../data/collections');
+    const { findCustomer } = await import('../data/customers');
+    const { DEFAULT_COMMERCIAL_TERMS } = await import('../domain/customers');
+
+    const customer = await findCustomer(customerCode);
+    if (!customer) return { error: `No customer ${customerCode}.` };
+    const terms = customer.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+
+    const received = text('receivedAt');
+    await recordReceipt({
+      customerCode: customer.code,
+      amountPaise: Math.round(amount * 100),
+      receivedAt: received ? new Date(received) : new Date(),
+      ...(text('instrument') ? { instrument: text('instrument') } : {}),
+      ...(text('note') ? { note: text('note') } : {}),
+      autoAllocate: form.get('autoAllocate') !== null,
+      paymentTermsDays: terms.paymentTermsDays,
+      actor: toActor(user),
+    });
+
+    revalidatePath('/collections', 'page');
+    return { ok: true as const };
+  } catch (cause) {
+    return { error: cause instanceof Error ? cause.message : 'Could not record that receipt.' };
+  }
+}
+
+/** Post a draft receipt: its allocation becomes payments against the invoices. */
+export async function postReceipt(reference: string, customerCode: string) {
+  const user = await authorise('record-money');
+  const { finaliseReceipt } = await import('../data/collections');
+  const { findCustomer } = await import('../data/customers');
+  const { DEFAULT_COMMERCIAL_TERMS } = await import('../domain/customers');
+
+  const customer = await findCustomer(customerCode);
+  const terms = customer?.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+  await finaliseReceipt(reference, terms.paymentTermsDays, toActor(user));
+  revalidatePath('/collections', 'page');
+}
+
+/* -------------------------------------------------------- billing periods */
+
+/**
+ * Reopen a billed period, with a reason.
+ *
+ * The reason is required and is the point: a period that drifted back to open because a
+ * late shipment arrived would defeat what freezing is for. Somebody decides, and says why,
+ * and that sentence is what is read when the restatement is questioned later.
+ */
+export async function reopenPeriodAction(
+  _previous: ActionResult | null,
+  form: FormData,
+): Promise<ActionResult> {
+  const user = await authorise('record-money');
+  const customerCode = String(form.get('customerCode') ?? '').trim();
+  const from = String(form.get('from') ?? '').trim();
+  const reason = String(form.get('reason') ?? '').trim();
+
+  if (!reason) return { error: 'Say why this period is being reopened.' };
+
+  try {
+    const { reopenPeriod } = await import('../data/billing-periods');
+    await reopenPeriod(customerCode, new Date(from), reason, toActor(user));
+    revalidatePath('/periods', 'page');
+    return { ok: true as const };
+  } catch (cause) {
+    return { error: cause instanceof Error ? cause.message : 'Could not reopen that period.' };
+  }
+}
+
+/** Close a reopened period, recording what the correction did to the total. */
+export async function relockPeriodAction(
+  _previous: ActionResult | null,
+  form: FormData,
+): Promise<ActionResult> {
+  const user = await authorise('record-money');
+  const customerCode = String(form.get('customerCode') ?? '').trim();
+  const from = String(form.get('from') ?? '').trim();
+  const corrected = Number(String(form.get('asCorrected') ?? '').trim());
+
+  if (!Number.isFinite(corrected) || corrected < 0) {
+    return { error: 'What does the period total now? That is the figure being compared.' };
+  }
+
+  try {
+    const { relockPeriod } = await import('../data/billing-periods');
+    await relockPeriod(customerCode, new Date(from), Math.round(corrected * 100), toActor(user));
+    revalidatePath('/periods', 'page');
+    return { ok: true as const };
+  } catch (cause) {
+    return { error: cause instanceof Error ? cause.message : 'Could not close that period.' };
+  }
 }

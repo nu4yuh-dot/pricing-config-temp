@@ -27,11 +27,18 @@ export default async function CustomersPage() {
   return (
     <div className="page">
       <div className="page-inner">
-        <h2>Contract customers</h2>
+        <h2>Customer master</h2>
         <p className="lede">
+          Every customer we price for, and the record of who they are: company details, GST
+          registrations, plants, contacts and their contract. This is the master — approved changes
+          here are sent to the SameX core, which is where a customer&rsquo;s enterprise portal
+          sign-in and their shipments live.
+        </p>
+        <p className="lede" style={{ marginTop: -6 }}>
           A contract is the base rate card plus only the cells that were negotiated. A customer who
           agreed four lanes stores four values, not a copy of the card — so they keep tracking base
-          changes everywhere else automatically.
+          changes everywhere else automatically. A customer with no contract is priced at base
+          rates, which is a normal state, not an unfinished one.
         </p>
 
         <div className="stats">

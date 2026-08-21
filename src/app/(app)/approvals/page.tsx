@@ -7,6 +7,12 @@ import {
   bookingExceptionHistory,
   listCustomers,
 } from '../../../data/customers';
+import { pendingProfileChanges } from '../../../data/customer-profile-changes';
+import { pendingContractRequests } from '../../../data/contract-requests';
+import ContractRequestRow from '../../../components/console/ContractRequestRow';
+import { pushBacklog } from '../../../data/core-push';
+import { coreIsConfigured } from '../../../core/client';
+import ProfileChangeRow from '../../../components/console/ProfileChangeRow';
 import { currentUser } from '../../../auth/session';
 import { can } from '../../../auth/roles';
 
@@ -15,8 +21,10 @@ const when = (date?: Date) =>
 
 export default async function ApprovalsPage() {
   const user = await currentUser();
-  const [queue, history, cards, contracts, contractsDone, exceptions, exceptionsDone, customers] =
-    await Promise.all([
+  const [
+    queue, history, cards, contracts, contractsDone, exceptions, exceptionsDone, customers,
+    profileChanges, backlog, customerRequests,
+  ] = await Promise.all([
       pendingRequests(),
       requestHistory(30),
       listCards(),
@@ -25,6 +33,9 @@ export default async function ApprovalsPage() {
       pendingBookingExceptions(),
       bookingExceptionHistory(20),
       listCustomers(),
+      pendingProfileChanges(),
+      pushBacklog(),
+      pendingContractRequests(),
     ]);
   const cardName = (id: string) =>
     cards.find((card) => card._id.toHexString() === id)?.name ?? 'Unknown card';
@@ -32,7 +43,9 @@ export default async function ApprovalsPage() {
     customers.find((customer) => customer.code === code)?.name ?? code;
 
   const reviewer = user ? can(user.role, 'review-change-request') : false;
-  const total = queue.length + contracts.length + exceptions.length;
+  const total =
+    queue.length + contracts.length + exceptions.length + profileChanges.length +
+    customerRequests.length;
 
   return (
     <div className="page">
@@ -62,7 +75,117 @@ export default async function ApprovalsPage() {
             <div className={exceptions.length ? 'v' : 'v muted'}>{exceptions.length}</div>
             <div className="sub">Blocking a booking right now</div>
           </div>
+          <div className="stat">
+            <div className="k">Customer requests</div>
+            <div className={customerRequests.length ? 'v' : 'v muted'}>{customerRequests.length}</div>
+            <div className="sub">Raised from the enterprise portal</div>
+          </div>
+          <div className="stat">
+            <div className="k">Customer details</div>
+            <div className={profileChanges.length ? 'v' : 'v muted'}>{profileChanges.length}</div>
+            <div className="sub">Approving also sends them to the core</div>
+          </div>
         </div>
+
+        {backlog.queued > 0 && (
+          <div className="callout warn">
+            <strong>
+              {backlog.queued} customer {backlog.queued === 1 ? 'change is' : 'changes are'} waiting
+              to reach the SameX core.
+            </strong>{' '}
+            {coreIsConfigured()
+              ? 'They will send on the next attempt. Nothing is lost while they wait.'
+              : 'The core connection is not configured yet, so they are being held. Nothing is lost — they will send once it is.'}
+          </div>
+        )}
+
+        {customerRequests.length > 0 && (
+          <>
+            <h3>Customer requests ({customerRequests.length})</h3>
+            <p className="lede" style={{ marginTop: 0 }}>
+              What customers have asked for from the enterprise portal. Accepting one puts the ask
+              into their <strong>draft</strong> contract for someone to rate — it does not agree a
+              price and nothing reaches a quote until that contract is approved in the ordinary way.
+            </p>
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Customer</th>
+                  <th>Asked for</th>
+                  <th>Raised</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {customerRequests.map((request) => {
+                  const parts: string[] = [];
+                  if (request.ask.modes?.length) parts.push(request.ask.modes.join(', '));
+                  if (request.ask.lanes?.length)
+                    parts.push(
+                      `${request.ask.lanes.length} lane${request.ask.lanes.length === 1 ? '' : 's'}`,
+                    );
+                  if (request.ask.weightBands?.length)
+                    parts.push(
+                      request.ask.weightBands
+                        .map((band) => `${band.from}–${band.to ?? 'no limit'} kg`)
+                        .join(', '),
+                    );
+                  return (
+                    <ContractRequestRow
+                      key={request.reference}
+                      reference={request.reference}
+                      customer={customerName(request.customerCode)}
+                      code={request.customerCode}
+                      asked={parts.join(' · ')}
+                      {...(request.note ? { note: request.note } : {})}
+                      raisedBy={request.raisedBy}
+                      raisedAt={when(request.raisedAt)}
+                      proposedCells={request.proposedRates?.length ?? 0}
+                      canReview={reviewer}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {profileChanges.length > 0 && (
+          <>
+            <h3>Customer details ({profileChanges.length})</h3>
+            <p className="lede" style={{ marginTop: 0 }}>
+              Company master data. Approving one changes what prints on that customer&rsquo;s tax
+              invoices, and sends it to the core, where it decides who can sign in to the
+              enterprise portal.
+            </p>
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>What changed</th>
+                  <th>Submitted by</th>
+                  <th>Asked</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {profileChanges.map((change) => (
+                  <ProfileChangeRow
+                    key={change._id.toHexString()}
+                    id={change._id.toHexString()}
+                    customer={customerName(change.customerCode)}
+                    code={change.customerCode}
+                    changed={change.changed}
+                    submittedBy={change.submittedBy.name}
+                    submittedAt={when(change.submittedAt)}
+                    canReview={reviewer}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
 
         {exceptions.length > 0 && (
           <>
@@ -89,8 +212,29 @@ export default async function ApprovalsPage() {
                       {request.mode} · {request.fromPincode} → {request.toPincode} ·{' '}
                       {request.weight} kg
                     </td>
-                    <td className="num">₹{request.quotedTotal.toLocaleString('en-IN')}</td>
-                    <td>{when(request.requestedAt)}</td>
+                    <td className="num">
+                      ₹{request.quotedTotal.toLocaleString('en-IN')}
+                      {request.customerAccepted && (
+                        <div className="sub">
+                          {request.customerAccepted.total === request.quotedTotal ? (
+                            <>customer accepted</>
+                          ) : (
+                            // Worth seeing: they agreed to a different number from the one
+                            // this would bill at, and somebody has to decide which stands.
+                            <>
+                              accepted ₹
+                              {request.customerAccepted.total.toLocaleString('en-IN')} — differs
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      {when(request.requestedAt)}
+                      {request.customerAccepted && (
+                        <div className="sub">by {request.customerAccepted.by}</div>
+                      )}
+                    </td>
                     <td>
                       <Link className="btn" href={`/approvals/exception/${request.reference}`}>
                         {reviewer ? 'Decide' : 'View'}

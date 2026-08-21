@@ -36,6 +36,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link href="/templates">Rate templates</Link>
             <Link href="/offers">Offers</Link>
             <Link href="/charges">Charge library</Link>
+            <span className="menu-group">The network</span>
+            <Link href="/carriers">Carriers</Link>
+            <Link href="/services">Services</Link>
+            <span className="menu-group">Records</span>
+            <Link href="/audit">Rate audit</Link>
+            <Link href="/fuel">Fuel index</Link>
+            <span className="menu-group">Review</span>
             <Link href="/approvals">
               Approvals
               {waiting > 0 && (
@@ -48,14 +55,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </NavMenu>
 
           <NavMenu label="Customers">
-            <Link href="/customers">Contract customers</Link>
+            {/* The master comes first: it is now the source of truth for who a customer is,
+                not only for what they pay. The core's own customer pages are being retired
+                in favour of it. */}
+            <Link href="/customers">Customer master</Link>
             <Link href="/customers/new">Add a customer</Link>
+            <span className="menu-group">Reference</span>
             <Link href="/products">Products</Link>
             <Link href="/coloaders">Co-loaders</Link>
           </NavMenu>
 
           {can(user.role, 'record-money') && (
             <NavMenu label="Billing">
+              {/* Ordered as the month runs: what a period covered, what was invoiced for
+                  it, what came back. */}
+              <Link href="/periods">Billing periods</Link>
+              <Link href="/invoices">Invoices</Link>
+              <Link href="/collections">Collections</Link>
+              <span className="menu-group">Account</span>
               <Link href="/money">Wallets &amp; credit</Link>
               <Link href="/settlement">Payment terms</Link>
             </NavMenu>

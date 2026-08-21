@@ -45,6 +45,28 @@ export interface ShipmentDoc {
   };
   /** `billed` once an invoice carries it, so the same AWB cannot reach two invoices. */
   status: 'received' | 'billed' | 'cancelled';
+  /**
+   * Proof of delivery, as the core records it.
+   *
+   * Held because a billing basis of "POD Verified" means an invoice line waits until
+   * delivery is proven — so whether a shipment is billable this period is a question only
+   * this field answers.
+   *
+   * Received rather than fetched. The core's POD endpoints are list-scoped to a customer
+   * or an admin; there is no lookup by AWB we could call for one shipment. So it arrives
+   * on the push that already exists, and changes arrive as an update to that shipment.
+   */
+  pod?: {
+    status: 'clear' | 'unclear' | 'pending' | 'disputed';
+    verifiedAt?: Date;
+    verifiedBy?: string;
+    method?: 'signature' | 'otp' | 'digital' | 'photo';
+    receiverName?: string;
+    deliveredAt?: Date;
+    boxCount?: number;
+    disputeStatus?: 'open' | 'investigating' | 'resolved' | 'rejected';
+    disputeAmount?: number;
+  };
   invoiceNumber?: string;
   receivedAt: Date;
 }
@@ -122,4 +144,43 @@ export async function billableFor(
 
 export async function findShipment(awb: string): Promise<ShipmentDoc | null> {
   return (await shipments()).findOne({ awb });
+}
+
+/**
+ * Records a change to a shipment we already hold — in practice, proof of delivery.
+ *
+ * Only ever adds to what is known. A shipment already billed keeps its POD updated,
+ * because a dispute raised after invoicing is exactly when the field is looked at, and
+ * refusing the update would leave the record saying delivery was never proven.
+ */
+export async function updateShipment(
+  awb: string,
+  change: { pod?: ShipmentDoc['pod']; deliveredAt?: Date },
+): Promise<ShipmentDoc | null> {
+  const collection = await shipments();
+  const result = await collection.findOneAndUpdate(
+    { awb },
+    {
+      $set: {
+        ...(change.pod === undefined ? {} : { pod: change.pod }),
+        ...(change.deliveredAt === undefined ? {} : { deliveredAt: change.deliveredAt }),
+      },
+    },
+    { returnDocument: 'after' },
+  );
+  return result ?? null;
+}
+
+/**
+ * Whether this shipment may be billed under the given basis.
+ *
+ * The reason "POD Verified" needs its own answer: under every other basis a shipment is
+ * billable as soon as it exists, and under this one it waits for a signature. Billing a
+ * consignment the customer has not acknowledged is how a bill run turns into a dispute.
+ */
+export function billableUnder(shipment: ShipmentDoc, basis: string | undefined): boolean {
+  if (shipment.status === 'cancelled') return false;
+  if (basis !== 'POD Verified') return true;
+  // A dispute is not a refusal to bill for ever, but it is a refusal to bill now.
+  return shipment.pod?.status === 'clear';
 }

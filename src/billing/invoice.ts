@@ -44,7 +44,13 @@ export interface InvoiceLine {
 }
 
 export interface Invoice {
+  /** From the series, e.g. `DNS/2026-27/000042`. Empty until the document is written. */
   number: string;
+  /**
+   * One customer, one mode, one period. The uniqueness check — a rerun finds this and
+   * stops before touching the series.
+   */
+  naturalKey: string;
   customerCode: string;
   mode: string;
   periodFrom: Date;
@@ -69,10 +75,27 @@ export interface Period {
 }
 
 /**
- * A stable, readable invoice number.
+ * What makes two invoices the same invoice.
  *
- * Deterministic on purpose: raising the same customer, mode and period twice produces the
- * same number, so a duplicate run is detectable instead of quietly billing twice.
+ * One customer, one mode, one period — bill that twice and you have billed twice. This
+ * used to be the invoice *number*, which made duplicates impossible by construction but
+ * meant the number was a description rather than a position in a series.
+ *
+ * Now the number comes from the series and this stays behind as the uniqueness check. A
+ * rerun of a bill finds the existing invoice by this key and stops, without ever reaching
+ * the series — which is what keeps the series gapless through a retry.
+ */
+export function naturalKey(customerCode: string, mode: string, periodStart: Date): string {
+  const year = periodStart.getUTCFullYear();
+  const month = String(periodStart.getUTCMonth() + 1).padStart(2, '0');
+  return `${customerCode.toUpperCase()}:${mode.toUpperCase()}:${year}${month}`;
+}
+
+/**
+ * The old descriptive number.
+ *
+ * @deprecated Kept because invoices already raised carry it and are looked up by it.
+ * New invoices take a series number; see `data/invoice-series.ts`.
  */
 export function invoiceNumber(customerCode: string, mode: string, periodStart: Date): string {
   const year = periodStart.getUTCFullYear();
@@ -127,7 +150,11 @@ export function buildInvoices(
     const rcm = first.rcm;
 
     invoices.push({
-      number: invoiceNumber(customerCode, mode, period.from),
+      // Filled in by the caller from the series, immediately before the document is
+      // written. Left empty here so a built-but-unsaved invoice cannot hold a number that
+      // was spent on nothing.
+      number: '',
+      naturalKey: naturalKey(customerCode, mode, period.from),
       customerCode,
       mode,
       periodFrom: period.from,

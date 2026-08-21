@@ -31,6 +31,18 @@ export interface Contact {
   role: string;
   email?: string;
   phone?: string;
+  /**
+   * Whether this person may sign in to the enterprise customer portal.
+   *
+   * Explicit opt-in rather than "anyone with an email address". Contacts include accounts
+   * payable clerks and site managers who are listed so somebody knows who to ring, and
+   * granting portal access to everyone whose email happens to be recorded would hand out
+   * a customer's rates and invoices by accident.
+   *
+   * The core issues the actual credential — we never hold a portal password. This only
+   * says who should have one.
+   */
+  portalAccess?: boolean;
 }
 
 /**
