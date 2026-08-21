@@ -22,7 +22,7 @@ import {
   type ContractProposal,
   type ProposalDecisions,
 } from '../customers/proposal';
-import { effectiveCard, pruneOverrides } from '../customers/contract';
+import { effectiveCard, pruneOverrides, malformedOverrides } from '../customers/contract';
 import type { RateCard } from '../domain/types';
 import type { BindPath } from '../sheets/types';
 
@@ -417,6 +417,21 @@ export async function editDraftContract(
   const base = await baseCardFor(customer);
   const overrides: Overrides = { ...customer.draftTerms.overrides };
   for (const edit of edits) overrides[edit.bind] = edit.value;
+
+  /**
+   * Refused at the door, not discovered at quote time.
+   *
+   * An override holding an object replaces a whole block of the card when applied, and the
+   * customer then prices to NaN — reported as a weight error, a long way from the write that
+   * caused it. Cheaper to refuse the write.
+   */
+  const malformed = malformedOverrides(overrides);
+  if (malformed.length > 0) {
+    throw new Error(
+      `An override has to be one value at one path — ${malformed.join(', ')} names a group. ` +
+        `Use a dotted path such as charges.docket.`,
+    );
+  }
 
   // Anything that now matches the base is not a negotiated term.
   const { overrides: pruned } = pruneOverrides(base.data, overrides);

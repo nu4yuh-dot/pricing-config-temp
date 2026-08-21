@@ -26,11 +26,47 @@ import type { BindPath } from '../sheets/types';
  * negotiated. A lock never outranks an agreement — it is a promise that *unnegotiated*
  * prices will not drift, so a cell somebody actually bargained for goes on top of it.
  */
+/**
+ * Whether an override entry can be applied without destroying the card.
+ *
+ * An override is a **leaf** — one negotiated number or string at one path. It is stored as a
+ * flat map of dotted paths precisely so that `charges.docket` means the docket and nothing
+ * else.
+ *
+ * A value that is itself an object is not that. Applied, `setByPath` puts the object *at*
+ * the path, so an entry keyed `charges` holding `{docket: 777}` replaces the whole charges
+ * block — taking `minWeightSurface`, `fuelSurface` and `gstSurface` with it. The card then
+ * prices to NaN, which surfaces as a weight error a long way from the cause. That happened,
+ * from a single write that used a nested key where a dotted one was meant.
+ *
+ * Refused rather than repaired: this cannot tell which leaf was intended, and guessing one
+ * would silently negotiate a rate nobody agreed.
+ */
+export function malformedOverrides(overrides: Overrides): string[] {
+  return Object.entries(overrides)
+    .filter(([, value]) => value !== null && typeof value === 'object')
+    .map(([path]) => path);
+}
+
 export function effectiveCard(base: RateCard, terms: ContractTerms): RateCard {
   const locked = Object.entries(terms.priceLock?.rates ?? {}).reduce<RateCardData>(
     (acc, [path, value]) => setByPath(acc, path, value),
     base.data,
   );
+  /**
+   * Fail closed. A malformed override would replace a whole block of the card and price the
+   * customer at NaN — a wrong number that reaches an invoice is worse than a refusal that
+   * reaches somebody who can fix it, and this service fails closed everywhere else too.
+   */
+  const malformed = malformedOverrides(terms.overrides);
+  if (malformed.length > 0) {
+    throw new Error(
+      `This contract has ${malformed.length} override(s) that name a group rather than a ` +
+        `single rate: ${malformed.join(', ')}. Each override must be one value at one path, ` +
+        `such as charges.docket. Nothing can be priced until they are corrected.`,
+    );
+  }
+
   const data = Object.entries(terms.overrides).reduce<RateCardData>(
     (acc, [path, value]) => setByPath(acc, path, value),
     locked,

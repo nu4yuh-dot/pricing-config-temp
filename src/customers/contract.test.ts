@@ -1,13 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  effectiveCard,
-  overridesFrom,
-  pruneOverrides,
-  checkContract,
-  overrideCount,
-} from './contract';
+import { checkContract, effectiveCard, malformedOverrides, overrideCount, overridesFrom, pruneOverrides } from './contract';
 import { laneKey, UNRESTRICTED_SCOPE, type ContractTerms } from '../domain/customers';
 import { setByPath, getByPath } from '../sheets/resolve';
 import type { RateCard, RateCardData } from '../domain/types';
@@ -307,5 +301,48 @@ describe('normaliseCustomerCode', () => {
   test('survives a malformed escape rather than throwing', () => {
     expect(() => normaliseCustomerCode('100%')).not.toThrow();
     expect(normaliseCustomerCode('100%')).toBe('100%');
+  });
+});
+
+describe('an override that would destroy the card', () => {
+  const base = { key: 'model-1', name: 'M1', freightMethod: 'CUMULATIVE_SLABS', source: 'dns',
+    version: 1, data: { charges: { docket: 100, fuelSurface: 0.25, minWeightSurface: 50 } } } as never as RateCard;
+
+  test('a leaf override is fine, and is what an override is', () => {
+    expect(malformedOverrides({ 'charges.docket': 777 } as never)).toEqual([]);
+    expect(malformedOverrides({ 'grids.surface.tier1.NCR.BOM': 12 } as never)).toEqual([]);
+  });
+
+  test('null is fine — it is how a cleared cell is stored', () => {
+    expect(malformedOverrides({ 'charges.docket': null } as never)).toEqual([]);
+  });
+
+  test('an override holding an object is refused, because applying it replaces a whole block', () => {
+    // This is not hypothetical. One write using a nested key instead of a dotted path put
+    // {docket: 777} at `charges`, which took minWeightSurface and fuelSurface with it and
+    // priced the customer at NaN — reported as a weight error, far from the cause.
+    expect(malformedOverrides({ charges: { docket: 777 } } as never)).toEqual(['charges']);
+  });
+
+  test('the card refuses to price rather than pricing wrongly', () => {
+    // Fails closed: a wrong number that reaches an invoice is worse than a refusal that
+    // reaches somebody who can fix it.
+    expect(() =>
+      effectiveCard(base, { overrides: { charges: { docket: 777 } }, scope: { modes: null, lanes: null } } as never),
+    ).toThrow(/name a group rather than a single rate/i);
+  });
+
+  test('the message names every offending path, so all of them can be fixed at once', () => {
+    const problems = malformedOverrides({
+      charges: { docket: 1 }, grids: { surface: {} }, 'charges.docket': 100,
+    } as never);
+    expect(problems).toEqual(['charges', 'grids']);
+  });
+
+  test('a clean contract still prices exactly as before', () => {
+    const card = effectiveCard(base, { overrides: { 'charges.docket': 777 }, scope: { modes: null, lanes: null } } as never);
+    expect((card.data as never as { charges: { docket: number } }).charges.docket).toBe(777);
+    // and the rest of the block survives, which is the whole point
+    expect((card.data as never as { charges: { minWeightSurface: number } }).charges.minWeightSurface).toBe(50);
   });
 });
