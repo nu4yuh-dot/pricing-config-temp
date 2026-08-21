@@ -6,6 +6,8 @@ import { summariseTemplate } from '../../../domain/templates';
 import { currentUser } from '../../../auth/session';
 import { can } from '../../../auth/roles';
 import NewTemplateForm from '../../../components/console/NewTemplateForm';
+import RowAction from '../../../components/console/RowAction';
+import { removeTemplate } from '../../console-actions';
 
 /**
  * Rate templates — a saved configuration you assign instead of rebuilding.
@@ -22,6 +24,9 @@ export default async function TemplatesPage() {
     currentUser(),
   ]);
   const editable = user ? can(user.role, 'edit-draft') : false;
+  // Deleting demands `manage-users`, not `edit-draft`. Gated on the same capability the
+  // action checks — a button that is always refused is worse than no button.
+  const canDelete = user ? can(user.role, 'manage-users') : false;
 
   // What a template is worth: how many contracts were actually built from it.
   const assignedCount = (key: string) =>
@@ -73,6 +78,7 @@ export default async function TemplatesPage() {
                   <th>Covers</th>
                   <th>From</th>
                   <th>Created</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -125,6 +131,28 @@ export default async function TemplatesPage() {
                       <td style={{ color: 'var(--ink-faint)', fontSize: 11.5 }}>
                         {template.createdBy} ·{' '}
                         {new Date(template.createdAt).toLocaleDateString('en-IN')}
+                      </td>
+                      <td>
+                        {canDelete && (
+                          <RowAction
+                            label="Delete"
+                            danger
+                            /**
+                             * The confirm names what is lost. Contracts built from a template
+                             * keep their rates — the terms were copied, not referenced — but
+                             * they cite it as where they came from, and that citation stops
+                             * resolving.
+                             */
+                            confirmLabel={
+                              assignedCount(template.key) === 0
+                                ? `Delete ${template.name}`
+                                : `Delete anyway — ${assignedCount(template.key)} contract${
+                                    assignedCount(template.key) === 1 ? '' : 's'
+                                  } cite${assignedCount(template.key) === 1 ? 's' : ''} it`
+                            }
+                            run={() => removeTemplate(template.key)}
+                          />
+                        )}
                       </td>
                     </tr>
                   );

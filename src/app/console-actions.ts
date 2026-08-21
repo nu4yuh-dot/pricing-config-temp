@@ -501,11 +501,25 @@ export async function markTemplateParameters(key: string, parameters: string[]) 
   revalidatePath('/customers/[code]', 'page');
 }
 
-export async function removeTemplate(key: string) {
+/**
+ * Withdraw a template.
+ *
+ * Admin-only, on the existing `manage-users` capability rather than `edit-draft`. That is
+ * the authorisation this already carried and it is not widened here: a configurator may
+ * write templates and assign them, and removing one that fifty contracts cite as their
+ * provenance is a different kind of act.
+ *
+ * Returns how many contracts were built from it, so the screen can report what the deletion
+ * actually cost. The number is in the audit entry too, because after this call nothing else
+ * knows it.
+ */
+export async function removeTemplate(key: string): Promise<{ builtFrom: number }> {
   const user = await authorise('manage-users');
   const { deleteTemplate } = await import('../data/templates');
-  await deleteTemplate(key, toActor(user));
+  const result = await deleteTemplate(key, toActor(user));
   revalidatePath('/templates');
+  revalidatePath('/customers/[code]', 'page');
+  return result;
 }
 
 /* ---------------------------------------------------------------- csv import */

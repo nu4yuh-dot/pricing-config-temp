@@ -169,10 +169,42 @@ export async function updateTemplateParameters(input: {
   });
 }
 
-export async function deleteTemplate(key: string, actor: Actor): Promise<void> {
+/**
+ * Delete a template.
+ *
+ * Safe for pricing, and worth saying why: applying a template **copies** its terms into a
+ * customer's draft contract rather than pointing at it, and the template's name is
+ * denormalised onto `appliedTemplate` alongside the key. So no rate moves when a template
+ * goes, and no screen loses a label.
+ *
+ * What does go is the ability to answer "what does that standard offer say?" for contracts
+ * claiming it as provenance. Their `appliedTemplate.key` will name a template that no
+ * longer exists. That is a reasonable trade — a withdrawn offer should stop being
+ * assignable — but it should not happen unremarked, so the count of contracts built from it
+ * is recorded in the audit entry. Afterwards that number is unrecoverable: nothing else
+ * stores it, and the customers keep their rates whether or not anybody remembers where they
+ * came from.
+ */
+export async function deleteTemplate(
+  key: string,
+  actor: Actor,
+): Promise<{ builtFrom: number }> {
+  // Counted before the delete: afterwards the template is gone and the question cannot be
+  // asked again.
+  const builtFrom = await (await db())
+    .collection(COLLECTIONS.customers)
+    .countDocuments({ 'appliedTemplate.key': key });
+
   const result = await (await templates()).deleteOne({ key });
   if (result.deletedCount === 0) throw new Error(`template ${key} not found`);
-  await recordAudit({ action: 'template-deleted', actor, at: new Date(), detail: { template: key } });
+
+  await recordAudit({
+    action: 'template-deleted',
+    actor,
+    at: new Date(),
+    detail: { template: key, contractsBuiltFrom: builtFrom },
+  });
+  return { builtFrom };
 }
 
 /**
@@ -217,9 +249,30 @@ export async function applyTemplateToCustomer(input: {
       ? Object.keys(customer.draftTerms.overrides).filter((path) => !(path in result.overrides))
       : [];
 
-  // Provenance: which standard offer this contract was built from. Recorded before the
-  // overrides are written so a failure part-way cannot leave a customer claiming a
-  // template whose rates never landed.
+  if (input.mode === 'replace') {
+    // Wholesale, so overrides the template does not mention are truly removed. A
+    // list of edits could not express that: null would mark those lanes not carried.
+    await setDraftOverrides(input.customerCode, result.overrides, input.actor);
+  } else {
+    await editDraftContract(
+      input.customerCode,
+      Object.entries(result.overrides).map(([bind, value]) => ({ bind, value })),
+      input.actor,
+    );
+  }
+  await editDraftScope(input.customerCode, result.scope, input.actor);
+
+  /**
+   * Provenance: which standard offer this contract was built from.
+   *
+   * Recorded **after** the overrides, so a failure part-way cannot leave a customer
+   * claiming a template whose rates never landed. This used to be written first, with a
+   * comment claiming that ordering achieved exactly what it prevented — and it did happen:
+   * applying a template to a contract frozen for approval is refused after the claim is
+   * already stored, leaving a customer citing an offer they never received. If the write
+   * below fails, the rates are in the draft and unattributed, which a reviewer can see and
+   * a diff still shows.
+   */
   await (await db()).collection(COLLECTIONS.customers).updateOne(
     { code: customer.code },
     {
@@ -234,19 +287,6 @@ export async function applyTemplateToCustomer(input: {
       },
     },
   );
-
-  if (input.mode === 'replace') {
-    // Wholesale, so overrides the template does not mention are truly removed. A
-    // list of edits could not express that: null would mark those lanes not carried.
-    await setDraftOverrides(input.customerCode, result.overrides, input.actor);
-  } else {
-    await editDraftContract(
-      input.customerCode,
-      Object.entries(result.overrides).map(([bind, value]) => ({ bind, value })),
-      input.actor,
-    );
-  }
-  await editDraftScope(input.customerCode, result.scope, input.actor);
 
   await recordAudit({
     action: 'template-applied',
