@@ -338,6 +338,16 @@ export const DepartmentUpsert = z.object({
   name: z.string().trim().min(1).max(200),
   /** The plant this belongs to. A department cannot exist without one. */
   plantCode: z.string().trim().min(1).max(40),
+  /**
+   * Whether it is in use. Omitted means active — which is what a caller that predates this
+   * field sends, and a department it created should not arrive withdrawn.
+   *
+   * `active` is also how a withdrawn department is brought back: `DELETE` deactivates rather
+   * than destroying, so the row is still here to reactivate.
+   */
+  isActive: z.boolean().optional(),
+  /** @deprecated Use `isActive`. Accepted permanently. */
+  active: z.boolean().optional(),
 });
 
 export const TeamMemberUpsert = z.object({

@@ -180,6 +180,14 @@ export interface Department {
   name: string;
   /** The `code` of a plant on this customer. */
   plantCode: string;
+  /**
+   * Whether this department is in use.
+   *
+   * Optional so records written before this field existed read as active — absent means
+   * active, and treating an old department as withdrawn would hide shipments' cost centres
+   * from whoever is reconciling them.
+   */
+  active?: boolean;
 }
 
 /* ------------------------------------------------------------------ billing */

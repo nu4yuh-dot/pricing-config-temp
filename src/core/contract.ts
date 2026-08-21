@@ -97,7 +97,14 @@ export interface CoreCustomerPayload {
    */
   addresses: CoreAddress2[];
   /** Departments within plants, for cost attribution on a booking. */
-  departments: { id: string; name: string; plantCode: string }[];
+  /**
+   * Cost centres, each belonging to a plant.
+   *
+   * `active` travels with them because withdrawing a department here deactivates it rather
+   * than deleting it — matching how the core withdraws one — and a payload that omitted the
+   * flag would leave the core showing a department this side has retired.
+   */
+  departments: { id: string; name: string; plantCode: string; active: boolean }[];
   /**
    * Whether SameX staff may find this account when booking on the customer's behalf.
    *

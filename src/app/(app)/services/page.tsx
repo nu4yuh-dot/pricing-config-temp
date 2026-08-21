@@ -107,7 +107,10 @@ export default async function ServicesPage() {
                         label="Delete"
                         confirmLabel={`Delete ${service.name}`}
                         danger
-                        run={() => removeService(service.key)}
+                        run={async () => {
+                          'use server';
+                          await removeService(service.key);
+                        }}
                       />
                     )}
                   </td>

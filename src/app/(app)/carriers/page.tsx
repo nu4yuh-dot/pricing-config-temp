@@ -112,7 +112,10 @@ export default async function CarriersPage() {
                         <RowAction
                           label={carrier.active ? 'Deactivate' : 'Reactivate'}
                           confirmLabel={`${carrier.active ? 'Deactivate' : 'Reactivate'} ${carrier.name}`}
-                          run={() => toggleCarrier(carrier.carrierId, !carrier.active)}
+                          run={async () => {
+                            'use server';
+                            await toggleCarrier(carrier.carrierId, !carrier.active);
+                          }}
                         />
                       )}
                     </td>

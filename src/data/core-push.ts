@@ -96,10 +96,68 @@ export async function markSent(id: ObjectId, coreCustomerId?: string): Promise<v
  * retried would turn a five-minute outage into a customer permanently missing from the
  * core. `failed` is reserved for a change that has been superseded and should not be sent.
  */
+/**
+ * How many times a push is retried before it is parked.
+ *
+ * The queue is drained oldest-first and stops at the first failure, which is right while the
+ * core is merely down — the rest would fail identically and hammering a recovering service
+ * is both rude and slower. It is wrong for a push that can *never* succeed: that one sits at
+ * the head of the queue and blocks every change behind it, for as long as nobody looks.
+ *
+ * Five, then parked. Enough to ride out a restart or a deploy; not so many that a genuinely
+ * undeliverable change holds up a day's work.
+ */
+export const MAX_PUSH_ATTEMPTS = 5;
+
+/**
+ * Record a failed attempt, parking the push once it has had enough of them.
+ *
+ * Parking sets `failed`, which takes it out of `queued` and therefore out of the drain — so
+ * the next attempt reaches whatever was behind it. Nothing is lost: a failed push keeps its
+ * payload and its last error, and can be requeued once the cause is fixed.
+ */
 export async function recordAttempt(id: ObjectId, error: string): Promise<void> {
-  await (await pushes()).updateOne(
+  const collection = await pushes();
+  const current = await collection.findOne({ _id: id });
+  const attempts = (current?.attempts ?? 0) + 1;
+
+  await collection.updateOne(
     { _id: id },
-    { $set: { lastError: error }, $inc: { attempts: 1 } },
+    {
+      $set: {
+        lastError: error,
+        attempts,
+        ...(attempts >= MAX_PUSH_ATTEMPTS ? { state: 'failed' as const } : {}),
+      },
+    },
+  );
+}
+
+/**
+ * Pushes that gave up, newest first.
+ *
+ * Surfaced rather than merely stored: a parked push is a customer whose record the core does
+ * not have, and the only way anybody finds out is by being told.
+ */
+export async function failedPushes(limit = 50): Promise<CorePushDoc[]> {
+  return (await pushes())
+    .find({ state: 'failed' })
+    .sort({ queuedAt: -1 })
+    .limit(limit)
+    .toArray();
+}
+
+/**
+ * Put a parked push back in the queue.
+ *
+ * Attempts are reset, because the count measures this attempt at delivery and not the
+ * history of the record — leaving it at five would park the push again on its first failure,
+ * which defeats the point of asking for a retry.
+ */
+export async function requeuePush(id: ObjectId): Promise<void> {
+  await (await pushes()).updateOne(
+    { _id: id, state: 'failed' },
+    { $set: { state: 'queued', attempts: 0 }, $unset: { lastError: '' } },
   );
 }
 

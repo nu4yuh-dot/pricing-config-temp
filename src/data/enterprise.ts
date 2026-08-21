@@ -155,15 +155,34 @@ export async function savePlant(
   return plant;
 }
 
+/**
+ * Withdraw a plant.
+ *
+ * **Deactivates rather than destroys**, and the reason is the other system: the SameX core
+ * deactivates a plant through its own toggle, so removing the row here would leave the two
+ * disagreeing about whether the plant exists at all — and the one holding the shipments
+ * would be the one that still had it.
+ *
+ * There is a second reason that outlives the integration. A plant is on invoices and on
+ * shipments that have already moved. Deleting it makes those documents reference something
+ * that never existed, which is not a tidier database, only a less answerable one.
+ *
+ * Departments at the plant are deactivated with it, because a department whose plant is
+ * withdrawn cannot be shipped from either. They keep their rows, so reactivating the plant
+ * can bring them back.
+ */
 export async function deletePlant(code: string, plantCode: string, actor: Actor): Promise<void> {
   const customer = await load(code);
   const profile = customer.profile;
   if (!profile?.plants.some((plant) => plant.code === plantCode)) throw new Error('No such plant.');
 
   const account = accountOf(customer);
-  // A department without its plant is an orphan the portal cannot render, so they go too.
-  const departments = account.departments.filter((entry) => entry.plantCode !== plantCode);
-  const plants = profile.plants.filter((plant) => plant.code !== plantCode);
+  const departments = account.departments.map((entry) =>
+    entry.plantCode === plantCode ? { ...entry, active: false } : entry,
+  );
+  const plants = profile.plants.map((plant) =>
+    plant.code === plantCode ? { ...plant, active: false } : plant,
+  );
   const revision = (customer.coreRevision ?? 0) + 1;
   const updated = { ...profile, plants };
 
@@ -181,7 +200,9 @@ export async function deletePlant(code: string, plantCode: string, actor: Actor)
     detail: {
       customer: customer.code,
       plant: plantCode,
-      departmentsRemoved: account.departments.length - departments.length,
+      deactivated: true,
+      departmentsDeactivated: account.departments.filter((entry) => entry.plantCode === plantCode)
+        .length,
     },
   });
 }
@@ -214,6 +235,12 @@ export async function saveDepartment(
   return department;
 }
 
+/**
+ * Withdraw a department.
+ *
+ * Deactivated rather than removed, for the same reasons as a plant: the core deactivates,
+ * and a department is a cost centre on shipments that have already moved.
+ */
 export async function deleteDepartment(code: string, id: string, actor: Actor): Promise<void> {
   const customer = await load(code);
   const account = accountOf(customer);
@@ -221,8 +248,17 @@ export async function deleteDepartment(code: string, id: string, actor: Actor): 
 
   await save(
     customer,
-    { ...account, departments: account.departments.filter((entry) => entry.id !== id) },
-    { action: 'enterprise-department-deleted', actor, detail: { customer: customer.code, id } },
+    {
+      ...account,
+      departments: account.departments.map((entry) =>
+        entry.id === id ? { ...entry, active: false } : entry,
+      ),
+    },
+    {
+      action: 'enterprise-department-deleted',
+      actor,
+      detail: { customer: customer.code, id, deactivated: true },
+    },
   );
 }
 

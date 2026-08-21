@@ -21,6 +21,19 @@ export default function RowAction({
 }: {
   label: string;
   confirmLabel: string;
+  /**
+   * What to do, as a **server action**.
+   *
+   * A page rendering this is a Server Component, and a plain closure cannot cross that
+   * boundary: React refuses it at render time with "Functions cannot be passed directly to
+   * Client Components", which is a 500 on the page rather than a build failure. So the
+   * caller passes an inline action:
+   *
+   *     run={async () => { 'use server'; await toggleCarrier(id, next); }}
+   *
+   * Typechecking cannot tell the two apart, so the only thing that catches a plain closure
+   * is rendering the page with a row present.
+   */
   run: () => Promise<unknown>;
   /** Styles the confirm step as destructive. Deactivating is not; deleting is. */
   danger?: boolean;

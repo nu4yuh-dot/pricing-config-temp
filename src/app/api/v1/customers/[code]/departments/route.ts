@@ -50,7 +50,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
   if ('response' in customer) return customer.response;
 
   try {
-    const saved = await saveDepartment(customer.customer.code, parsed.data, portalActor(auth.caller));
+    const { isActive, active, ...rest } = parsed.data;
+    const saved = await saveDepartment(
+      customer.customer.code,
+      // Absent means active, so a caller that predates the field creates a working
+      // department rather than a withdrawn one.
+      { ...rest, active: isActive ?? active ?? true },
+      portalActor(auth.caller),
+    );
     return NextResponse.json({ success: true, data: saved }, { status: parsed.data.id ? 200 : 201 });
   } catch (cause) {
     return badRequest(cause instanceof Error ? cause.message : 'Could not save that department.');

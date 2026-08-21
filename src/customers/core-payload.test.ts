@@ -213,8 +213,31 @@ describe('the address book crossing to the core', () => {
 
   test('departments cross with the plant they belong to', () => {
     expect(toCorePayload(withBook).departments).toEqual([
-      { id: 'd1', name: 'Production', plantCode: 'PLT-01' },
+      { id: 'd1', name: 'Production', plantCode: 'PLT-01', active: true },
     ]);
+  });
+
+  test('a department with no active flag crosses as active', () => {
+    // Records written before the field existed are in use. Sending them as withdrawn would
+    // retire cost centres nobody retired, on the far side, silently.
+    const [department] = toCorePayload(withBook).departments;
+    expect(department?.active).toBe(true);
+  });
+
+  test('a withdrawn department crosses as withdrawn', () => {
+    // The whole point of deactivating rather than deleting: the core has to learn about it,
+    // and it can only learn from this payload.
+    const withdrawn = {
+      ...withBook,
+      enterprise: {
+        ...withBook.enterprise!,
+        departments: (withBook.enterprise?.departments ?? []).map((entry) => ({
+          ...entry,
+          active: false,
+        })),
+      },
+    };
+    expect(toCorePayload(withdrawn).departments[0]?.active).toBe(false);
   });
 });
 

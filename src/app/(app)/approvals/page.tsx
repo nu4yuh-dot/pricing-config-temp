@@ -10,12 +10,14 @@ import {
 import { pendingProfileChanges } from '../../../data/customer-profile-changes';
 import { pendingContractRequests } from '../../../data/contract-requests';
 import ContractRequestRow from '../../../components/console/ContractRequestRow';
-import { pushBacklog } from '../../../data/core-push';
+import { pushBacklog, failedPushes } from '../../../data/core-push';
 import { coreIsConfigured } from '../../../core/client';
 import ProfileChangeRow from '../../../components/console/ProfileChangeRow';
 import SendToCoreButton from '../../../components/console/SendToCoreButton';
+import RowAction from '../../../components/console/RowAction';
 import { currentUser } from '../../../auth/session';
 import { can } from '../../../auth/roles';
+import { retryFailedPush } from '../../console-actions';
 
 const when = (date?: Date) =>
   date ? new Date(date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
@@ -24,7 +26,7 @@ export default async function ApprovalsPage() {
   const user = await currentUser();
   const [
     queue, history, cards, contracts, contractsDone, exceptions, exceptionsDone, customers,
-    profileChanges, backlog, customerRequests,
+    profileChanges, backlog, customerRequests, parked,
   ] = await Promise.all([
       pendingRequests(),
       requestHistory(30),
@@ -37,6 +39,7 @@ export default async function ApprovalsPage() {
       pendingProfileChanges(),
       pushBacklog(),
       pendingContractRequests(),
+      failedPushes(),
     ]);
   const cardName = (id: string) =>
     cards.find((card) => card._id.toHexString() === id)?.name ?? 'Unknown card';
@@ -98,6 +101,60 @@ export default async function ApprovalsPage() {
               ? 'Nothing is lost while they wait.'
               : 'The core connection is not configured yet, so they are being held. Nothing is lost — they will send once it is.'}
             {coreIsConfigured() && <SendToCoreButton queued={backlog.queued} />}
+          </div>
+        )}
+
+        {parked.length > 0 && (
+          <div className="callout bad">
+            <strong>
+              {parked.length} customer change{parked.length === 1 ? '' : 's'} gave up trying to
+              reach the SameX core
+            </strong>
+            Each stopped after five attempts so it would not hold up the changes behind it. The
+            record is still here and nothing is lost — but{' '}
+            <strong style={{ display: 'inline' }}>the core does not have it</strong>, so the two
+            systems disagree about {parked.length === 1 ? 'this customer' : 'these customers'} until
+            it goes through. Fix what it is complaining about, then try again.
+            <div className="gridscroll" style={{ marginTop: 8 }}>
+              <table className="data">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Queued</th>
+                    <th>Why it stopped</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {parked.map((push) => (
+                    <tr key={String(push._id)}>
+                      <td>
+                        <Link href={`/customers/${encodeURIComponent(push.customerCode)}`}>
+                          {customerName(push.customerCode)}
+                        </Link>
+                        <div className="sub">{push.customerCode}</div>
+                      </td>
+                      <td className="sub">
+                        {push.queuedAt.toLocaleDateString('en-IN', { dateStyle: 'medium' })}
+                      </td>
+                      <td className="sub">{push.lastError ?? 'No reason was recorded.'}</td>
+                      <td>
+                        {reviewer && (
+                          <RowAction
+                            label="Try again"
+                            confirmLabel={`Requeue ${push.customerCode}`}
+                            run={async () => {
+                              'use server';
+                              await retryFailedPush(String(push._id));
+                            }}
+                          />
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

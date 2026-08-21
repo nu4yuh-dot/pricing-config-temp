@@ -138,6 +138,9 @@ export function toCorePayload(customer: CustomerDoc): CoreCustomerPayload {
       id: entry.id,
       name: entry.name,
       plantCode: entry.plantCode,
+      // Absent means active: records written before the field existed are in use, and
+      // sending them as withdrawn would retire cost centres nobody retired.
+      active: entry.active ?? true,
     })),
     // Off unless the customer turned it on. Absent means off, so a customer who has never
     // seen the switch is not quietly opted in.

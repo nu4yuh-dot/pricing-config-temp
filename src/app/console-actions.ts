@@ -1237,6 +1237,22 @@ export async function decideProfileChange(
  * this is the button for when the core was down at that moment and somebody wants to know
  * it has caught up.
  */
+/**
+ * Put a parked push back in the queue.
+ *
+ * A push gives up after five attempts so it stops blocking everything behind it. Retrying
+ * is a deliberate act because the cause is usually outside this service — the core rejecting
+ * a record, or not having the endpoint yet — and retrying before that changes just parks it
+ * again.
+ */
+export async function retryFailedPush(id: string): Promise<void> {
+  await authorise('review-change-request');
+  const { ObjectId } = await import('mongodb');
+  const { requeuePush } = await import('../data/core-push');
+  await requeuePush(new ObjectId(id));
+  revalidatePath('/approvals', 'page');
+}
+
 export async function sendQueuedToCore(): Promise<
   ActionResult & { sent?: number; failed?: number; configured?: boolean }
 > {

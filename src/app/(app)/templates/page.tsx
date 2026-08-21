@@ -150,7 +150,10 @@ export default async function TemplatesPage() {
                                     assignedCount(template.key) === 1 ? '' : 's'
                                   } cite${assignedCount(template.key) === 1 ? 's' : ''} it`
                             }
-                            run={() => removeTemplate(template.key)}
+                            run={async () => {
+                              'use server';
+                              await removeTemplate(template.key);
+                            }}
                           />
                         )}
                       </td>
