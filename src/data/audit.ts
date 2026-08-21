@@ -46,6 +46,8 @@ export interface AuditEntry {
     | 'period-relocked'
     | 'bill-line-accepted'
     | 'bill-line-disputed'
+    | 'bill-run'
+    | 'credit-note-issued'
     | 'customer-registered'
     | 'contract-proposed'
     | 'contract-draft-reset'

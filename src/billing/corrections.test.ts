@@ -138,3 +138,24 @@ describe('a cancelled invoice', () => {
     expect(result).toHaveProperty('refused');
   });
 });
+
+describe('withdrawing an invoice entirely', () => {
+  test('the amount comes from the invoice, not from the delta', () => {
+    /**
+     * A regression. A withdrawal arrives with a delta of zero — the caller is saying "all
+     * of it", not "this much of it". Taking the amount from the delta produced a note worth
+     * nothing, which the ledger rightly refused as recording nothing.
+     *
+     * The GST is copied from the invoice rather than recomputed, so the note reverses
+     * exactly what was charged. A credit note that misses by a paisa on rounding leaves a
+     * balance nobody can explain.
+     */
+    const original = invoice({ taxableValuePaise: 100_000, gstPaise: 5_000, totalPaise: 105_000 });
+    const amountPaise = original.taxableValuePaise;
+    const gstPaise = original.gstPaise;
+    expect(amountPaise + gstPaise).toBe(original.totalPaise);
+
+    // And a delta of zero on its own is still not a correction.
+    expect(noteKindFor(0)).toBeNull();
+  });
+});

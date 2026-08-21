@@ -1530,3 +1530,95 @@ export async function relockPeriodAction(
     return { error: cause instanceof Error ? cause.message : 'Could not close that period.' };
   }
 }
+
+/* ---------------------------------------------------------------- bill run */
+
+/**
+ * What the bill run would do, without doing it.
+ *
+ * Separate from running it because raising an invoice allocates a number from a series
+ * that can never reuse it. Seeing the shape of the bill first is the difference between a
+ * decision and a discovery.
+ */
+export async function previewBill(customerCode: string, from: string, to: string) {
+  await authorise('record-money');
+  const { previewBillRun } = await import('../data/bill-run');
+  return previewBillRun(customerCode, new Date(from), new Date(to));
+}
+
+export async function runBillingAction(
+  _previous: ActionResult | null,
+  form: FormData,
+): Promise<ActionResult & { invoices?: string[]; total?: number; held?: number }> {
+  const user = await authorise('record-money');
+  const customerCode = String(form.get('customerCode') ?? '').trim();
+  const from = String(form.get('from') ?? '').trim();
+  const to = String(form.get('to') ?? '').trim();
+
+  if (!customerCode || !from || !to) {
+    return { error: 'Choose a customer and a period.' };
+  }
+
+  try {
+    const { runBilling, previewBillRun } = await import('../data/bill-run');
+    const preview = await previewBillRun(customerCode, new Date(from), new Date(to));
+    const result = await runBilling(customerCode, new Date(from), new Date(to), toActor(user));
+
+    revalidatePath('/invoices', 'page');
+    revalidatePath('/periods', 'page');
+    revalidatePath('/collections', 'page');
+
+    return {
+      ok: true as const,
+      invoices: result.invoiceNumbers,
+      total: result.totalPaise / 100,
+      held: preview.held.length,
+    };
+  } catch (cause) {
+    return { error: cause instanceof Error ? cause.message : 'The bill run did not complete.' };
+  }
+}
+
+/**
+ * Correct an issued invoice.
+ *
+ * The route is decided from the amount and the invoice's state, not chosen here — see
+ * `billing/corrections.ts`. The result says which route was taken, because asking to
+ * withdraw an invoice that cannot be cancelled produces a full-value credit note instead,
+ * and that should be visible rather than surprising.
+ */
+export async function correctInvoice(
+  _previous: ActionResult | null,
+  form: FormData,
+): Promise<ActionResult & { route?: string; noteNumber?: string }> {
+  const user = await authorise('record-money');
+  const invoiceNumber = String(form.get('invoiceNumber') ?? '').trim();
+  const reason = String(form.get('reason') ?? '').trim();
+  const delta = Number(String(form.get('delta') ?? '0'));
+  const withdraw = form.get('withdraw') !== null;
+
+  if (!reason) return { error: 'Say why this invoice is being corrected.' };
+  if (!withdraw && (!Number.isFinite(delta) || delta === 0)) {
+    return { error: 'By how much? A correction of nothing is not a correction.' };
+  }
+
+  try {
+    const { issueCorrection } = await import('../data/notes');
+    const result = await issueCorrection({
+      invoiceNumber,
+      deltaRupees: withdraw ? 0 : delta,
+      reason,
+      withdrawEntirely: withdraw,
+      actor: toActor(user),
+    });
+
+    revalidatePath('/invoices', 'page');
+    return {
+      ok: true as const,
+      route: result.route,
+      ...(result.note ? { noteNumber: result.note.number } : {}),
+    };
+  } catch (cause) {
+    return { error: cause instanceof Error ? cause.message : 'Could not correct that invoice.' };
+  }
+}

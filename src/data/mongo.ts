@@ -63,6 +63,7 @@ export const COLLECTIONS = {
   receipts: 'receipts',
   billingPeriods: 'billingPeriods',
   reconciliation: 'reconciliation',
+  notes: 'notes',
 } as const;
 
 /**
@@ -184,6 +185,9 @@ export async function ensureIndexes(): Promise<void> {
   await index(database, COLLECTIONS.receipts, { customerCode: 1, receivedAt: -1 });
   await index(database, COLLECTIONS.billingPeriods, { customerCode: 1, from: 1 }, { unique: true });
   await index(database, COLLECTIONS.reconciliation, { customerCode: 1, periodId: 1 }, { unique: true });
+  await index(database, COLLECTIONS.notes, { number: 1 }, { unique: true });
+  await index(database, COLLECTIONS.notes, { against: 1 });
+  await index(database, COLLECTIONS.notes, { customerCode: 1, issuedAt: -1 });
   await index(database, COLLECTIONS.invoices, { number: 1 }, { unique: true });
   await index(database, COLLECTIONS.invoices, { customerCode: 1, raisedAt: -1 });
 }

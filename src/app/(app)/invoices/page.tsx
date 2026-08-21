@@ -5,6 +5,9 @@ import { allSeries, reconcileSeries } from '../../../data/invoice-series';
 import { financialYear } from '../../../billing/series';
 import { db, COLLECTIONS } from '../../../data/mongo';
 import type { Invoice } from '../../../billing/invoice';
+import { listCustomers } from '../../../data/customers';
+import { notesFor } from '../../../data/notes';
+import BillRunForm from '../../../components/console/BillRunForm';
 
 /**
  * Invoices, and the series they are numbered from.
@@ -19,7 +22,7 @@ export default async function InvoicesPage() {
   if (!user) redirect('/login');
   if (!can(user.role, 'record-money')) redirect('/console/model-1/rates');
 
-  const series = await allSeries();
+  const [series, customers] = await Promise.all([allSeries(), listCustomers()]);
   const thisYear = financialYear(new Date());
   const database = await db();
   const invoices = await database
@@ -46,6 +49,15 @@ export default async function InvoicesPage() {
           Documents raised, and the series they are numbered from. A number is a position in
           a consecutive run — every one has to be either on an invoice or explained.
         </p>
+
+        <h3>Run a bill</h3>
+        <p className="lede" style={{ marginTop: 0 }}>
+          Closes a period and raises its invoices. Look at what it would bill first — a number
+          taken from the series is never reused, so this is a decision rather than a discovery.
+        </p>
+        <BillRunForm
+          customers={customers.map((customer) => ({ code: customer.code, name: customer.name }))}
+        />
 
         <h3>The series</h3>
         {series.length === 0 ? (

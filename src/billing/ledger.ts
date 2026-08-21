@@ -25,6 +25,16 @@ export const ENTRY_KINDS = [
   'payment',
   /** A manual correction with a reason, e.g. a goodwill credit. */
   'adjustment',
+  /**
+   * A credit note against an invoice. Reduces what the customer owes.
+   *
+   * Its own kind rather than an `adjustment`, because the two answer different questions.
+   * An adjustment is a decision somebody made; a credit note is a tax document with a
+   * number in the series, and a return has to list them separately.
+   */
+  'credit-note',
+  /** A debit note against an invoice. Increases what the customer owes. */
+  'debit-note',
   /** Money returned to the customer. */
   'refund',
   /** Undoes an earlier entry exactly. */
@@ -156,9 +166,13 @@ function walletDirection(kind: EntryKind): number {
     case 'recharge':
     case 'payment':
     case 'adjustment':
+    // A credit note reduces the bill, so it moves the balance the same way a payment does.
+    case 'credit-note':
       return 1;
     case 'invoice':
     case 'refund':
+    // A debit note is an additional charge, so it moves the balance like an invoice.
+    case 'debit-note':
       return -1;
     case 'reversal':
       return 0;
