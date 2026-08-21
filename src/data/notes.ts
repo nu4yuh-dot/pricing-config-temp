@@ -2,7 +2,13 @@ import { db, COLLECTIONS } from './mongo';
 import { recordAudit } from './audit';
 import { recordEntry } from './billing';
 import { allocateNumber, recordGap } from './invoice-series';
-import { routeFor, type CorrectionRoute } from '../billing/corrections';
+import {
+  correctionRoutes,
+  routeFor,
+  type CorrectionContext,
+  type CorrectionRoute,
+  type RouteOption,
+} from '../billing/corrections';
 import { findCustomer } from './customers';
 import { periodFor } from './billing-periods';
 import { isFrozen } from '../billing/periods';
@@ -61,6 +67,52 @@ export interface IssueNoteInput {
 }
 
 /**
+ * The circumstances that decide which corrections are open on an invoice.
+ *
+ * Shared by the preview and the issue, so a screen cannot offer a route the issue would
+ * refuse. Two of these would drift instantly if each caller assembled them itself.
+ */
+async function contextFor(invoice: Invoice): Promise<CorrectionContext> {
+  const customer = await findCustomer(invoice.customerCode);
+  const period = await periodFor(invoice.customerCode, invoice.periodFrom);
+  return {
+    // Nothing here tracks GST filing yet, so a filed return cannot be detected. Treated
+    // as unfiled rather than assumed filed: assuming would refuse cancellations that are
+    // legitimately available, which is the more damaging guess.
+    filed: false,
+    cancelPolicy: customer?.settlement ? 'requireApproval' : 'allow',
+    periodLocked: period ? isFrozen(period.state) : false,
+  };
+}
+
+/**
+ * What may be done to an invoice, before anybody commits to it.
+ *
+ * The screen needs this because the route is **decided, not chosen** — asking to withdraw
+ * an invoice that has been part-paid produces a full-value credit note instead, and finding
+ * that out afterwards is how somebody issues a document they did not mean to. Each option
+ * carries why it is closed, in words, so the screen can say so rather than greying a button
+ * with no explanation.
+ */
+export async function correctionOptionsFor(invoiceNumber: string): Promise<{
+  invoice: Pick<Invoice, 'number' | 'customerCode' | 'totalPaise' | 'paidPaise' | 'status'>;
+  options: RouteOption[];
+} | null> {
+  const invoice = await (await invoices()).findOne({ number: invoiceNumber });
+  if (!invoice) return null;
+  return {
+    invoice: {
+      number: invoice.number,
+      customerCode: invoice.customerCode,
+      totalPaise: invoice.totalPaise,
+      paidPaise: invoice.paidPaise,
+      status: invoice.status,
+    },
+    options: correctionRoutes(invoice, await contextFor(invoice)),
+  };
+}
+
+/**
  * Issues the correction, whichever it turns out to be.
  *
  * Returns the route taken as well as the document, because "I asked to cancel and got a
@@ -76,19 +128,9 @@ export async function issueCorrection(
   if (!invoice) throw new Error(`No invoice ${input.invoiceNumber}.`);
   if (!input.reason.trim()) throw new Error('Say why this invoice is being corrected.');
 
-  const customer = await findCustomer(invoice.customerCode);
-  const period = await periodFor(invoice.customerCode, invoice.periodFrom);
-
   const decision = routeFor(
     invoice,
-    {
-      // Nothing here tracks GST filing yet, so a filed return cannot be detected. Treated
-      // as unfiled rather than assumed filed: assuming would refuse cancellations that are
-      // legitimately available, which is the more damaging guess.
-      filed: false,
-      cancelPolicy: customer?.settlement ? 'requireApproval' : 'allow',
-      periodLocked: period ? isFrozen(period.state) : false,
-    },
+    await contextFor(invoice),
     {
       deltaPaise: Math.round(input.deltaRupees * 100),
       withdrawEntirely: input.withdrawEntirely === true,

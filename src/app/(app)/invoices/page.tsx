@@ -6,8 +6,8 @@ import { financialYear } from '../../../billing/series';
 import { db, COLLECTIONS } from '../../../data/mongo';
 import type { Invoice } from '../../../billing/invoice';
 import { listCustomers } from '../../../data/customers';
-import { notesFor } from '../../../data/notes';
 import BillRunForm from '../../../components/console/BillRunForm';
+import CorrectionForm from '../../../components/console/CorrectionForm';
 
 /**
  * Invoices, and the series they are numbered from.
@@ -57,6 +57,24 @@ export default async function InvoicesPage() {
         </p>
         <BillRunForm
           customers={customers.map((customer) => ({ code: customer.code, name: customer.name }))}
+        />
+
+        <h3>Correct an invoice</h3>
+        <p className="lede" style={{ marginTop: 0 }}>
+          An issued invoice is never edited — it is what the customer was charged. A correction is
+          a second numbered document against it: a credit note reduces what is owed, a debit note
+          increases it. Which one applies is decided from the invoice&rsquo;s state, not chosen
+          here.
+        </p>
+        <CorrectionForm
+          invoices={invoices
+            .filter((invoice) => invoice.number && invoice.status !== 'cancelled')
+            .map((invoice) => ({
+              number: invoice.number,
+              customerCode: invoice.customerCode,
+              total: rupees(invoice.totalPaise),
+              status: invoice.status,
+            }))}
         />
 
         <h3>The series</h3>

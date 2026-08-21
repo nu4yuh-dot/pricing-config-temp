@@ -842,6 +842,24 @@ table.data td.ref {
   background: var(--rejected-wash);
 }
 
+/*
+ * Warning and success variants.
+ *
+ * `.callout.warn` was already used in three places with no rule behind it, so it fell back
+ * to the base and quietly rendered as an ordinary callout. Defined explicitly rather than
+ * left to coincide with the base — the base is what an unmarked callout looks like, and the
+ * two should not be the same declaration by accident.
+ */
+.callout.warn {
+  border-left-color: var(--pending);
+  background: var(--pending-wash);
+}
+
+.callout.ok {
+  border-left-color: var(--approved);
+  background: var(--approved-wash);
+}
+
 .callout strong {
   display: block;
   margin-bottom: 3px;

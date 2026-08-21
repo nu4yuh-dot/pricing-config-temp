@@ -10,7 +10,8 @@ import {
   CYCLE_LABELS,
 } from '../../../billing/settlement';
 import NewSettlementProfileForm from '../../../components/console/NewSettlementProfileForm';
-import { createSettlementProfile } from '../../console-actions';
+import AssignSettlementForm from '../../../components/console/AssignSettlementForm';
+import { createSettlementProfile, assignSettlementProfile } from '../../console-actions';
 
 /**
  * Payment terms.
@@ -140,6 +141,40 @@ export default async function SettlementPage() {
             same as one on permissive terms — nothing here decides for them, so whatever checks
             their bookings today still does.
           </div>
+        )}
+
+        {profiles.length > 0 && customers.length > 0 && (
+          <>
+            <h3 style={{ marginTop: 26 }}>Assign one</h3>
+            <AssignSettlementForm
+              customers={customers.map((customer) => {
+                const current = profiles.find((p) => p.key === customer.settlement?.profileKey);
+                return {
+                  code: customer.code,
+                  name: customer.name,
+                  ...(current === undefined ? {} : { currentProfile: current.name }),
+                  overrideCount: Object.keys(customer.settlement?.overrides ?? {}).length,
+                };
+              })}
+              profiles={profiles.map((profile) => {
+                const terms = resolveSettlement(profile);
+                return {
+                  key: profile.key,
+                  name: profile.name,
+                  summary:
+                    `${terms.mode === 'prepaid' ? 'Prepaid' : 'Credit'} · ${CYCLE_LABELS[terms.cycle]}` +
+                    ` · on breach: ${BREACH_LABELS[terms.onBreach]}` +
+                    (terms.mode === 'credit'
+                      ? ` · limit ₹${terms.credit.limit.toLocaleString('en-IN')}, ${terms.credit.periodDays} days`
+                      : ''),
+                };
+              })}
+              assign={async (customerCode, profileKey) => {
+                'use server';
+                await assignSettlementProfile(customerCode, profileKey);
+              }}
+            />
+          </>
         )}
 
         <h3 style={{ marginTop: 26 }}>Define a new one</h3>

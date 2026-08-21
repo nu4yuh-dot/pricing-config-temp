@@ -219,6 +219,20 @@ export async function saveProfile(
  * form back should send only the fields that actually depart from the profile, which is
  * what `resolveSettlement` reports in `overridden`.
  */
+/**
+ * Put a customer on an arrangement, or move them to another one.
+ *
+ * What happens to their overrides is the decision here, and it goes two ways on purpose.
+ *
+ * An override is a departure from a **specific** profile — "periodDays: 60" means sixty
+ * against that profile's forty-five. Carrying it onto a different arrangement would apply a
+ * number somebody agreed in one context to a different one, so **moving profiles clears
+ * them**. The screen says so before it happens.
+ *
+ * Re-assigning the profile they are already on **keeps** them, because that is a save rather
+ * than a move, and silently discarding negotiated terms on a no-op is how a customer's
+ * agreement quietly disappears.
+ */
 export async function assignSettlement(
   code: string,
   settlement: { profileKey: string; overrides?: SettlementOverrides },
@@ -227,9 +241,13 @@ export async function assignSettlement(
   const customer = await findCustomer(code);
   if (!customer) throw new Error(`No customer ${code}.`);
 
+  const staying = customer.settlement?.profileKey === settlement.profileKey;
+  const overrides =
+    settlement.overrides ?? (staying ? customer.settlement?.overrides : undefined);
+
   await (await customers()).updateOne(
     { _id: customer._id },
-    { $set: { settlement } },
+    { $set: { settlement: { profileKey: settlement.profileKey, ...(overrides === undefined ? {} : { overrides }) } } },
   );
   await recordAudit({
     action: 'settlement-assigned',
@@ -238,7 +256,11 @@ export async function assignSettlement(
     detail: {
       customer: customer.code,
       profile: settlement.profileKey,
-      overrides: Object.keys(settlement.overrides ?? {}),
+      from: customer.settlement?.profileKey ?? null,
+      overrides: Object.keys(overrides ?? {}),
+      // Recorded because it is not recoverable afterwards: a move that dropped negotiated
+      // terms should be answerable later.
+      clearedOverrides: staying ? 0 : Object.keys(customer.settlement?.overrides ?? {}).length,
     },
   });
 }

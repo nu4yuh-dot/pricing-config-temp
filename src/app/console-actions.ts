@@ -1478,18 +1478,6 @@ export async function recordReceiptAction(
   }
 }
 
-/** Post a draft receipt: its allocation becomes payments against the invoices. */
-export async function postReceipt(reference: string, customerCode: string) {
-  const user = await authorise('record-money');
-  const { finaliseReceipt } = await import('../data/collections');
-  const { findCustomer } = await import('../data/customers');
-  const { DEFAULT_COMMERCIAL_TERMS } = await import('../domain/customers');
-
-  const customer = await findCustomer(customerCode);
-  const terms = customer?.commercial ?? DEFAULT_COMMERCIAL_TERMS;
-  await finaliseReceipt(reference, terms.paymentTermsDays, toActor(user));
-  revalidatePath('/collections', 'page');
-}
 
 /* -------------------------------------------------------- billing periods */
 
@@ -1591,6 +1579,19 @@ export async function runBillingAction(
   } catch (cause) {
     return { error: cause instanceof Error ? cause.message : 'The bill run did not complete.' };
   }
+}
+
+/**
+ * What corrections are open on an invoice, for the screen to show before anybody commits.
+ *
+ * Separate from issuing because the route is decided rather than chosen: somebody typing an
+ * amount needs to see that withdrawing a part-paid invoice will produce a full-value credit
+ * note, not a cancellation, while they can still change their mind.
+ */
+export async function correctionOptions(invoiceNumber: string) {
+  await authorise('record-money');
+  const { correctionOptionsFor } = await import('../data/notes');
+  return correctionOptionsFor(invoiceNumber);
 }
 
 /**
