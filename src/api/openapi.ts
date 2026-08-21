@@ -490,6 +490,22 @@ export function openApiDocument(): Record<string, unknown> {
           responses: { ...ok('The bill and its lines.'), '404': { description: 'No such bill.' } },
         },
       },
+      '/api/v1/billing/month-end': {
+        get: {
+          summary: 'Rehearse the month-end bill run',
+          description:
+            'What a scheduler calls. It PREPARES AND DOES NOT RAISE: working out what would ' +
+            'be billed is safe to automate, issuing a numbered document in a gapless series ' +
+            'is not. The response always carries raised: false. Safe to call twice — it ' +
+            'reads and reports, so a run on the 3rd because the 1st was missed gives the same ' +
+            'answer for the same month. Omit from and to for the month that has just closed.',
+          parameters: [
+            { name: 'from', in: 'query', required: false, schema: { type: 'string', format: 'date' } },
+            { name: 'to', in: 'query', required: false, schema: { type: 'string', format: 'date' } },
+          ],
+          responses: ok('Who is ready to bill, who is blocked and why, and who was quiet.'),
+        },
+      },
       '/api/v1/customers/{code}/billing/{periodId}/pdf': {
         get: {
           summary: 'A period’s charges as a PDF',

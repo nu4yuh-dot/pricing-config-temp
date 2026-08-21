@@ -68,7 +68,9 @@ export interface AuditEntry {
     | 'ledger-entry'
     | 'ledger-reversal'
     | 'invoices-raised'
-    | 'payment-recorded';
+    | 'payment-recorded'
+  /** The month-end rehearsal ran. Records what it found, not what it changed — it changes nothing. */
+  | 'month-end-rehearsed';
   actor: Actor;
   at: Date;
   rateCardKey?: string;
