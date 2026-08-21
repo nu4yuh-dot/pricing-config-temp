@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createHash, createHmac, timingSafeEqual as nodeTimingSafeEqual } from 'node:crypto';
 import { db, COLLECTIONS, NONCE_TTL_SECONDS } from '../../data/mongo';
+import { consume } from '../../api/rate-limit';
 
 /**
  * Service-to-service authentication.
@@ -189,6 +190,38 @@ const unauthorised = (message: string) =>
  * the same value, and a signature check against a re-serialised body is a check that
  * passes for the wrong reason.
  */
+/**
+ * Count an authenticated request against its caller's budget.
+ *
+ * Placed here rather than in each route because this is the one function every published
+ * endpoint passes through: a limiter added per route is a limiter somebody forgets on the
+ * next route. Counted only once the caller is known, so a failed authentication never
+ * spends anybody's budget and nobody can be locked out by someone else guessing keys.
+ */
+function withinBudget(caller: ServiceCaller): { ok: false; response: NextResponse } | null {
+  const decision = consume(caller.keyId);
+  if (decision.allowed) return null;
+  return {
+    ok: false,
+    response: NextResponse.json(
+      {
+        error: 'rate-limited',
+        message:
+          `Too many requests. The limit is ${decision.limit} per minute per caller; ` +
+          `try again in ${decision.retryAfterSeconds}s.`,
+      },
+      {
+        status: 429,
+        headers: {
+          'retry-after': String(decision.retryAfterSeconds),
+          'x-ratelimit-limit': String(decision.limit),
+          'x-ratelimit-remaining': '0',
+        },
+      },
+    ),
+  };
+}
+
 export async function authenticateService(
   request: Request,
   body: string,
@@ -254,7 +287,8 @@ export async function authenticateService(
       };
     }
 
-    return { ok: true, caller: { keyId, scheme: 'signed' } };
+    const signedCaller = { keyId, scheme: 'signed' as const };
+    return withinBudget(signedCaller) ?? { ok: true, caller: signedCaller };
   }
 
   /* ------------------------------------------------- the deprecated static key */
@@ -283,7 +317,8 @@ export async function authenticateService(
     };
   }
 
-  return { ok: true, caller: { keyId: 'booking-site', scheme: 'static-key' } };
+  const staticCaller = { keyId: 'booking-site', scheme: 'static-key' as const };
+  return withinBudget(staticCaller) ?? { ok: true, caller: staticCaller };
 }
 
 /**

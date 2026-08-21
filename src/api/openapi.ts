@@ -60,10 +60,22 @@ const jsonBody = (schema: z.ZodType) => ({
   content: { 'application/json': { schema: json(schema) } },
 });
 
+/**
+ * The statuses every authenticated endpoint shares.
+ *
+ * `429` is here rather than on individual paths because the limiter sits in the shared
+ * authenticator: every published endpoint can return it, so declaring it per path would be
+ * a list somebody forgets to extend on the next route.
+ */
 const ok = (description: string) => ({
   '200': { description },
   '400': { description: 'The request did not match this endpoint’s schema.' },
   '401': { description: 'No valid service credentials were presented.' },
+  '429': {
+    description:
+      'Too many requests from this caller. Carries retry-after, x-ratelimit-limit and ' +
+      'x-ratelimit-remaining. The budget is per caller, per minute.',
+  },
 });
 
 export const SERVICE_TITLE = 'DNS Logistics pricing service';
@@ -209,6 +221,15 @@ export function openApiDocument(): Record<string, unknown> {
       '/api/v1/customers': {
         get: {
           summary: 'List customers we can price for',
+          description:
+            'Omit limit and cursor to receive every customer, which is what this has always ' +
+            'done. Supply limit to page: the response then carries page.nextCursor, and null ' +
+            'there means the last page. The cursor is the last code seen, not an offset, so a ' +
+            'customer created mid-page cannot cause one to be read twice or missed.',
+          parameters: [
+            { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 200 } },
+            { name: 'cursor', in: 'query', required: false, schema: { type: 'string' } },
+          ],
           responses: ok('Customer codes and the card each is on.'),
         },
         post: {
