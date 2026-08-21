@@ -69,105 +69,121 @@ export const COLLECTIONS = {
  * Indexes the application relies on. Called by the seed script and safe to re-run:
  * createIndex is idempotent for an unchanged definition.
  */
+/**
+ * Creates one index, and reports rather than aborts when it cannot.
+ *
+ * A conflicting specification — the same name asked for with different options — throws,
+ * and a single throw partway through this function used to leave every index below it
+ * uncreated. On a database with any history that is the normal case, not the exceptional
+ * one, and silently ending up without a unique constraint on an invoice series is worse
+ * than the noise of saying so.
+ */
+async function index(
+  database: Db,
+  collection: string,
+  keys: Record<string, 1 | -1>,
+  options: Record<string, unknown> = {},
+): Promise<void> {
+  try {
+    await database.collection(collection).createIndex(keys as never, options as never);
+  } catch (error) {
+    const code = (error as { code?: number }).code;
+    // 85 IndexOptionsConflict, 86 IndexKeySpecsConflict: an index with this name already
+    // exists with different options. The existing one is left alone — changing it is a
+    // migration somebody should decide on, not a side effect of a deploy.
+    if (code === 85 || code === 86) {
+      console.warn(
+        `index ${collection}.${Object.keys(keys).join('_')} already exists with different options; left as it is`,
+      );
+      return;
+    }
+    throw error;
+  }
+}
+
 export async function ensureIndexes(): Promise<void> {
   const database = await db();
 
-  await database.collection(COLLECTIONS.users).createIndex({ email: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.rateCards).createIndex({ key: 1 }, { unique: true });
-  await database
-    .collection(COLLECTIONS.rateCardVersions)
-    .createIndex({ rateCardId: 1, version: -1 });
-  await database.collection(COLLECTIONS.rateCardVersions).createIndex({ rateCardId: 1, state: 1 });
-  await database.collection(COLLECTIONS.changeRequests).createIndex({ status: 1, submittedAt: -1 });
-  await database.collection(COLLECTIONS.changeRequests).createIndex({ rateCardId: 1 });
+  await index(database, COLLECTIONS.users, { email: 1 }, { unique: true });
+  await index(database, COLLECTIONS.rateCards, { key: 1 }, { unique: true });
+  await index(database, COLLECTIONS.rateCardVersions, { rateCardId: 1, version: -1 });
+  await index(database, COLLECTIONS.rateCardVersions, { rateCardId: 1, state: 1 });
+  await index(database, COLLECTIONS.changeRequests, { status: 1, submittedAt: -1 });
+  await index(database, COLLECTIONS.changeRequests, { rateCardId: 1 });
   // The pincode lookup is on the hot path of every quote.
-  await database.collection(COLLECTIONS.pincodes).createIndex({ pincode: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.pincodes).createIndex({ state: 1 });
-  await database.collection(COLLECTIONS.pincodes).createIndex({ 'surface.zone': 1 });
-  await database.collection(COLLECTIONS.auditLog).createIndex({ at: -1 });
+  await index(database, COLLECTIONS.pincodes, { pincode: 1 }, { unique: true });
+  await index(database, COLLECTIONS.pincodes, { state: 1 });
+  await index(database, COLLECTIONS.pincodes, { 'surface.zone': 1 });
+  await index(database, COLLECTIONS.auditLog, { at: -1 });
 
   // The booking site looks customers up by code on every quote.
-  await database.collection(COLLECTIONS.customers).createIndex({ code: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.contractProposals).createIndex({ status: 1, submittedAt: -1 });
-  await database.collection(COLLECTIONS.contractProposals).createIndex({ customerCode: 1 });
-  await database
-    .collection(COLLECTIONS.bookingExceptions)
-    .createIndex({ reference: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.bookingExceptions).createIndex({ status: 1, requestedAt: -1 });
-  await database.collection(COLLECTIONS.rateTemplates).createIndex({ key: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.products).createIndex({ key: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.offers).createIndex({ key: 1 }, { unique: true });
+  await index(database, COLLECTIONS.customers, { code: 1 }, { unique: true });
+  await index(database, COLLECTIONS.contractProposals, { status: 1, submittedAt: -1 });
+  await index(database, COLLECTIONS.contractProposals, { customerCode: 1 });
+  await index(database, COLLECTIONS.bookingExceptions, { reference: 1 }, { unique: true });
+  await index(database, COLLECTIONS.bookingExceptions, { status: 1, requestedAt: -1 });
+  await index(database, COLLECTIONS.rateTemplates, { key: 1 }, { unique: true });
+  await index(database, COLLECTIONS.products, { key: 1 }, { unique: true });
+  await index(database, COLLECTIONS.offers, { key: 1 }, { unique: true });
   // Read on the quote path: only offers live right now, never the whole history.
-  await database.collection(COLLECTIONS.offers).createIndex({ enabled: 1, startsAt: 1, endsAt: 1 });
+  await index(database, COLLECTIONS.offers, { enabled: 1, startsAt: 1, endsAt: 1 });
 
   // Money. Every balance is a replay of one customer's entries, oldest first.
-  await database.collection(COLLECTIONS.ledger).createIndex({ customerCode: 1, at: 1 });
-  await database.collection(COLLECTIONS.ledger).createIndex({ id: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.ledger).createIndex({ reference: 1 });
+  await index(database, COLLECTIONS.ledger, { customerCode: 1, at: 1 });
+  await index(database, COLLECTIONS.ledger, { id: 1 }, { unique: true });
+  await index(database, COLLECTIONS.ledger, { reference: 1 });
   // Deterministic invoice numbers, so raising a period twice collides rather than duplicates.
   // One AWB, one shipment: a retry from the core must not become a second billable line.
-  await database.collection(COLLECTIONS.shipments).createIndex({ awb: 1 }, { unique: true });
-  await database
-    .collection(COLLECTIONS.shipments)
-    .createIndex({ customerCode: 1, status: 1, bookedAt: 1 });
+  await index(database, COLLECTIONS.shipments, { awb: 1 }, { unique: true });
+  await index(database, COLLECTIONS.shipments, { customerCode: 1, status: 1, bookedAt: 1 });
 
   // Looked up by identifier when a charge is questioned, which is the whole point of
   // keeping them. Unique because a collision would attribute one customer's price to
   // another, and that is not an error anybody would notice in time.
-  await database.collection(COLLECTIONS.quotes).createIndex({ quoteId: 1 }, { unique: true });
+  await index(database, COLLECTIONS.quotes, { quoteId: 1 }, { unique: true });
   // "What did we quote this customer, and when" — the shape a dispute arrives in.
-  await database.collection(COLLECTIONS.quotes).createIndex({ 'request.customerCode': 1, createdAt: -1 });
+  await index(database, COLLECTIONS.quotes, { 'request.customerCode': 1, createdAt: -1 });
 
   // Replay protection. Uniqueness is what makes a nonce one-use, and it has to be the
   // database's job: two copies of a captured request hitting two instances would both
   // pass a read-then-write. Expiry is set from the auth module's constant so the window
   // a nonce is remembered for can never end up shorter than the clock skew allowed —
   // which would quietly reopen replays.
-  await database
-    .collection(COLLECTIONS.serviceNonces)
-    .createIndex({ keyId: 1, nonce: 1 }, { unique: true });
-  await database
-    .collection(COLLECTIONS.serviceNonces)
-    .createIndex({ at: 1 }, { expireAfterSeconds: NONCE_TTL_SECONDS });
+  await index(database, COLLECTIONS.serviceNonces, { keyId: 1, nonce: 1 }, { unique: true });
+  await index(database, COLLECTIONS.serviceNonces, { at: 1 }, { expireAfterSeconds: NONCE_TTL_SECONDS });
 
   // Drained oldest-first, so the core sees changes in the order they were approved.
-  await database.collection(COLLECTIONS.corePushes).createIndex({ state: 1, queuedAt: 1 });
-  await database.collection(COLLECTIONS.corePushes).createIndex({ customerCode: 1, queuedAt: -1 });
+  await index(database, COLLECTIONS.corePushes, { state: 1, queuedAt: 1 });
+  await index(database, COLLECTIONS.corePushes, { customerCode: 1, queuedAt: -1 });
 
-  await database
-    .collection(COLLECTIONS.customerProfileChanges)
-    .createIndex({ status: 1, submittedAt: 1 });
-  await database
-    .collection(COLLECTIONS.customerProfileChanges)
-    .createIndex({ customerCode: 1, status: 1 });
+  await index(database, COLLECTIONS.customerProfileChanges, { status: 1, submittedAt: 1 });
+  await index(database, COLLECTIONS.customerProfileChanges, { customerCode: 1, status: 1 });
 
-  await database.collection(COLLECTIONS.contractRequests).createIndex({ status: 1, raisedAt: 1 });
-  await database
-    .collection(COLLECTIONS.contractRequests)
-    .createIndex({ reference: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.contractRequests).createIndex({ customerCode: 1, raisedAt: -1 });
+  await index(database, COLLECTIONS.contractRequests, { status: 1, raisedAt: 1 });
+  await index(database, COLLECTIONS.contractRequests, { reference: 1 }, { unique: true });
+  await index(database, COLLECTIONS.contractRequests, { customerCode: 1, raisedAt: -1 });
 
-  await database.collection(COLLECTIONS.carriers).createIndex({ carrierId: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.services).createIndex({ key: 1 }, { unique: true });
+  await index(database, COLLECTIONS.carriers, { carrierId: 1 }, { unique: true });
+  await index(database, COLLECTIONS.services, { key: 1 }, { unique: true });
 
   // One series document per prefix and financial year. Unique, because two would mean two
   // counters handing out the same numbers.
-  await database
-    .collection(COLLECTIONS.invoiceSeries)
-    .createIndex({ prefix: 1, financialYear: 1 }, { unique: true });
+  await index(database, COLLECTIONS.invoiceSeries, { prefix: 1, financialYear: 1 }, { unique: true });
 
   // One customer, one mode, one period, one invoice. Enforced by the database rather than
   // by the check that precedes it: two bill runs racing would both pass a read.
-  await database.collection(COLLECTIONS.invoices).createIndex({ naturalKey: 1 }, { unique: true, sparse: true });
-  await database.collection(COLLECTIONS.invoices).createIndex({ number: 1 }, { unique: true, sparse: true });
-  await database.collection(COLLECTIONS.receipts).createIndex({ reference: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.receipts).createIndex({ customerCode: 1, receivedAt: -1 });
-  await database
-    .collection(COLLECTIONS.billingPeriods)
-    .createIndex({ customerCode: 1, from: 1 }, { unique: true });
-  await database
-    .collection(COLLECTIONS.reconciliation)
-    .createIndex({ customerCode: 1, periodId: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.invoices).createIndex({ number: 1 }, { unique: true });
-  await database.collection(COLLECTIONS.invoices).createIndex({ customerCode: 1, raisedAt: -1 });
+  // Sparse, because invoices raised before the natural key existed do not carry one and
+  // a plain unique index would treat every one of them as a duplicate of the others.
+  await index(database, COLLECTIONS.invoices, { naturalKey: 1 }, { unique: true, sparse: true });
+  // NOT sparse: every invoice has a number, and this index already exists in production
+  // without the flag. Asking for a sparse one is a different index specification, which
+  // Mongo refuses under the same name — and that refusal aborted the whole run, leaving
+  // every index below it uncreated.
+  await index(database, COLLECTIONS.invoices, { number: 1 }, { unique: true });
+  await index(database, COLLECTIONS.receipts, { reference: 1 }, { unique: true });
+  await index(database, COLLECTIONS.receipts, { customerCode: 1, receivedAt: -1 });
+  await index(database, COLLECTIONS.billingPeriods, { customerCode: 1, from: 1 }, { unique: true });
+  await index(database, COLLECTIONS.reconciliation, { customerCode: 1, periodId: 1 }, { unique: true });
+  await index(database, COLLECTIONS.invoices, { number: 1 }, { unique: true });
+  await index(database, COLLECTIONS.invoices, { customerCode: 1, raisedAt: -1 });
 }
