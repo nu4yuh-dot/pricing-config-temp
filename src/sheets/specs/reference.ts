@@ -173,7 +173,7 @@ export const chargesSpec: SheetSpec = {
         { label: 'Delivery Air', bind: 'charges.deliveryAir', note: 'per shipment (+ODA)', format: 'currency' },
         { label: 'Pickup Surface', bind: 'charges.pickupSurface', note: 'per shipment (+ODA)', format: 'currency' },
         { label: 'Delivery Surface', bind: 'charges.deliverySurface', note: 'per shipment (+ODA)', format: 'currency' },
-        { label: 'Docket / AWB', bind: 'charges.docket', note: 'per shipment; outside the fuel base', format: 'currency' },
+        { label: 'Docket / AWB', bind: 'charges.docket', note: 'superseded — the charge library sets what is billed', format: 'currency' },
         { label: 'GST Air', bind: 'charges.gstAir', note: 'superseded — see Tax & Charges', format: 'percent' },
         { label: 'GST Surface', bind: 'charges.gstSurface', note: 'superseded — see Tax & Charges', format: 'percent' },
         { label: 'Fuel Air', bind: 'charges.fuelAir', note: 'freight + cartage + ODA; also used for NFO', format: 'percent' },

@@ -4,6 +4,7 @@ import { findPincodePair } from '../../../data/pincodes';
 import { listCustomers, findCustomer, baseCardFor, contractedCard } from '../../../data/customers';
 import { checkContract, overrideCount } from '../../../customers/contract';
 import { quote, type QuoteResult } from '../../../pricing/quote';
+import { offersFor } from '../../../data/offers';
 import { MODES, type Mode } from '../../../domain/types';
 import CalculatorTabs from '../../../components/CalculatorTabs';
 
@@ -82,6 +83,22 @@ export default async function CalculatorPage({
   // The contract quote carries the customer's cell map so its breakdown can say which
   // lanes were negotiated. The standard quote deliberately does not: it is the price
   // before negotiation, so every lane on it is the base card by definition.
+  /**
+   * Offers reaching this customer now.
+   *
+   * The calculator is where somebody checks whether an offer they just created actually
+   * discounts anything, so pricing here without them made the one screen built to answer
+   * that question answer it wrongly.
+   */
+  const offers = customer
+    ? await offersFor({
+        at: new Date(),
+        customerCode: customer.code,
+        ...(customer.tags ? { tags: customer.tags } : {}),
+        ...(customer.appliedProduct ? { productKey: customer.appliedProduct.key } : {}),
+      })
+    : [];
+
   const contractQuote =
     contracted &&
     quote(
@@ -91,7 +108,10 @@ export default async function CalculatorPage({
       billing,
       customer?.liveTerms.overrides,
       customer?.liveTerms.laneRules,
+      offers,
     );
+  // Deliberately without offers: this is the standard price, and an offer is a discount
+  // against it. Applying one to both sides would hide the discount it exists to show.
   const standardQuote = standard && quote(shipment, { origin, destination }, standard, billing);
 
   // Coverage is checked against what would actually be billed, so the zones and weight

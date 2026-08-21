@@ -6,6 +6,7 @@ import { recordQuote, fingerprint } from '../../../../data/quotes';
 import { findPincodePair } from '../../../../data/pincodes';
 import { liveCard } from '../../../../data/rate-cards';
 import { findCustomer, contractedCard } from '../../../../data/customers';
+import { offersFor } from '../../../../data/offers';
 import {
   mayUseCarrier,
   carrierRefusedMessage,
@@ -198,7 +199,28 @@ export async function POST(request: Request) {
    * the partner's, so there is no other price to give — and a price nobody may book is
    * worse than none, because somebody plans around it.
    */
-  const carrier = SOURCE_CARRIERS[card.source ?? 'dns'] ?? card.source ?? 'dns';
+  /**
+   * Offers that reach this customer at this moment.
+   *
+   * This endpoint priced without them, which meant an offer created and assigned in the
+   * console changed nothing here — the console said a discount was live and the price the
+   * core was quoted was the undiscounted one. `GET /api/v1/network/quotes` had always
+   * applied them; this one, which is the endpoint the core actually calls, had not.
+   *
+   * Resolved once for the request rather than per tier: the answer depends on the customer
+   * and the moment, neither of which changes between tiers, and re-reading them per tier
+   * would let two tiers in one response disagree about whether an offer was live.
+   */
+  const offers = quotedFor
+    ? await offersFor({
+        at: new Date(),
+        customerCode: quotedFor.code,
+        ...(quotedFor.tags ? { tags: quotedFor.tags } : {}),
+        ...(quotedFor.appliedProduct ? { productKey: quotedFor.appliedProduct.key } : {}),
+      })
+    : [];
+
+    const carrier = SOURCE_CARRIERS[card.source ?? 'dns'] ?? card.source ?? 'dns';
   if (!mayUseCarrier(quotedFor, carrier)) {
     return NextResponse.json(
       {
@@ -245,6 +267,10 @@ export async function POST(request: Request) {
       { ...shipment, mode: tier.mode, ...(rules === undefined ? {} : { service: rules }) },
       { origin, destination },
       card,
+      undefined,
+      undefined,
+      undefined,
+      offers,
     );
     // A lane the network does not carry is omitted rather than priced at zero: an
     // absent tier is a true answer, a zero is a bookable-looking lie.
@@ -328,10 +354,38 @@ export async function POST(request: Request) {
           insuranceCharge: 0,
           pickupCharge: b.pickup,
           deliveryCharge: b.delivery,
-          freightSubtotal: b.freight,
+          /**
+           * Freight before and after an offer, and the discount between them.
+           *
+           * These were `b.freight` twice and two hardcoded zeros, which was safe only while
+           * nothing could discount a quote. An offer does exactly that — and reporting the
+           * reduced freight with `discountAmt: 0` would tell the core a lower price was the
+           * list price, leaving nobody able to explain months later why that shipment was
+           * cheaper. An offer is applied and never stored, so if the quote does not carry it,
+           * nothing does.
+           */
+          freightSubtotal: b.offer?.freightBeforeOffer ?? b.freight,
           adjustedFreight: b.freight,
-          discountPct: 0,
-          discountAmt: 0,
+          discountPct: b.offer?.freightBeforeOffer
+            ? Number(((b.offer.discount / b.offer.freightBeforeOffer) * 100).toFixed(2))
+            : 0,
+          discountAmt: b.offer?.discount ?? 0,
+          /**
+           * Which offer, by name. Additive — a caller that does not read it is unaffected,
+           * and one that does can say "Diwali 10%" instead of "the price changed".
+           */
+          ...(b.offer
+            ? {
+                offer: {
+                  key: b.offer.key,
+                  name: b.offer.name,
+                  kind: b.offer.kind,
+                  discount: b.offer.discount,
+                  freightBeforeOffer: b.offer.freightBeforeOffer,
+                  ...(b.offer.waived.length > 0 ? { waived: b.offer.waived } : {}),
+                },
+              }
+            : {}),
           subtotal: b.subTotal,
           gstProfile: b.tax.sac,
           // Theirs is a percentage, ours a fraction.

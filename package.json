@@ -19,7 +19,8 @@
     "test:e2e": "playwright test",
     "deploy": "tsx scripts/deploy.ts",
     "start:standalone": "node scripts/standalone.mjs",
-    "contract:record": "tsx scripts/record-contract.ts"
+    "contract:record": "tsx scripts/record-contract.ts",
+    "verify:effects": "tsx scripts/verify-effects.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
