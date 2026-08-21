@@ -1,19 +1,21 @@
-node_modules/
-.next/
-out/
-build/
+
+# The source .xlsx workbooks themselves are never committed.
+# but it is also what seeds production. Regenerate with: python3 scripts/extract.py
+# data/extracted/ is deliberately COMMITTED: it is derived from the source workbooks
+*.png
+*.tsbuildinfo
+*.xls
+*.xlsx
+.DS_Store
 .env
 .env.local
-*.tsbuildinfo
-next-env.d.ts
-.DS_Store
+.next/
 /tmp/
-scripts/.recalc/
+build/
+next-env.d.ts
+node_modules/
+out/
+playwright-report/
 scripts/.recalc-franchise/
-*.png
-
-# data/extracted/ is deliberately COMMITTED: it is derived from the source workbooks
-# but it is also what seeds production. Regenerate with: python3 scripts/extract.py
-# The source .xlsx workbooks themselves are never committed.
-*.xlsx
-*.xls
+scripts/.recalc/
+test-results/
