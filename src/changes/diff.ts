@@ -4,6 +4,7 @@ import { editableSpecsFor } from '../sheets/specs';
 import type { RateCardData } from '../domain/types';
 import type { BindPath } from '../sheets/types';
 import { diffLaneRules } from './rule-diff';
+import { diffUpsZoneAccessorials } from './ups-zone-diff';
 
 export type CellValue = string | number | null;
 
@@ -114,7 +115,9 @@ export function diffCardData(before: RateCardData, after: RateCardData): Change[
   // tabs now, built from the card in `sheets/specs/ups.ts`, so the walk finds it like any
   // other card — and running both produced two lines for one edit, which an approver could
   // have decided differently on each.
-  return [...changes, ...diffLaneRules(before, after)];
+  // Per-zone accessorial rates live under a sparse `byZone` map with no A1 address, so the
+  // sheet walk above cannot see one either. Same reasoning as lane rules.
+  return [...changes, ...diffLaneRules(before, after), ...diffUpsZoneAccessorials(before, after)];
 }
 
 /** Index by bind path, for validators that need to locate a cell they flagged. */

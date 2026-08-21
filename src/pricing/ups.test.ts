@@ -274,3 +274,104 @@ describe('every quote adds up', () => {
     expect(off).toEqual([]);
   });
 });
+
+describe('accessorials negotiated for one zone', () => {
+  // Nothing on this card applies by default, so the charge is asked for by id — which is
+  // also how the core calls it: ?accessorials=high-value-cargo-export-clearance.
+  const base = card.accessorials.find((c) => c.minimum > 0 && c.waiver === 0);
+  if (!base) throw new Error('the card has no unwaived accessorial to test with');
+
+  /** The same card, with one charge repriced for Zone 5 only. */
+  const withZone = (override: Record<string, number>): UpsCardData => ({
+    ...card,
+    accessorials: card.accessorials.map((c) =>
+      c.id === base.id ? { ...c, byZone: { Z5: override } } : c,
+    ),
+  });
+
+  const lineFor = (data: UpsCardData, countryCode: string) => {
+    const result = quoteUps(
+      { product: 'package', countryCode, actualWeight: 5, accessorials: [base.id] },
+      data,
+    );
+    if (!result.available) throw new Error(`expected a price: ${result.reason}`);
+    const line = result.breakdown.accessorials.find((l) => l.id === base.id);
+    if (!line) throw new Error('the charge was not applied');
+    return { line, zone: result.breakdown.zone, total: result.breakdown.accessorialsTotal };
+  };
+
+  // MX is Zone 5 on this card; US is its own zone. Both read from the card, not assumed.
+  const IN_Z5 = 'MX';
+  const ELSEWHERE = 'US';
+
+  test('the fixture really does straddle two zones', () => {
+    expect(card.zones[IN_Z5]).toBe('Z5');
+    expect(card.zones[ELSEWHERE]).not.toBe('Z5');
+  });
+
+  test('a zone minimum applies only to that zone', () => {
+    const data = withZone({ minimum: base.minimum + 500 });
+    const zoned = lineFor(data, IN_Z5);
+    const other = lineFor(data, ELSEWHERE);
+
+    expect(zoned.zone).toBe('Z5');
+    expect(zoned.line.gross).toBeCloseTo(base.minimum + 500, 4);
+    expect(zoned.line.overridden).toEqual(['minimum']);
+
+    // The other destination is untouched — the whole point of a per-zone rate.
+    expect(other.line.gross).toBeCloseTo(base.minimum, 4);
+    expect(other.line.overridden).toEqual([]);
+  });
+
+  test('a zone waiver changes what is billed without changing the gross', () => {
+    const data = withZone({ waiver: 1 });
+    const { line } = lineFor(data, IN_Z5);
+    expect(line.gross).toBeCloseTo(base.minimum, 4);
+    expect(line.amount).toBe(0);
+    expect(line.waiver).toBe(1);
+    expect(line.overridden).toEqual(['waiver']);
+  });
+
+  test('a zone override equal to the card is not an override', () => {
+    // Otherwise saving the form for a zone that changed nothing would report three
+    // negotiations, and a reviewer could not find the zones that really moved.
+    const data = withZone({ minimum: base.minimum, perKg: base.perKg, waiver: base.waiver });
+    const { line } = lineFor(data, IN_Z5);
+    expect(line.overridden).toEqual([]);
+    expect(line.gross).toBeCloseTo(base.minimum, 4);
+  });
+
+  test('a partial override keeps the card for the fields it leaves out', () => {
+    const data = withZone({ waiver: 0.5 });
+    const { line } = lineFor(data, IN_Z5);
+    expect(line.gross).toBeCloseTo(base.minimum, 4);
+    expect(line.amount).toBeCloseTo(base.minimum * 0.5, 3);
+    expect(line.overridden).toEqual(['waiver']);
+  });
+
+  test('a per-kg zone rate is still the greater of minimum and per-kg', () => {
+    // 5 kg at 1000/kg beats any minimum on this card, so the per-kg arm must win.
+    const data = withZone({ perKg: 1000 });
+    const { line } = lineFor(data, IN_Z5);
+    expect(line.gross).toBeCloseTo(5000, 4);
+    expect(line.overridden).toEqual(['perKg']);
+  });
+
+  test('the accessorial total follows the zone, not the card', () => {
+    const data = withZone({ minimum: base.minimum + 1000 });
+    expect(lineFor(data, IN_Z5).total).toBeCloseTo(
+      lineFor(data, ELSEWHERE).total + 1000,
+      3,
+    );
+  });
+
+  test('a card with no zone rates prices exactly as it did before', () => {
+    // The compatibility guarantee, asserted rather than assumed: every card in production
+    // today has no byZone at all.
+    for (const code of [IN_Z5, ELSEWHERE]) {
+      const line = lineFor(card, code).line;
+      expect(line.gross).toBeCloseTo(base.minimum, 4);
+      expect(line.overridden).toEqual([]);
+    }
+  });
+});

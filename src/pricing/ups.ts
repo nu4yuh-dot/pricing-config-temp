@@ -9,7 +9,13 @@ import {
   ZERO_MICRO,
   type Micro,
 } from './money';
-import { resolveZone, selectRate, type UpsCardData, type UpsProduct } from '../domain/ups';
+import {
+  effectiveAccessorial,
+  resolveZone,
+  selectRate,
+  type UpsCardData,
+  type UpsProduct,
+} from '../domain/ups';
 
 /**
  * Pricing the UPS / MOVIN international export card.
@@ -56,6 +62,14 @@ export interface UpsChargeLine {
   waiver: number;
   /** What is actually billed. */
   amount: number;
+  /**
+   * Which of this charge's rates came from the destination zone rather than the card.
+   *
+   * Empty for a charge priced the same everywhere, which is most of them. Non-empty is the
+   * answer to "why is this accessorial a different amount than last time" when the only
+   * thing that changed was the country.
+   */
+  overridden: string[];
 }
 
 export interface UpsBreakdown {
@@ -156,14 +170,17 @@ export function quoteUps(input: UpsQuoteInput, data: UpsCardData): UpsQuoteResul
 
   for (const charge of data.accessorials) {
     if (!charge.appliesByDefault && !asked.has(charge.id)) continue;
-    const gross = maxMicro(toMicro(charge.minimum), microPerKg(toMicro(charge.perKg), grams));
-    const amount = (gross - microRateOf(gross, charge.waiver)) as Micro;
+    // Priced against the destination's own zone where that zone negotiated something.
+    const rates = effectiveAccessorial(charge, where.zone);
+    const gross = maxMicro(toMicro(rates.minimum), microPerKg(toMicro(rates.perKg), grams));
+    const amount = (gross - microRateOf(gross, rates.waiver)) as Micro;
     lines.push({
       id: charge.id,
       name: charge.name,
       gross: microToRupees(gross),
-      waiver: charge.waiver,
+      waiver: rates.waiver,
       amount: microToRupees(amount),
+      overridden: rates.overridden,
     });
     accessorialsTotal = addMicro(accessorialsTotal, amount);
   }

@@ -59,6 +59,20 @@ export interface UpsBulkRow {
   rates: Record<string, number>;
 }
 
+/**
+ * What one zone charges differently for an accessorial.
+ *
+ * Sparse on purpose, exactly as a customer's contract overrides are: a zone that only
+ * negotiated the waiver stores the waiver and follows the card for the rest. Storing all
+ * three would mean a later change to the card's minimum silently failed to reach eighteen
+ * zones that had each copied the old one.
+ */
+export interface UpsAccessorialOverride {
+  minimum?: number;
+  perKg?: number;
+  waiver?: number;
+}
+
 export interface UpsAccessorial {
   id: string;
   name: string;
@@ -69,6 +83,52 @@ export interface UpsAccessorial {
   /** 1 is fully waived, 0.5 half, 0 not waived. */
   waiver: number;
   appliesByDefault: boolean;
+  /**
+   * Rate zone → what that zone charges instead.
+   *
+   * Absent for most charges, and that is the normal case: the agreement prices an
+   * accessorial once and it applies wherever the parcel is going. Where a zone was
+   * negotiated separately, only the fields that differ are recorded here.
+   */
+  byZone?: Record<string, UpsAccessorialOverride>;
+}
+
+/** An accessorial's rates as they apply to one zone, and what the zone changed. */
+export interface EffectiveAccessorial {
+  minimum: number;
+  perKg: number;
+  waiver: number;
+  /** Which fields came from the zone rather than the card. Empty when none did. */
+  overridden: string[];
+}
+
+/**
+ * The rates in force for one accessorial in one zone.
+ *
+ * A field is overridden only when it is present **and** different. Without that second
+ * test, a zone whose form was saved wholesale would report three overrides identical to
+ * the card, and a reviewer reading the approval queue could not tell which zones had
+ * actually negotiated anything.
+ */
+export function effectiveAccessorial(
+  charge: UpsAccessorial,
+  zone?: string,
+): EffectiveAccessorial {
+  const base = { minimum: charge.minimum, perKg: charge.perKg, waiver: charge.waiver };
+  const override = zone === undefined ? undefined : charge.byZone?.[zone];
+  if (!override) return { ...base, overridden: [] };
+
+  const overridden: string[] = [];
+  const resolved = { ...base };
+  for (const field of ['minimum', 'perKg', 'waiver'] as const) {
+    const value = override[field];
+    // Null and NaN reach here from a cleared input; neither is a negotiated rate.
+    if (value === undefined || value === null || Number.isNaN(value)) continue;
+    if (value === base[field]) continue;
+    resolved[field] = value;
+    overridden.push(field);
+  }
+  return { ...resolved, overridden };
 }
 
 export interface UpsPostalZone {

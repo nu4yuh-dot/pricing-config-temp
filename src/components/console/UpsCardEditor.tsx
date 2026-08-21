@@ -20,7 +20,17 @@ const SECTIONS: { key: UpsSection; label: string; bind?: string }[] = [
   { key: 'reference', label: 'Destinations & zones' },
 ];
 import { saveParamEdits } from '../../app/console-actions';
+import { effectiveAccessorial } from '../../domain/ups';
 import type { UpsCardData } from '../../domain/ups';
+
+/**
+ * Whether the accessorial table is editing the card's own rates or one zone's overrides.
+ *
+ * Two modes rather than eighteen extra columns: 37 charges by 18 zones by 3 values is two
+ * thousand inputs, and a screen nobody can check their own work on is a screen that ships
+ * a wrong tariff.
+ */
+type AccessorialScope = 'card' | 'zone';
 
 /**
  * Editing the UPS tariff.
@@ -56,6 +66,7 @@ export default function UpsCardEditor({
   reference?: React.ReactNode;
 }) {
   const [zone, setZone] = useState(data.zoneKeys[0] ?? 'Z1');
+  const [scope, setScope] = useState<AccessorialScope>('card');
   const [dirty, setDirty] = useState<Record<string, string>>({});
   const [section, setSection] = useState<UpsSection>('params');
   const [pending, startTransition] = useTransition();
@@ -339,9 +350,42 @@ export default function UpsCardEditor({
       <div className="panel">
         <header>
           <h3>Accessorial charges</h3>
-          <span className="hint">A waiver of 1 is fully waived</span>
+          <span className="hint">
+            {scope === 'card' ? 'Everywhere' : `Zone ${zone}`} · a waiver of 1 is fully waived
+          </span>
         </header>
         <div className="body">
+          <div className="inline-form" style={{ marginBottom: 12 }}>
+            <div className="field" style={{ maxWidth: 260 }}>
+              <label htmlFor="ups-acc-scope">Applies to</label>
+              <select
+                id="ups-acc-scope"
+                value={scope}
+                onChange={(event) => setScope(event.target.value as AccessorialScope)}
+              >
+                <option value="card">Every destination</option>
+                <option value="zone">One zone only</option>
+              </select>
+            </div>
+            {scope === 'zone' && (
+              <div className="field" style={{ maxWidth: 200 }}>
+                <label htmlFor="ups-acc-zone">Zone</label>
+                <select id="ups-acc-zone" value={zone} onChange={(event) => setZone(event.target.value)}>
+                  {data.zoneKeys.map((z) => (
+                    <option key={z} value={z}>
+                      {z}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <span style={{ color: 'var(--ink-soft)', fontSize: 11.5, alignSelf: 'end', paddingBottom: 6 }}>
+              {scope === 'card'
+                ? 'These rates apply wherever the parcel is going, unless a zone overrides one.'
+                : 'Leave a cell blank to follow the card. Changes to other zones are kept while you switch.'}
+            </span>
+          </div>
+
           <div className="gridscroll">
             <table className="data gridedit">
               <thead>
@@ -350,20 +394,46 @@ export default function UpsCardEditor({
                   <th>Minimum ₹</th>
                   <th>Per kg ₹</th>
                   <th>Waiver</th>
+                  {scope === 'zone' && <th>Everywhere</th>}
                 </tr>
               </thead>
               <tbody>
-                {data.accessorials.map((charge, index) => (
-                  <tr key={charge.id}>
-                    <td>
-                      <strong>{charge.name}</strong>{' '}
-                      <span className="meta">{charge.unit}</span>
-                    </td>
-                    {gridCell(`ups.accessorials.${index}.minimum`, charge.minimum, `${charge.name} — minimum`)}
-                    {gridCell(`ups.accessorials.${index}.perKg`, charge.perKg, `${charge.name} — per kg`)}
-                    {gridCell(`ups.accessorials.${index}.waiver`, charge.waiver, `${charge.name} — waiver`)}
-                  </tr>
-                ))}
+                {data.accessorials.map((charge, index) => {
+                  const prefix =
+                    scope === 'card'
+                      ? `ups.accessorials.${index}`
+                      : `ups.accessorials.${index}.byZone.${zone}`;
+                  const override = charge.byZone?.[zone];
+                  // In zone scope a blank cell means "follow the card", so the stored value
+                  // must be the override itself and not the card's number — otherwise every
+                  // zone would look as though it had negotiated all three.
+                  const cell = (field: 'minimum' | 'perKg' | 'waiver') =>
+                    gridCell(
+                      `${prefix}.${field}`,
+                      scope === 'card' ? charge[field] : (override?.[field] ?? null),
+                      `${charge.name} — ${field}${scope === 'zone' ? ` for ${zone}` : ''}`,
+                    );
+                  const effective = effectiveAccessorial(charge, zone);
+                  return (
+                    <tr key={charge.id}>
+                      <td>
+                        <strong>{charge.name}</strong>{' '}
+                        <span className="meta">{charge.unit}</span>
+                        {scope === 'zone' && effective.overridden.length > 0 && (
+                          <span className="meta"> · {zone}: {effective.overridden.join(', ')}</span>
+                        )}
+                      </td>
+                      {cell('minimum')}
+                      {cell('perKg')}
+                      {cell('waiver')}
+                      {scope === 'zone' && (
+                        <td className="meta" style={{ whiteSpace: 'nowrap' }}>
+                          {charge.minimum} / {charge.perKg} / {charge.waiver}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
