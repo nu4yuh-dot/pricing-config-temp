@@ -490,6 +490,25 @@ export function openApiDocument(): Record<string, unknown> {
           responses: { ...ok('The bill and its lines.'), '404': { description: 'No such bill.' } },
         },
       },
+      '/api/v1/customers/{code}/billing/{periodId}/pdf': {
+        get: {
+          summary: 'A period’s charges as a PDF',
+          description:
+            'A statement of charges, not a tax invoice — a cycle holds several invoice ' +
+            'numbers because invoices are raised per mode, and the statement names them. ' +
+            'Rendered on demand from the same figures as the JSON, so the two cannot ' +
+            'disagree, and never cached because a credit note changes the period. ' +
+            'Returns application/pdf.',
+          parameters: [
+            { name: 'code', in: 'path', required: true, schema: { type: 'string' } },
+            { name: 'periodId', in: 'path', required: true, schema: { type: 'string' } },
+          ],
+          responses: {
+            ...ok('The statement, as application/pdf.'),
+            '404': { description: 'No bill for that period, or no such customer.' },
+          },
+        },
+      },
       '/api/v1/customers/{code}/billing/{periodId}/lines': {
         post: {
           summary: 'Accept every outstanding line',
