@@ -32,9 +32,20 @@ export interface BillLine {
   origin: string;
   destination: string;
   chargeableWeight: number;
+  /**
+   * Rupees, because a line renders straight into the customer's table.
+   *
+   * The paise fields beside them are the same money and are what to compute with. A bill
+   * carries both because the totals on it are in paise, and a caller who sums the rupee
+   * lines to check them against `totalPaise` is out by a factor of a hundred. Summing
+   * `totalPaise` across the lines reconciles exactly.
+   */
   taxableValue: number;
   gst: number;
   total: number;
+  taxableValuePaise: number;
+  gstPaise: number;
+  totalPaise: number;
   invoiceNumber: string;
   /** Whether the customer has accepted, disputed, or not looked at this line. */
   reconciliation: 'pending' | 'accepted' | 'disputed';
@@ -119,6 +130,9 @@ export function buildCustomerBill(
         taxableValue: line.taxableValuePaise / 100,
         gst: line.gstPaise / 100,
         total: line.totalPaise / 100,
+        taxableValuePaise: line.taxableValuePaise,
+        gstPaise: line.gstPaise,
+        totalPaise: line.totalPaise,
         invoiceNumber: invoice.number,
         reconciliation: mark?.state ?? 'pending',
         ...(mark?.reason ? { disputeReason: mark.reason } : {}),
