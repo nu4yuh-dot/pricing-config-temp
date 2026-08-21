@@ -6,6 +6,12 @@ import { recordQuote, fingerprint } from '../../../../data/quotes';
 import { findPincodePair } from '../../../../data/pincodes';
 import { liveCard } from '../../../../data/rate-cards';
 import { findCustomer, contractedCard } from '../../../../data/customers';
+import {
+  mayUseCarrier,
+  carrierRefusedMessage,
+  carrierName,
+  SOURCE_CARRIERS,
+} from '../../../../customers/carrier-access';
 import { quote } from '../../../../pricing/quote';
 import { listServices, isBuiltIn } from '../../../../data/services';
 import { serviceTiers, serviceRules } from '../../../../domain/services';
@@ -147,6 +153,7 @@ export async function POST(request: Request) {
   /* ------------------------------------------------------------------ the card */
 
   let card: RateCard | null;
+  let quotedFor: Awaited<ReturnType<typeof findCustomer>> = null;
 
   // Held so the quote record can say which terms priced it, not merely which customer.
   let contract: { fingerprint: string; overrides: number } | null = null;
@@ -162,6 +169,7 @@ export async function POST(request: Request) {
     // The contracted card is the base card with this customer's negotiated cells
     // applied, so a quote here is the price they were actually promised.
     card = await contractedCard(customer);
+    quotedFor = customer;
     contract = {
       fingerprint: fingerprint(customer.liveTerms),
       overrides: Object.keys(customer.liveTerms.overrides).length,
@@ -174,6 +182,32 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { success: false, message: 'No rate card is available to price against.' },
       { status: 503 },
+    );
+  }
+
+  /**
+   * Whether this customer may be quoted the carrier whose card won.
+   *
+   * A customer's base card can be a partner's — Bluedart, UPS — and the core gates those
+   * per account. The Bluedart, UPS and FTL endpoints each checked; this one did not, so a
+   * customer sitting on a partner card was quoted it whatever their access said. Nothing
+   * has walked through that yet because every customer today is on a DNS card, which is
+   * never gated: it is not a partner they opt into, it is the thing they signed up for.
+   *
+   * Refused outright rather than falling back to the standard network. Their base card *is*
+   * the partner's, so there is no other price to give — and a price nobody may book is
+   * worse than none, because somebody plans around it.
+   */
+  const carrier = SOURCE_CARRIERS[card.source ?? 'dns'] ?? card.source ?? 'dns';
+  if (!mayUseCarrier(quotedFor, carrier)) {
+    return NextResponse.json(
+      {
+        success: false,
+        // Additive: a caller that reads only `message` behaves exactly as before.
+        reason: 'carrier-not-enabled',
+        message: carrierRefusedMessage(quotedFor!.name, carrierName(carrier)),
+      },
+      { status: 403 },
     );
   }
 

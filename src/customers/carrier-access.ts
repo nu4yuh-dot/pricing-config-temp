@@ -19,6 +19,25 @@ export const SOURCE_CARRIERS: Record<string, string> = {
   ups: 'ups',
 };
 
+/**
+ * What a carrier is called when telling somebody they cannot use it.
+ *
+ * Separate from the card name on purpose. A card is named for what it is —
+ * "Bluedart — franchise, directional zones" — which is right on a rate screen and clumsy in
+ * a sentence refusing a booking. All four quoting routes read this, so they refuse in the
+ * same words.
+ */
+export const CARRIER_NAMES: Record<string, string> = {
+  own: 'the DNS network',
+  bluedart: 'Bluedart',
+  ups: 'UPS / MOVIN',
+  velocity: 'velocity',
+};
+
+export function carrierName(carrierId: string): string {
+  return CARRIER_NAMES[carrierId] ?? carrierId;
+}
+
 /** Never gated: it is the default network, not an opt-in partner. */
 const ALWAYS_ALLOWED = 'own';
 

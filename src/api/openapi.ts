@@ -136,7 +136,15 @@ export function openApiDocument(): Record<string, unknown> {
             'The canonical quoting contract. Returns a quoteId; keep it — it is how the ' +
             'same number is explained again on an invoice months later.',
           requestBody: jsonBody(QuoteRequest),
-          responses: ok('Tiers, each with a full breakdown, plus the quoteId.'),
+          responses: {
+            ...ok('Tiers, each with a full breakdown, plus the quoteId.'),
+            '403': {
+              description:
+                'The named customer is not enabled for the carrier whose card prices them. ' +
+                'Carries reason: carrier-not-enabled. Their base card is that partner’s, so ' +
+                'there is no other price to fall back to.',
+            },
+          },
         },
       },
       '/api/v1/quotes/{quoteId}': {
