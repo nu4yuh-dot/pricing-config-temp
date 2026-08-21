@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useToast } from '../Toasts';
 import { scheduleOffer } from '../../app/console-actions';
 
 /**
@@ -23,6 +24,7 @@ export default function NewOfferForm({
   charges: { id: string; name: string }[];
 }) {
   const [name, setName] = useState('');
+  const toast = useToast();
   const [kind, setKind] = useState<'percent-off-freight' | 'amount-off-freight' | 'waive-charge'>(
     'percent-off-freight',
   );
@@ -62,7 +64,7 @@ export default function NewOfferForm({
     setError(null);
     startTransition(async () => {
       try {
-        await scheduleOffer({
+        const outcome = await scheduleOffer({
           name,
           kind,
           value: kind === 'waive-charge' ? 0 : numeric,
@@ -71,9 +73,19 @@ export default function NewOfferForm({
           endsAt,
           audience: { kind: audienceKind, value: audienceValue },
         });
+        if ('error' in outcome) {
+          setError(outcome.error);
+          toast.failed('schedule the offer', outcome.error);
+          return;
+        }
+        // Named, and with the dates, because "saved" alone does not tell somebody whether
+        // the offer is live now or starts next week — which is the thing they came to do.
+        toast.saved(`Offer “${name}”`, `${kind === 'waive-charge' ? 'Waiver' : `${numeric}${kind === 'percent-off-freight' ? '%' : ' rupees'} off freight`} · ${startsAt} to ${endsAt} · ${audienceKind} ${audienceValue}`);
         setName('');
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Could not schedule the offer.');
+        const reason = cause instanceof Error ? cause.message : 'Could not schedule the offer.';
+        setError(reason);
+        toast.failed('schedule the offer', reason);
       }
     });
   };

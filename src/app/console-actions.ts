@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { attempt } from './action-result';
 import type {
   SettlementMode,
   BillingCycle,
@@ -1131,19 +1132,30 @@ export async function scheduleOffer(input: {
   audience: { kind: 'product' | 'segment' | 'customer'; value: string };
 }) {
   const user = await authorise('edit-draft');
-  const { createOffer } = await import('../data/offers');
 
-  await createOffer({
-    name: input.name,
-    kind: input.kind,
-    value: input.value,
-    ...(input.chargeId ? { chargeId: input.chargeId } : {}),
-    startsAt: new Date(input.startsAt),
-    endsAt: new Date(input.endsAt),
-    audience: input.audience,
-    actor: toActor(user),
+  /**
+   * Returned rather than thrown, so the reason survives.
+   *
+   * `createOffer` refuses a duplicate name, an end before a start, a waiver with no charge
+   * and a percentage outside 0–100 — each with a sentence written to be read. Thrown out of
+   * a Server Action, a production build replaces every one of them with boilerplate, and the
+   * person who needs the sentence never sees it.
+   */
+  return attempt('Could not schedule the offer', async () => {
+    const { createOffer } = await import('../data/offers');
+    const offer = await createOffer({
+      name: input.name,
+      kind: input.kind,
+      value: input.value,
+      ...(input.chargeId ? { chargeId: input.chargeId } : {}),
+      startsAt: new Date(input.startsAt),
+      endsAt: new Date(input.endsAt),
+      audience: input.audience,
+      actor: toActor(user),
+    });
+    revalidatePath('/offers');
+    return { key: offer.key };
   });
-  revalidatePath('/offers');
 }
 
 export async function suspendOffer(key: string, enabled: boolean) {

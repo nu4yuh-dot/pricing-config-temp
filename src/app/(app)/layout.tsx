@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import ToastProvider from '../../components/Toasts';
 import Link from 'next/link';
 import { currentUser } from '../../auth/session';
 import { can } from '../../auth/roles';
@@ -18,6 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const waiting = queue.length + proposals.length + exceptions.length;
 
   return (
+    <ToastProvider>
     <div className="shell">
       <header className="masthead">
         <h1>DNS Logistics</h1>
@@ -100,5 +102,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </header>
       {children}
     </div>
+    </ToastProvider>
   );
 }

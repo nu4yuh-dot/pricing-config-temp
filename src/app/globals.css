@@ -2050,3 +2050,71 @@ table.data.gridedit td.text {
   margin-left: 6px;
   vertical-align: baseline;
 }
+
+/* ----------------------------------------------------------------- toasts */
+/*
+ * Top right, clear of the masthead.
+ *
+ * Fixed rather than absolute so it survives a page that scrolls, and offset by the
+ * masthead's own height so it never sits on top of the navigation. `pointer-events: none`
+ * on the stack with it restored on each toast means the column does not swallow clicks on
+ * the page behind it — a notification that blocks the thing it is reporting on is worse
+ * than none.
+ */
+.toasts {
+  position: fixed;
+  top: 52px;
+  right: 16px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(380px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule-strong);
+  border-left: 3px solid var(--ink-soft);
+  border-radius: 4px;
+  background: var(--paper);
+  box-shadow: var(--shadow-float);
+  font-size: 12.5px;
+  animation: toast-in 140ms ease-out;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}
+
+.toast.success { border-left-color: var(--approved); background: var(--approved-wash); }
+.toast.error   { border-left-color: var(--rejected); background: var(--rejected-wash); }
+.toast.info    { border-left-color: var(--accent);   background: var(--dirty-wash); }
+
+.toast-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.toast-body strong { color: var(--ink); font-weight: 600; }
+
+/* The reason wraps rather than truncating: a message cut in half cannot be acted on. */
+.toast-detail { color: var(--ink-soft); line-height: 1.45; overflow-wrap: anywhere; }
+
+.toast-close {
+  background: none;
+  border: 0;
+  padding: 0 2px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+
+.toast-close:hover:not(:disabled) { color: var(--ink); background: none; }

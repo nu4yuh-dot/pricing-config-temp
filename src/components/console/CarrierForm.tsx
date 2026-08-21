@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
+import { useToast } from '../Toasts';
 import { RATE_STRUCTURES, RATE_STRUCTURE_LABELS } from '../../domain/carriers';
 import type { ActionResult } from '../../app/console-actions';
 
@@ -18,6 +19,20 @@ export default function CarrierForm({
   action: (previous: ActionResult | null, form: FormData) => Promise<ActionResult>;
 }) {
   const [state, submit, pending] = useActionState(action, null);
+  const toast = useToast();
+
+  /**
+   * Report whatever the action returned.
+   *
+   * Driven off the result rather than the click, so a failure the server decided — a
+   * duplicate key, a refused value — is announced with the reason it gave rather than a
+   * guess made on the client.
+   */
+  useEffect(() => {
+    if (!state) return;
+    if ('error' in state && state.error) toast.failed('save the carrier', state.error);
+    else if ('ok' in state && state.ok) toast.saved('Carrier');
+  }, [state, toast]);
 
   return (
     <form action={submit} className="panel">

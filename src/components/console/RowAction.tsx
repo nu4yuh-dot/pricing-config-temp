@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useToast } from '../Toasts';
 
 /**
  * One irreversible-looking action on a table row: deactivate a carrier, delete a service.
@@ -18,6 +19,8 @@ export default function RowAction({
   confirmLabel,
   run,
   danger,
+  /** What the row is, for the toast: "Bluedart", "Surface Express". */
+  subject,
 }: {
   label: string;
   confirmLabel: string;
@@ -37,10 +40,12 @@ export default function RowAction({
   run: () => Promise<unknown>;
   /** Styles the confirm step as destructive. Deactivating is not; deleting is. */
   danger?: boolean;
+  subject?: string;
 }) {
   const [armed, setArmed] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   if (error) {
     return (
@@ -72,8 +77,16 @@ export default function RowAction({
             try {
               await run();
               setArmed(false);
+              // The row usually vanishes or changes on success, but "usually" is not
+              // confirmation — say so.
+              toast.show({ kind: 'success', title: `${label} — done`,
+                ...(subject ? { detail: subject } : {}) });
             } catch (cause) {
-              setError(cause instanceof Error ? cause.message : 'That did not work.');
+              const reason = cause instanceof Error ? cause.message : 'That did not work.';
+              setError(reason);
+              // Inline as well as a toast: the inline message is attached to the row it
+              // belongs to, and the toast is what somebody looking elsewhere will notice.
+              toast.failed(label.toLowerCase(), reason);
             }
           })
         }
