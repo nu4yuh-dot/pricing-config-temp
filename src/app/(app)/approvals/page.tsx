@@ -13,6 +13,7 @@ import ContractRequestRow from '../../../components/console/ContractRequestRow';
 import { pushBacklog } from '../../../data/core-push';
 import { coreIsConfigured } from '../../../core/client';
 import ProfileChangeRow from '../../../components/console/ProfileChangeRow';
+import SendToCoreButton from '../../../components/console/SendToCoreButton';
 import { currentUser } from '../../../auth/session';
 import { can } from '../../../auth/roles';
 
@@ -94,8 +95,9 @@ export default async function ApprovalsPage() {
               to reach the SameX core.
             </strong>{' '}
             {coreIsConfigured()
-              ? 'They will send on the next attempt. Nothing is lost while they wait.'
+              ? 'Nothing is lost while they wait.'
               : 'The core connection is not configured yet, so they are being held. Nothing is lost — they will send once it is.'}
+            {coreIsConfigured() && <SendToCoreButton queued={backlog.queued} />}
           </div>
         )}
 
