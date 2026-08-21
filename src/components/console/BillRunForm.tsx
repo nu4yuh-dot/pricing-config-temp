@@ -4,7 +4,8 @@ import { useActionState, useState, useTransition } from 'react';
 import { previewBill, runBillingAction } from '../../app/console-actions';
 import type { ActionResult } from '../../app/console-actions';
 
-type Preview = Awaited<ReturnType<typeof previewBill>>;
+/** The preview itself, unwrapped from the outcome the action now returns. */
+type Preview = Extract<Awaited<ReturnType<typeof previewBill>>, { ok: true }>['preview'];
 
 /**
  * Running the monthly bill.
@@ -36,7 +37,14 @@ export default function BillRunForm({
     setPreviewError(null);
     startChecking(async () => {
       try {
-        setPreview(await previewBill(customerCode, from, to));
+        const outcome = await previewBill(customerCode, from, to);
+        // A refused preview says why now, instead of showing an empty one and leaving the
+        // reason in a log.
+        if ('error' in outcome) {
+          setPreviewError(outcome.error);
+          return;
+        }
+        setPreview(outcome.preview);
       } catch (cause) {
         setPreview(null);
         setPreviewError(cause instanceof Error ? cause.message : 'Could not read that period.');

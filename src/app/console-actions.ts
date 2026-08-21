@@ -798,7 +798,15 @@ export async function testShipmentAction(
   };
 }
 
-/** How many pincodes an endpoint reaches, and which cities they fall in. */
+/**
+ * How many pincodes an endpoint reaches, and which cities they fall in.
+ *
+ * Left throwing, deliberately. `attempt` exists so a *refusal* survives to the screen with
+ * the sentence it was given — "already exists", "awaiting approval", "not enabled for
+ * Bluedart". This has no refusals: it either reads the pincode master or the process is
+ * broken, and for a genuine crash the boilerplate message is the right amount to show.
+ * `searchGeographyAction` and `previewRuleAction` are the same shape.
+ */
 export async function coverageAction(
   endpoint: Endpoint,
   mode: StoredMode,
@@ -1683,8 +1691,17 @@ export async function relockPeriodAction(
  */
 export async function previewBill(customerCode: string, from: string, to: string) {
   await authorise('record-money');
-  const { previewBillRun } = await import('../data/bill-run');
-  return previewBillRun(customerCode, new Date(from), new Date(to));
+
+  /**
+   * A preview refuses for reasons worth reading — an unknown customer, a period already
+   * billed, nothing billable because every line is held. Thrown, a production build replaces
+   * each of them with boilerplate, and somebody looking at an empty preview is left to guess
+   * which one it was.
+   */
+  return attempt('Could not preview the bill', async () => {
+    const { previewBillRun } = await import('../data/bill-run');
+    return { preview: await previewBillRun(customerCode, new Date(from), new Date(to)) };
+  });
 }
 
 export async function runBillingAction(
@@ -1729,8 +1746,11 @@ export async function runBillingAction(
  */
 export async function correctionOptions(invoiceNumber: string) {
   await authorise('record-money');
-  const { correctionOptionsFor } = await import('../data/notes');
-  return correctionOptionsFor(invoiceNumber);
+
+  return attempt('Could not read what may be done to that invoice', async () => {
+    const { correctionOptionsFor } = await import('../data/notes');
+    return { options: await correctionOptionsFor(invoiceNumber) };
+  });
 }
 
 /**

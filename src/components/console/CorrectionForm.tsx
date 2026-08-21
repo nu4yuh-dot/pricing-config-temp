@@ -3,7 +3,8 @@
 import { useActionState, useEffect, useState, useTransition } from 'react';
 import { correctInvoice, correctionOptions, type ActionResult } from '../../app/console-actions';
 
-type Options = Awaited<ReturnType<typeof correctionOptions>>;
+/** What may be done to the selected invoice, unwrapped from the action's outcome. */
+type Options = Extract<Awaited<ReturnType<typeof correctionOptions>>, { ok: true }>['options'];
 
 /**
  * Correcting an issued invoice.
@@ -32,6 +33,7 @@ export default function CorrectionForm({
   const [withdraw, setWithdraw] = useState(false);
   const [options, setOptions] = useState<Options>(null);
   const [loading, startLoading] = useTransition();
+  const [optionsError, setOptionsError] = useState<string | null>(null);
 
   // Refetched whenever the invoice changes, and again after a correction lands — issuing a
   // note can close a route that was open a moment ago.
@@ -40,7 +42,13 @@ export default function CorrectionForm({
       setOptions(null);
       return;
     }
-    startLoading(async () => setOptions(await correctionOptions(selected)));
+    startLoading(async () => {
+      const outcome = await correctionOptions(selected);
+      // A refusal here means the invoice could not be read at all, which is worth saying
+      // rather than showing an empty set of routes as though nothing were possible.
+      setOptions('error' in outcome ? null : outcome.options);
+      setOptionsError('error' in outcome ? outcome.error : null);
+    });
   }, [selected, state?.ok]);
 
   if (invoices.length === 0) {
@@ -111,6 +119,7 @@ export default function CorrectionForm({
         </div>
 
         {loading && <p className="sub">Checking what is open on this invoice…</p>}
+        {optionsError && <div className="error">{optionsError}</div>}
 
         {options && !loading && (
           <div className="callout" style={{ marginTop: 10 }}>
