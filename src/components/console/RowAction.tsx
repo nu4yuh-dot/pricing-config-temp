@@ -75,7 +75,22 @@ export default function RowAction({
         onClick={() =>
           startTransition(async () => {
             try {
-              await run();
+              /**
+               * Actions now *return* their refusal rather than throwing it, so that the
+               * reason survives a production build. A caller that only catches would treat
+               * a refusal as a success and show the wrong toast — so the result is checked
+               * as well as the throw.
+               */
+              const outcome = await run();
+              const returnedError =
+                outcome && typeof outcome === 'object' && 'error' in outcome
+                  ? String((outcome as { error: unknown }).error)
+                  : null;
+              if (returnedError) {
+                setError(returnedError);
+                toast.failed(label.toLowerCase(), returnedError);
+                return;
+              }
               setArmed(false);
               // The row usually vanishes or changes on success, but "usually" is not
               // confirmation — say so.

@@ -40,7 +40,12 @@ export default function PriceLockPanel({
     setResult(null);
     startTransition(async () => {
       try {
-        const { locked } = await lockTodaysPrices(customerCode, lock);
+        const outcome = await lockTodaysPrices(customerCode, lock);
+        if ('error' in outcome) {
+          setError(outcome.error);
+          return;
+        }
+        const { locked } = outcome;
         setResult(
           lock
             ? `${locked} rates pinned at today's prices. Submit the draft to put it in front of an approver.`

@@ -1,6 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
+import { useToast } from '../Toasts';
 import { suspendOffer } from '../../app/console-actions';
 
 /**
@@ -17,13 +18,22 @@ export default function OfferSwitch({
   enabled: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
 
   return (
     <button
       type="button"
       className="btn"
       disabled={pending}
-      onClick={() => startTransition(async () => void (await suspendOffer(offerKey, !enabled)))}
+      onClick={() =>
+        startTransition(async () => {
+          // The result was discarded, so a refused switch looked exactly like a successful
+          // one — the row re-rendered unchanged and nothing said why.
+          const outcome = await suspendOffer(offerKey, !enabled);
+          if (outcome && 'error' in outcome) toast.failed('change the offer', outcome.error);
+          else toast.show({ kind: 'success', title: enabled ? 'Offer suspended' : 'Offer resumed' });
+        })
+      }
     >
       {pending ? '…' : enabled ? 'Suspend' : 'Resume'}
     </button>

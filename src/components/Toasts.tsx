@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { reasonFrom } from '../app/action-result';
 
 /**
  * Telling somebody what just happened.
@@ -46,23 +47,6 @@ const ToastContext = createContext<ToastApi | null>(null);
 /** How long a success stays. Errors ignore this — see the note above. */
 const LINGER_MS = 4500;
 
-/**
- * Read the reason out of whatever an action returned or threw.
- *
- * Actions here report failure three ways — a thrown Error, a returned `{ error }`, or a bare
- * string — because they were written at different times. Rather than make every caller
- * remember which, this takes any of them.
- */
-export function reasonFrom(cause: unknown): string {
-  if (typeof cause === 'string' && cause.trim() !== '') return cause;
-  if (cause instanceof Error && cause.message) return cause.message;
-  if (cause && typeof cause === 'object') {
-    const maybe = (cause as { error?: unknown; message?: unknown });
-    if (typeof maybe.error === 'string' && maybe.error.trim() !== '') return maybe.error;
-    if (typeof maybe.message === 'string' && maybe.message.trim() !== '') return maybe.message;
-  }
-  return 'No reason was given, which is usually a bug rather than a silent success.';
-}
 
 export function useToast(): ToastApi {
   const api = useContext(ToastContext);

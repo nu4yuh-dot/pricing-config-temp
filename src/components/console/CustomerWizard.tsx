@@ -136,6 +136,12 @@ export default function CustomerWizard({
           scope,
           propose,
         });
+        // The action returns its refusal rather than throwing it, so the reason survives a
+        // production build — and a caller that only caught would navigate away on a failure.
+        if ('error' in result) {
+          setError(result.error);
+          return;
+        }
         router.push(
           result.proposalId
             ? `/approvals/contract/${result.proposalId}`

@@ -21,7 +21,14 @@ export default function AssignSettlementForm({
 }: {
   customers: { code: string; name: string; currentProfile?: string; overrideCount?: number }[];
   profiles: { key: string; name: string; summary: string }[];
-  assign: (customerCode: string, profileKey: string) => Promise<void>;
+  /**
+   * The action, which returns its refusal rather than throwing it — so a failure survives a
+   * production build with the reason it was given.
+   */
+  assign: (
+    customerCode: string,
+    profileKey: string,
+  ) => Promise<{ ok: true } | { error: string } | void>;
 }) {
   const [customerCode, setCustomerCode] = useState(customers[0]?.code ?? '');
   const [profileKey, setProfileKey] = useState(profiles[0]?.key ?? '');
@@ -114,7 +121,11 @@ export default function AssignSettlementForm({
               setError(null);
               setDone(null);
               try {
-                await assign(customerCode, profileKey);
+                const outcome = await assign(customerCode, profileKey);
+                if (outcome && 'error' in outcome && outcome.error) {
+                  setError(outcome.error);
+                  return;
+                }
                 setDone(`${customer?.name} is now on ${profile?.name}.`);
               } catch (cause) {
                 setError(cause instanceof Error ? cause.message : 'That did not work.');

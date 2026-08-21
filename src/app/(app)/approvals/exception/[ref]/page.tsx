@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ActionForm from '../../../../../components/console/ActionForm';
 import { notFound } from 'next/navigation';
 import { currentUser } from '../../../../../auth/session';
 import { can } from '../../../../../auth/roles';
@@ -108,7 +109,10 @@ export default async function ExceptionPage({ params }: { params: Promise<{ ref:
         </div>
 
         {decidable ? (
-          <form action={decideException.bind(null, request.reference)}>
+          <ActionForm what="record that decision" action={async (_previous: unknown, form: FormData) => {
+          'use server';
+          return decideException(request.reference, form);
+        }}>
             <h3>Decide</h3>
             <div className="field" style={{ maxWidth: 560 }}>
               <label htmlFor="comment">Note (optional)</label>
@@ -136,7 +140,7 @@ export default async function ExceptionPage({ params }: { params: Promise<{ ref:
                 Reject
               </button>
             </div>
-          </form>
+          </ActionForm>
         ) : (
           request.status === 'pending' && (
             <p style={{ color: 'var(--ink-faint)' }}>

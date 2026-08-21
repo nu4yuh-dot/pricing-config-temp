@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ActionForm from '../../../../../components/console/ActionForm';
 import { notFound } from 'next/navigation';
 import { currentUser } from '../../../../../auth/session';
 import { can } from '../../../../../auth/roles';
@@ -141,7 +142,10 @@ export default async function ContractProposalPage({
           </>
         )}
 
-        <form action={decideContractProposal.bind(null, id)}>
+        <ActionForm what="record that decision" action={async (_previous: unknown, form: FormData) => {
+          'use server';
+          return decideContractProposal(id, form);
+        }}>
           <h3>Negotiated rates</h3>
           {proposal.changes.length === 0 ? (
             <p style={{ color: 'var(--ink-faint)' }}>
@@ -244,7 +248,7 @@ export default async function ContractProposalPage({
               </p>
             </>
           )}
-        </form>
+        </ActionForm>
       </div>
     </div>
   );

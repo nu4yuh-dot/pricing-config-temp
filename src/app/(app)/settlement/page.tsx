@@ -171,7 +171,9 @@ export default async function SettlementPage() {
               })}
               assign={async (customerCode, profileKey) => {
                 'use server';
-                await assignSettlementProfile(customerCode, profileKey);
+                // Passed back rather than discarded: the action returns its refusal now, and
+                // a swallowed refusal shows as a success.
+                return assignSettlementProfile(customerCode, profileKey);
               }}
             />
           </>

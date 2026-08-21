@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { attempt } from './action-result';
+import { attempt, type Outcome } from './action-result';
 import type {
   SettlementMode,
   BillingCycle,
@@ -79,8 +79,12 @@ const toBinds = (edits: LaneEdit[]) =>
 
 export async function saveLaneEdits(cardKey: string, edits: LaneEdit[]) {
   const user = await authorise('edit-draft');
-  await editDraftCells(cardKey, toBinds(edits), toActor(user));
-  revalidatePath('/console/[card]', 'layout');
+
+  return attempt('Could not save those rate edits', async () => {
+    await editDraftCells(cardKey, toBinds(edits), toActor(user));
+    revalidatePath('/console/[card]', 'layout');
+    return {};
+  });
 }
 
 export async function saveParamEdits(
@@ -89,16 +93,24 @@ export async function saveParamEdits(
   edits: { bind: string; value: string | number | null }[],
 ) {
   const user = await authorise('edit-draft');
-  await editDraftCells(cardKey, edits, toActor(user));
-  revalidatePath('/console/[card]', 'layout');
+
+  return attempt('Could not save those parameters', async () => {
+    await editDraftCells(cardKey, edits, toActor(user));
+    revalidatePath('/console/[card]', 'layout');
+    return {};
+  });
 }
 
 /* ---------------------------------------------------------- customer contracts */
 
 export async function saveContractLaneEdits(customerCode: string, edits: LaneEdit[]) {
   const user = await authorise('edit-draft');
-  await editDraftContract(customerCode, toBinds(edits), toActor(user));
-  revalidatePath('/customers/[code]', 'page');
+
+  return attempt('Could not save those contract rates', async () => {
+    await editDraftContract(customerCode, toBinds(edits), toActor(user));
+    revalidatePath('/customers/[code]', 'page');
+    return {};
+  });
 }
 
 /**
@@ -114,27 +126,48 @@ export async function saveContractCharges(
   edits: { bind: string; value: string | number | null }[],
 ) {
   const user = await authorise('edit-draft');
-  await editDraftContract(customerCode, edits, toActor(user));
-  revalidatePath('/customers/[code]', 'page');
+
+  return attempt('Could not save those negotiated charges', async () => {
+    await editDraftContract(customerCode, edits, toActor(user));
+    revalidatePath('/customers/[code]', 'page');
+    return {};
+  });
 }
 
 export async function saveContractScope(customerCode: string, scope: ContractScope) {
   const user = await authorise('edit-draft');
-  await editDraftScope(customerCode, scope, toActor(user));
-  revalidatePath('/customers/[code]', 'page');
+
+  return attempt('Could not save the contract scope', async () => {
+    await editDraftScope(customerCode, scope, toActor(user));
+    revalidatePath('/customers/[code]', 'page');
+    return {};
+  });
 }
 
 export async function discardContractDraft(customerCode: string) {
   const user = await authorise('edit-draft');
-  await discardDraftContract(customerCode, toActor(user));
-  revalidatePath('/customers/[code]', 'page');
+
+  return attempt('Could not discard the draft contract', async () => {
+    await discardDraftContract(customerCode, toActor(user));
+    revalidatePath('/customers/[code]', 'page');
+    return {};
+  });
 }
 
 export async function submitContractProposal(customerCode: string) {
   const user = await authorise('submit-for-approval');
-  const proposal = await proposeContract(customerCode, toActor(user));
-  revalidatePath('/approvals');
-  redirect(`/approvals/contract/${proposal._id.toHexString()}`);
+
+  /**
+   * The redirect is inside the wrapper, and that is safe: `attempt` re-throws Next's control
+   * flow untouched. A refusal — a contract already awaiting approval, a draft with nothing in
+   * it — comes back as a message instead of the boilerplate a production build would
+   * otherwise substitute.
+   */
+  return attempt('Could not submit the contract for approval', async () => {
+    const proposal = await proposeContract(customerCode, toActor(user));
+    revalidatePath('/approvals');
+    redirect(`/approvals/contract/${proposal._id.toHexString()}`);
+  });
 }
 
 export async function addCustomerManually(_previous: unknown, form: FormData) {
@@ -160,80 +193,86 @@ export async function addCustomerManually(_previous: unknown, form: FormData) {
 
 export async function decideContractProposal(proposalId: string, form: FormData) {
   const user = await authorise('review-change-request');
-  const intent = String(form.get('intent') ?? '');
-  const comment = String(form.get('comment') ?? '').trim() || undefined;
 
-  let decisions: ProposalDecisions;
-  if (intent === 'approve-all') decisions = 'approve-all';
-  else if (intent === 'reject-all') decisions = 'reject-all';
-  else {
-    const perLine: Record<string, { decision: 'approved' | 'rejected'; comment?: string }> = {};
-    for (const [key, value] of form.entries()) {
-      if (!key.startsWith('decision:')) continue;
-      const bind = key.slice('decision:'.length);
-      const lineComment = String(form.get(`comment:${bind}`) ?? '').trim();
-      perLine[bind] = {
-        decision: value === 'approved' ? 'approved' : 'rejected',
-        ...(lineComment ? { comment: lineComment } : {}),
-      };
+  return attempt('Could not record that decision', async () => {
+    const intent = String(form.get('intent') ?? '');
+    const comment = String(form.get('comment') ?? '').trim() || undefined;
+
+    let decisions: ProposalDecisions;
+    if (intent === 'approve-all') decisions = 'approve-all';
+    else if (intent === 'reject-all') decisions = 'reject-all';
+    else {
+      const perLine: Record<string, { decision: 'approved' | 'rejected'; comment?: string }> = {};
+      for (const [key, value] of form.entries()) {
+        if (!key.startsWith('decision:')) continue;
+        const bind = key.slice('decision:'.length);
+        const lineComment = String(form.get(`comment:${bind}`) ?? '').trim();
+        perLine[bind] = {
+          decision: value === 'approved' ? 'approved' : 'rejected',
+          ...(lineComment ? { comment: lineComment } : {}),
+        };
+      }
+      decisions = perLine;
     }
-    decisions = perLine;
-  }
 
-  await reviewProposal(proposalId, decisions, toActor(user), comment);
-  revalidatePath('/approvals');
-  revalidatePath('/customers', 'layout');
-  redirect('/approvals');
+    await reviewProposal(proposalId, decisions, toActor(user), comment);
+    revalidatePath('/approvals');
+    revalidatePath('/customers', 'layout');
+    redirect('/approvals');
+  });
 }
 
 /* --------------------------------------------------------- booking exceptions */
 
 export async function decideException(reference: string, form: FormData) {
   const user = await authorise('review-change-request');
-  const approve = String(form.get('intent')) === 'approve';
-  const comment = String(form.get('comment') ?? '').trim() || undefined;
-  const addToContract = form.get('addToContract') === 'on';
 
-  const request = await decideBookingException(reference, approve, toActor(user), {
-    ...(comment === undefined ? {} : { comment }),
-    addToContract,
-  });
+  return attempt('Could not record that decision', async () => {
+    const approve = String(form.get('intent')) === 'approve';
+    const comment = String(form.get('comment') ?? '').trim() || undefined;
+    const addToContract = form.get('addToContract') === 'on';
 
-  // Folding the lane in permanently needs the resolved zones, which the request
-  // does not store — so re-resolve them here from the pincodes.
-  if (approve && addToContract) {
-    const customer = await findCustomer(request.customerCode);
-    if (customer && customer.liveTerms.scope.lanes !== null) {
-      const { findPincodePair } = await import('../data/pincodes');
-      const { baseCardFor } = await import('../data/customers');
-      const { quote } = await import('../pricing/quote');
-      const { withLane, withMode } = await import('../customers/contract');
+    const request = await decideBookingException(reference, approve, toActor(user), {
+      ...(comment === undefined ? {} : { comment }),
+      addToContract,
+    });
 
-      const { origin, destination } = await findPincodePair(
-        request.fromPincode,
-        request.toPincode,
-      );
-      const base = await baseCardFor(customer);
-      const priced = quote(
-        { mode: request.mode, actualWeight: request.weight },
-        { origin, destination },
-        base,
-      );
-      if (priced.available) {
-        let scope = withLane(
-          customer.liveTerms.scope,
-          request.mode,
-          priced.breakdown.originZone,
-          priced.breakdown.destinationZone,
+    // Folding the lane in permanently needs the resolved zones, which the request
+    // does not store — so re-resolve them here from the pincodes.
+    if (approve && addToContract) {
+      const customer = await findCustomer(request.customerCode);
+      if (customer && customer.liveTerms.scope.lanes !== null) {
+        const { findPincodePair } = await import('../data/pincodes');
+        const { baseCardFor } = await import('../data/customers');
+        const { quote } = await import('../pricing/quote');
+        const { withLane, withMode } = await import('../customers/contract');
+
+        const { origin, destination } = await findPincodePair(
+          request.fromPincode,
+          request.toPincode,
         );
-        scope = withMode(scope, request.mode);
-        await widenScopeForException(customer.code, scope, toActor(user));
+        const base = await baseCardFor(customer);
+        const priced = quote(
+          { mode: request.mode, actualWeight: request.weight },
+          { origin, destination },
+          base,
+        );
+        if (priced.available) {
+          let scope = withLane(
+            customer.liveTerms.scope,
+            request.mode,
+            priced.breakdown.originZone,
+            priced.breakdown.destinationZone,
+          );
+          scope = withMode(scope, request.mode);
+          await widenScopeForException(customer.code, scope, toActor(user));
+        }
       }
     }
-  }
 
-  revalidatePath('/approvals');
-  redirect('/approvals');
+    revalidatePath('/approvals');
+    redirect('/approvals');
+  });
 }
 
 /* ------------------------------------------------------------------ ui switch */
@@ -429,32 +468,36 @@ export async function saveTemplateTerms(
   scope?: ContractScope,
 ) {
   const user = await authorise('edit-draft');
-  const { findTemplate, updateTemplateTerms } = await import('../data/templates');
-  const template = await findTemplate(key);
-  if (!template) throw new Error(`template ${key} not found`);
 
-  // A template is the same shape as a contract, so it is edited by the same rules —
-  // including that `null` is a VALUE meaning "this lane is not carried", not an
-  // instruction to remove the override. Treating a blank as a deletion here would
-  // silently reopen lanes a template deliberately closes.
-  const overrides = { ...template.overrides };
-  for (const edit of edits) overrides[edit.bind] = edit.value;
+  return attempt('Could not save the template', async () => {
+    const { findTemplate, updateTemplateTerms } = await import('../data/templates');
+    const template = await findTemplate(key);
+    if (!template) throw new Error(`template ${key} not found`);
 
-  // Anything that now equals the base card is not a negotiated term, so it is dropped —
-  // otherwise the template would freeze that cell and stop tracking base changes.
-  const { liveCard } = await import('../data/rate-cards');
-  const { pruneOverrides } = await import('../customers/contract');
-  const base = await liveCard(template.baseCardKey);
-  const pruned = base ? pruneOverrides(base.data, overrides).overrides : overrides;
+    // A template is the same shape as a contract, so it is edited by the same rules —
+    // including that `null` is a VALUE meaning "this lane is not carried", not an
+    // instruction to remove the override. Treating a blank as a deletion here would
+    // silently reopen lanes a template deliberately closes.
+    const overrides = { ...template.overrides };
+    for (const edit of edits) overrides[edit.bind] = edit.value;
 
-  await updateTemplateTerms({
-    key,
-    overrides: pruned,
-    scope: scope ?? template.scope,
-    actor: toActor(user),
+    // Anything that now equals the base card is not a negotiated term, so it is dropped —
+    // otherwise the template would freeze that cell and stop tracking base changes.
+    const { liveCard } = await import('../data/rate-cards');
+    const { pruneOverrides } = await import('../customers/contract');
+    const base = await liveCard(template.baseCardKey);
+    const pruned = base ? pruneOverrides(base.data, overrides).overrides : overrides;
+
+    await updateTemplateTerms({
+      key,
+      overrides: pruned,
+      scope: scope ?? template.scope,
+      actor: toActor(user),
+    });
+    revalidatePath('/templates');
+    revalidatePath(`/templates/${key}`);
+    return {};
   });
-  revalidatePath('/templates');
-  revalidatePath(`/templates/${key}`);
 }
 
 export async function assignTemplate(
@@ -496,10 +539,14 @@ export async function assignTemplate(
 /** Mark which of a template's cells ask the next customer for a value. */
 export async function markTemplateParameters(key: string, parameters: string[]) {
   const user = await authorise('edit-draft');
-  const { updateTemplateParameters } = await import('../data/templates');
-  await updateTemplateParameters({ key, parameters, actor: toActor(user) });
-  revalidatePath(`/templates/${key}`);
-  revalidatePath('/customers/[code]', 'page');
+
+  return attempt('Could not save those parameters', async () => {
+    const { updateTemplateParameters } = await import('../data/templates');
+    await updateTemplateParameters({ key, parameters, actor: toActor(user) });
+    revalidatePath(`/templates/${key}`);
+    revalidatePath('/customers/[code]', 'page');
+    return {};
+  });
 }
 
 /**
@@ -514,13 +561,16 @@ export async function markTemplateParameters(key: string, parameters: string[]) 
  * actually cost. The number is in the audit entry too, because after this call nothing else
  * knows it.
  */
-export async function removeTemplate(key: string): Promise<{ builtFrom: number }> {
+export async function removeTemplate(key: string): Promise<Outcome<{ builtFrom: number }>> {
   const user = await authorise('manage-users');
-  const { deleteTemplate } = await import('../data/templates');
-  const result = await deleteTemplate(key, toActor(user));
-  revalidatePath('/templates');
-  revalidatePath('/customers/[code]', 'page');
-  return result;
+
+  return attempt('Could not delete the template', async () => {
+    const { deleteTemplate } = await import('../data/templates');
+    const result = await deleteTemplate(key, toActor(user));
+    revalidatePath('/templates');
+    revalidatePath('/customers/[code]', 'page');
+    return result;
+  });
 }
 
 /* ---------------------------------------------------------------- csv import */
@@ -648,22 +698,25 @@ export async function saveCommercial(
   form: FormData,
 ): Promise<ActionResult> {
   const user = await authorise('edit-draft');
-  const code = String(form.get('code') ?? '');
-  const creditRaw = String(form.get('creditLimit') ?? '').trim();
 
-  const { saveCommercialTerms } = await import('../data/customers');
-  await saveCommercialTerms(
-    code,
-    {
-      billingType: String(form.get('billingType')) === 'RCM' ? 'RCM' : 'FORWARD',
-      gstApplicable: form.get('gstApplicable') === 'on',
-      paymentTermsDays: Number(form.get('paymentTermsDays') ?? 30) || 0,
-      creditLimit: creditRaw === '' ? null : Number(creditRaw),
-    },
-    toActor(user),
-  );
-  revalidatePath('/customers/[code]', 'page');
-  return { ok: true as const };
+  return attempt('Could not save the commercial terms', async () => {
+    const code = String(form.get('code') ?? '');
+    const creditRaw = String(form.get('creditLimit') ?? '').trim();
+
+    const { saveCommercialTerms } = await import('../data/customers');
+    await saveCommercialTerms(
+      code,
+      {
+        billingType: String(form.get('billingType')) === 'RCM' ? 'RCM' : 'FORWARD',
+        gstApplicable: form.get('gstApplicable') === 'on',
+        paymentTermsDays: Number(form.get('paymentTermsDays') ?? 30) || 0,
+        creditLimit: creditRaw === '' ? null : Number(creditRaw),
+      },
+      toActor(user),
+    );
+    revalidatePath('/customers/[code]', 'page');
+    return { ok: true as const };
+  });
 }
 
 /* --------------------------------------------------------------- lane rules */
@@ -677,14 +730,22 @@ export async function saveCommercial(
  */
 export async function saveLaneRule(cardKey: string, rule: StoredLaneRule) {
   const user = await authorise('edit-draft');
-  await saveDraftRule(cardKey, rule, toActor(user));
-  revalidatePath('/console/[card]', 'layout');
+
+  return attempt('Could not save the lane rule', async () => {
+    await saveDraftRule(cardKey, rule, toActor(user));
+    revalidatePath('/console/[card]', 'layout');
+    return {};
+  });
 }
 
 export async function removeLaneRule(cardKey: string, id: string) {
   const user = await authorise('edit-draft');
-  await deleteDraftRule(cardKey, id, toActor(user));
-  revalidatePath('/console/[card]', 'layout');
+
+  return attempt('Could not remove the lane rule', async () => {
+    await deleteDraftRule(cardKey, id, toActor(user));
+    revalidatePath('/console/[card]', 'layout');
+    return {};
+  });
 }
 
 /** Search every level of geography, for the rule editor's one search box. */
@@ -787,24 +848,28 @@ export async function createLibraryCharge(
   },
 ) {
   const user = await authorise('edit-draft');
-  const path = `chargeCatalog.${definition.id}`;
 
-  await editDraftCells(
-    cardKey,
-    [
-      { bind: `${path}.name`, value: definition.name },
-      { bind: `${path}.basis`, value: definition.basis },
-      { bind: `${path}.amount`, value: 0 },
-      { bind: `${path}.gstApplies`, value: definition.gstApplies ? 'Yes' : 'No' },
-      { bind: `${path}.fuelApplies`, value: definition.fuelApplies ? 'Yes' : 'No' },
-      { bind: `${path}.bookableOneOff`, value: definition.bookableOneOff ? 'Yes' : 'No' },
-      // Inactive on purpose: a new definition should not start billing the moment it is
-      // named. It is switched on deliberately, at an amount somebody chose.
-      { bind: `${path}.active`, value: 'No' },
-    ],
-    toActor(user),
-  );
-  revalidatePath('/charges', 'page');
+  return attempt('Could not add the charge', async () => {
+    const path = `chargeCatalog.${definition.id}`;
+
+    await editDraftCells(
+      cardKey,
+      [
+        { bind: `${path}.name`, value: definition.name },
+        { bind: `${path}.basis`, value: definition.basis },
+        { bind: `${path}.amount`, value: 0 },
+        { bind: `${path}.gstApplies`, value: definition.gstApplies ? 'Yes' : 'No' },
+        { bind: `${path}.fuelApplies`, value: definition.fuelApplies ? 'Yes' : 'No' },
+        { bind: `${path}.bookableOneOff`, value: definition.bookableOneOff ? 'Yes' : 'No' },
+        // Inactive on purpose: a new definition should not start billing the moment it is
+        // named. It is switched on deliberately, at an amount somebody chose.
+        { bind: `${path}.active`, value: 'No' },
+      ],
+      toActor(user),
+    );
+    revalidatePath('/charges', 'page');
+    return {};
+  });
 }
 
 /* -------------------------------------------------------------- the catalog */
@@ -825,8 +890,12 @@ export async function createCatalogProduct(input: {
   segment: string;
 }) {
   const user = await authorise('edit-draft');
-  await createProduct({ ...input, actor: toActor(user) });
-  revalidatePath('/products', 'page');
+
+  return attempt('Could not create the product', async () => {
+    await createProduct({ ...input, actor: toActor(user) });
+    revalidatePath('/products', 'page');
+    return {};
+  });
 }
 
 export type ApplyProductResult =
@@ -868,10 +937,14 @@ export async function applyProduct(
 /** Segment tags for a customer. Reference data: it decides what is offered, not what is charged. */
 export async function saveCustomerTags(customerCode: string, tags: string[]) {
   const user = await authorise('edit-draft');
-  const { setCustomerTags } = await import('../data/customers');
-  await setCustomerTags(customerCode, tags, toActor(user));
-  revalidatePath('/customers/[code]', 'page');
-  revalidatePath('/products/[key]', 'page');
+
+  return attempt('Could not save the tags', async () => {
+    const { setCustomerTags } = await import('../data/customers');
+    await setCustomerTags(customerCode, tags, toActor(user));
+    revalidatePath('/customers/[code]', 'page');
+    revalidatePath('/products/[key]', 'page');
+    return {};
+  });
 }
 
 /**
@@ -884,30 +957,33 @@ export async function saveCustomerTags(customerCode: string, tags: string[]) {
 export async function lockTodaysPrices(
   customerCode: string,
   lock: boolean,
-): Promise<{ locked: number }> {
+): Promise<Outcome<{ locked: number }>> {
   const user = await authorise('edit-draft');
-  const { findCustomer, baseCardFor, setDraftPriceLock } = await import('../data/customers');
-  const { priceLockOverrides } = await import('../domain/price-lock');
 
-  const customer = await findCustomer(customerCode);
-  if (!customer) throw new Error(`customer ${customerCode} not found`);
+  return attempt('Could not lock the prices', async () => {
+    const { findCustomer, baseCardFor, setDraftPriceLock } = await import('../data/customers');
+    const { priceLockOverrides } = await import('../domain/price-lock');
 
-  if (!lock) {
-    await setDraftPriceLock(customerCode, null, toActor(user));
+    const customer = await findCustomer(customerCode);
+    if (!customer) throw new Error(`customer ${customerCode} not found`);
+
+    if (!lock) {
+      await setDraftPriceLock(customerCode, null, toActor(user));
+      revalidatePath('/customers/[code]', 'page');
+      return { locked: 0 };
+    }
+
+    const base = await baseCardFor(customer);
+    const rates = priceLockOverrides(base.data, customer.draftTerms.overrides);
+    const locked = await setDraftPriceLock(
+      customerCode,
+      { at: new Date(), by: user.name, rates },
+      toActor(user),
+    );
+
     revalidatePath('/customers/[code]', 'page');
-    return { locked: 0 };
-  }
-
-  const base = await baseCardFor(customer);
-  const rates = priceLockOverrides(base.data, customer.draftTerms.overrides);
-  const locked = await setDraftPriceLock(
-    customerCode,
-    { at: new Date(), by: user.name, rates },
-    toActor(user),
-  );
-
-  revalidatePath('/customers/[code]', 'page');
-  return { locked };
+    return { locked };
+  });
 }
 
 /* ------------------------------------------------------- the customer wizard */
@@ -951,102 +1027,105 @@ export interface WizardInput {
  */
 export async function createCustomerFromWizard(
   input: WizardInput,
-): Promise<{ code: string; cells: number; proposalId?: string }> {
+): Promise<Outcome<{ code: string; cells: number; proposalId?: string }>> {
   const user = await authorise('edit-draft');
-  const actor = toActor(user);
 
-  const {
-    registerCustomer,
-    findCustomer,
-    editDraftScope,
-    editDraftContract,
-    saveProfile,
-    proposeContract,
-  } = await import('../data/customers');
+  return attempt('Could not create the customer', async () => {
+    const actor = toActor(user);
 
-  const { created, customer } = await registerCustomer({
-    code: input.code,
-    name: input.name,
-    baseCardKey: input.baseCardKey,
-    source: 'manual',
-    actor,
-  });
-  if (!created) {
-    throw new Error(`${customer.code} already exists. Pick another code.`);
-  }
+    const {
+      registerCustomer,
+      findCustomer,
+      editDraftScope,
+      editDraftContract,
+      saveProfile,
+      proposeContract,
+    } = await import('../data/customers');
 
-  if (input.profile.gstin || input.profile.pan || input.profile.msmeNumber || input.profile.addressLine) {
-    const { EMPTY_PROFILE, EMPTY_ADDRESS } = await import('../domain/company');
-    await saveProfile(
-      customer.code,
-      {
-        ...EMPTY_PROFILE,
-        legalName: input.name,
-        ...(input.profile.gstin ? { gstin: input.profile.gstin.trim().toUpperCase() } : {}),
-        ...(input.profile.pan ? { pan: input.profile.pan.trim().toUpperCase() } : {}),
-        ...(input.profile.msmeNumber ? { msmeNumber: input.profile.msmeNumber.trim() } : {}),
-        ...(input.profile.addressLine
-          ? {
-              registeredAddress: {
-                ...EMPTY_ADDRESS,
-                line1: input.profile.addressLine,
-                state: input.profile.state ?? '',
-              },
-            }
-          : {}),
-      },
+    const { created, customer } = await registerCustomer({
+      code: input.code,
+      name: input.name,
+      baseCardKey: input.baseCardKey,
+      source: 'manual',
       actor,
-    );
-  }
-
-  if (input.start.kind === 'template') {
-    const { applyTemplateToCustomer } = await import('../data/templates');
-    await applyTemplateToCustomer({
-      templateKey: input.start.templateKey,
-      customerCode: customer.code,
-      mode: 'fill-gaps',
-      actor,
-      answers: input.start.answers,
     });
-  } else if (input.start.kind === 'clone') {
-    const source = await findCustomer(input.start.customerCode);
-    if (!source) throw new Error(`customer ${input.start.customerCode} not found`);
-    if (source.baseCardKey !== input.baseCardKey) {
-      throw new Error(
-        `${source.code} is priced from ${source.baseCardKey}; the same cells would mean ` +
-          `something else on ${input.baseCardKey}.`,
+    if (!created) {
+      throw new Error(`${customer.code} already exists. Pick another code.`);
+    }
+
+    if (input.profile.gstin || input.profile.pan || input.profile.msmeNumber || input.profile.addressLine) {
+      const { EMPTY_PROFILE, EMPTY_ADDRESS } = await import('../domain/company');
+      await saveProfile(
+        customer.code,
+        {
+          ...EMPTY_PROFILE,
+          legalName: input.name,
+          ...(input.profile.gstin ? { gstin: input.profile.gstin.trim().toUpperCase() } : {}),
+          ...(input.profile.pan ? { pan: input.profile.pan.trim().toUpperCase() } : {}),
+          ...(input.profile.msmeNumber ? { msmeNumber: input.profile.msmeNumber.trim() } : {}),
+          ...(input.profile.addressLine
+            ? {
+                registeredAddress: {
+                  ...EMPTY_ADDRESS,
+                  line1: input.profile.addressLine,
+                  state: input.profile.state ?? '',
+                },
+              }
+            : {}),
+        },
+        actor,
       );
     }
-    // The approved contract, not their draft: cloning someone's half-finished negotiation
-    // would copy a position nobody has agreed to.
-    await editDraftContract(
-      customer.code,
-      Object.entries(source.liveTerms.overrides).map(([bind, value]) => ({ bind, value })),
-      actor,
-    );
-  }
 
-  await editDraftScope(customer.code, input.scope, actor);
-
-  const after = await findCustomer(customer.code);
-  const cells = Object.keys(after?.draftTerms.overrides ?? {}).length;
-
-  let proposalId: string | undefined;
-  if (input.propose) {
-    if (cells === 0 && JSON.stringify(input.scope) === JSON.stringify(UNRESTRICTED_SCOPE)) {
-      // Nothing to review. Saying so beats an error from the proposal builder that reads
-      // like the save failed.
-      throw new Error(
-        'There is nothing to propose: this contract matches the standard card exactly. ' +
-          'Save it as a draft instead.',
+    if (input.start.kind === 'template') {
+      const { applyTemplateToCustomer } = await import('../data/templates');
+      await applyTemplateToCustomer({
+        templateKey: input.start.templateKey,
+        customerCode: customer.code,
+        mode: 'fill-gaps',
+        actor,
+        answers: input.start.answers,
+      });
+    } else if (input.start.kind === 'clone') {
+      const source = await findCustomer(input.start.customerCode);
+      if (!source) throw new Error(`customer ${input.start.customerCode} not found`);
+      if (source.baseCardKey !== input.baseCardKey) {
+        throw new Error(
+          `${source.code} is priced from ${source.baseCardKey}; the same cells would mean ` +
+            `something else on ${input.baseCardKey}.`,
+        );
+      }
+      // The approved contract, not their draft: cloning someone's half-finished negotiation
+      // would copy a position nobody has agreed to.
+      await editDraftContract(
+        customer.code,
+        Object.entries(source.liveTerms.overrides).map(([bind, value]) => ({ bind, value })),
+        actor,
       );
     }
-    const proposal = await proposeContract(customer.code, actor);
-    proposalId = proposal._id.toHexString();
-  }
 
-  revalidatePath('/customers', 'layout');
-  return { code: customer.code, cells, ...(proposalId ? { proposalId } : {}) };
+    await editDraftScope(customer.code, input.scope, actor);
+
+    const after = await findCustomer(customer.code);
+    const cells = Object.keys(after?.draftTerms.overrides ?? {}).length;
+
+    let proposalId: string | undefined;
+    if (input.propose) {
+      if (cells === 0 && JSON.stringify(input.scope) === JSON.stringify(UNRESTRICTED_SCOPE)) {
+        // Nothing to review. Saying so beats an error from the proposal builder that reads
+        // like the save failed.
+        throw new Error(
+          'There is nothing to propose: this contract matches the standard card exactly. ' +
+            'Save it as a draft instead.',
+        );
+      }
+      const proposal = await proposeContract(customer.code, actor);
+      proposalId = proposal._id.toHexString();
+    }
+
+    revalidatePath('/customers', 'layout');
+    return { code: customer.code, cells, ...(proposalId ? { proposalId } : {}) };
+  });
 }
 
 /**
@@ -1060,12 +1139,20 @@ export async function createCustomerFromWizard(
 export async function changeCustomerSetup(
   currentCode: string,
   next: { code: string; baseCardKey: string },
-): Promise<{ code: string }> {
+): Promise<Outcome<{ code: string }>> {
   const user = await authorise('edit-draft');
-  const { changeSetup } = await import('../data/customers');
-  const result = await changeSetup(currentCode, next, toActor(user));
-  revalidatePath('/customers', 'layout');
-  return result;
+
+  /**
+   * `changeSetup` refuses a code already in use and a card that would change what the
+   * customer's negotiated cells mean. Both sentences are worth reading, and both were being
+   * replaced by boilerplate.
+   */
+  return attempt('Could not change the setup', async () => {
+    const { changeSetup } = await import('../data/customers');
+    const result = await changeSetup(currentCode, next, toActor(user));
+    revalidatePath('/customers', 'layout');
+    return result;
+  });
 }
 
 
@@ -1090,9 +1177,13 @@ export async function createSettlementProfile(input: {
   credit?: { limit: number; periodDays: number; graceDays: number };
 }) {
   const user = await authorise('record-money');
-  const { createProfile } = await import('../data/settlement');
-  await createProfile(input, toActor(user));
-  revalidatePath('/settlement');
+
+  return attempt('Could not create the arrangement', async () => {
+    const { createProfile } = await import('../data/settlement');
+    await createProfile(input, toActor(user));
+    revalidatePath('/settlement');
+    return {};
+  });
 }
 
 /** Put a customer on an arrangement, or move them to another one. */
@@ -1102,14 +1193,18 @@ export async function assignSettlementProfile(
   overrides?: SettlementOverrides,
 ) {
   const user = await authorise('record-money');
-  const { assignSettlement } = await import('../data/customers');
-  await assignSettlement(
-    customerCode,
-    { profileKey, ...(overrides === undefined ? {} : { overrides }) },
-    toActor(user),
-  );
-  revalidatePath('/settlement');
-  revalidatePath('/customers', 'layout');
+
+  return attempt('Could not assign the arrangement', async () => {
+    const { assignSettlement } = await import('../data/customers');
+    await assignSettlement(
+      customerCode,
+      { profileKey, ...(overrides === undefined ? {} : { overrides }) },
+      toActor(user),
+    );
+    revalidatePath('/settlement');
+    revalidatePath('/customers', 'layout');
+    return {};
+  });
 }
 
 /* -------------------------------------------------------------------- offers */
@@ -1160,9 +1255,13 @@ export async function scheduleOffer(input: {
 
 export async function suspendOffer(key: string, enabled: boolean) {
   const user = await authorise('edit-draft');
-  const { setOfferEnabled } = await import('../data/offers');
-  await setOfferEnabled(key, enabled, toActor(user));
-  revalidatePath('/offers');
+
+  return attempt('Could not change the offer', async () => {
+    const { setOfferEnabled } = await import('../data/offers');
+    await setOfferEnabled(key, enabled, toActor(user));
+    revalidatePath('/offers');
+    return {};
+  });
 }
 
 /* ----------------------------------------------------------------- UPS export */
@@ -1257,12 +1356,16 @@ export async function decideProfileChange(
  * a record, or not having the endpoint yet — and retrying before that changes just parks it
  * again.
  */
-export async function retryFailedPush(id: string): Promise<void> {
+export async function retryFailedPush(id: string) {
   await authorise('review-change-request');
-  const { ObjectId } = await import('mongodb');
-  const { requeuePush } = await import('../data/core-push');
-  await requeuePush(new ObjectId(id));
-  revalidatePath('/approvals', 'page');
+
+  return attempt('Could not requeue that change', async () => {
+    const { ObjectId } = await import('mongodb');
+    const { requeuePush } = await import('../data/core-push');
+    await requeuePush(new ObjectId(id));
+    revalidatePath('/approvals', 'page');
+    return {};
+  });
 }
 
 export async function sendQueuedToCore(): Promise<
@@ -1392,9 +1495,13 @@ export async function saveCarrierRecord(
 
 export async function toggleCarrier(carrierId: string, active: boolean) {
   const user = await authorise('edit-draft');
-  const { setCarrierActive } = await import('../data/carriers');
-  await setCarrierActive(carrierId, active, toActor(user));
-  revalidatePath('/carriers', 'page');
+
+  return attempt('Could not change the carrier', async () => {
+    const { setCarrierActive } = await import('../data/carriers');
+    await setCarrierActive(carrierId, active, toActor(user));
+    revalidatePath('/carriers', 'page');
+    return {};
+  });
 }
 
 /* --------------------------------------------------------------- services */
@@ -1448,9 +1555,13 @@ export async function saveServiceRecord(
 
 export async function removeService(key: string) {
   const user = await authorise('edit-draft');
-  const { deleteService } = await import('../data/services');
-  await deleteService(key, toActor(user));
-  revalidatePath('/services', 'page');
+
+  return attempt('Could not remove the service', async () => {
+    const { deleteService } = await import('../data/services');
+    await deleteService(key, toActor(user));
+    revalidatePath('/services', 'page');
+    return {};
+  });
 }
 
 /* ------------------------------------------------------------- collections */

@@ -32,8 +32,14 @@ export default function ChangeSetupPanel({
     setError(null);
     startTransition(async () => {
       try {
-        const result = await changeCustomerSetup(customerCode, { code, baseCardKey: card });
-        router.push(`/customers/${encodeURIComponent(result.code)}`);
+        const outcome = await changeCustomerSetup(customerCode, { code, baseCardKey: card });
+        // The action returns its refusal rather than throwing it, so the reason survives a
+        // production build — and a caller that only caught would navigate on a failure.
+        if ('error' in outcome) {
+          setError(outcome.error);
+          return;
+        }
+        router.push(`/customers/${encodeURIComponent(outcome.code)}`);
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : 'Could not change the setup.');
       }
