@@ -5,7 +5,8 @@ import { can } from '../../../auth/roles';
 import { listCarriers } from '../../../data/carriers';
 import { unpriceableReason, RATE_STRUCTURE_LABELS } from '../../../domain/carriers';
 import CarrierForm from '../../../components/console/CarrierForm';
-import { saveCarrierRecord } from '../../console-actions';
+import { saveCarrierRecord, toggleCarrier } from '../../console-actions';
+import RowAction from '../../../components/console/RowAction';
 
 /**
  * Carriers — who actually moves the freight.
@@ -63,6 +64,7 @@ export default async function CarriersPage() {
                 <th style={{ textAlign: 'right' }}>Multiplier</th>
                 <th>Cut-off</th>
                 <th>Status</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -103,6 +105,15 @@ export default async function CarriersPage() {
                         </>
                       ) : (
                         <span className="chip live">quotable</span>
+                      )}
+                    </td>
+                    <td>
+                      {editable && (
+                        <RowAction
+                          label={carrier.active ? 'Deactivate' : 'Reactivate'}
+                          confirmLabel={`${carrier.active ? 'Deactivate' : 'Reactivate'} ${carrier.name}`}
+                          run={() => toggleCarrier(carrier.carrierId, !carrier.active)}
+                        />
                       )}
                     </td>
                   </tr>

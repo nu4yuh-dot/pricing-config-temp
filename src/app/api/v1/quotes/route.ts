@@ -7,6 +7,8 @@ import { findPincodePair } from '../../../../data/pincodes';
 import { liveCard } from '../../../../data/rate-cards';
 import { findCustomer, contractedCard } from '../../../../data/customers';
 import { quote } from '../../../../pricing/quote';
+import { listServices, isBuiltIn } from '../../../../data/services';
+import { serviceTiers, serviceRules } from '../../../../domain/services';
 import { applicableTierRate } from '../../../../pricing/freight';
 import type { Mode, Pincode, RateCard } from '../../../../domain/types';
 
@@ -29,32 +31,19 @@ import type { Mode, Pincode, RateCard } from '../../../../domain/types';
  * append-only, so a caller that only reads three keeps working.
  */
 
-const TIERS: { service: string; mode: Mode; description: string; features: string[] }[] = [
-  {
-    service: 'ECONOMY',
-    mode: 'surface',
-    description: 'Road, the standard service.',
-    features: ['Door to door', 'Surface network'],
-  },
-  {
-    service: 'EXPRESS',
-    mode: 'air',
-    description: 'Air, for time-sensitive freight.',
-    features: ['Door to door', 'Air network'],
-  },
-  {
-    service: 'CRITICAL',
-    mode: 'nfo',
-    description: 'Next flight out.',
-    features: ['Door to door', 'Next available flight'],
-  },
-  {
-    service: 'RAIL',
-    mode: 'rail',
-    description: 'Rail, where the lane is served.',
-    features: ['Door to door', 'Rail network'],
-  },
-];
+/**
+ * The tiers are the service registry, not a list in this file.
+ *
+ * They were four constants, which was right while nothing varied them. Now a service is a
+ * record — a network, a multiplier, its own transit and tax treatment — and the tiers
+ * offered here are whichever of those are active.
+ *
+ * Two guarantees hold that list steady for callers already installed. The four networks
+ * keep the names the core has always sent (`ECONOMY`, `EXPRESS`, `CRITICAL`, `RAIL`) and
+ * keep their order, so a caller reading the first three reads exactly what it did before.
+ * And anything configured is appended, under a name of its own, which their append-only
+ * rule already covers: `tiers` is an array, and an unrecognised entry is ignored.
+ */
 
 /** The canonical form of a request, whichever names it arrived under. */
 function canonical(input: z.infer<typeof QuoteRequest>) {
@@ -190,10 +179,16 @@ export async function POST(request: Request) {
 
   /* ----------------------------------------------------------------- the tiers */
 
+  const offered = serviceTiers(await listServices());
+
   const wanted = input.transportMode?.toUpperCase();
+  // Matched on the API name or the underlying mode, as before — a caller sending `AIR`
+  // rather than `EXPRESS` has always worked and continues to.
   const requested = wanted
-    ? TIERS.filter((tier) => tier.service === wanted || tier.mode.toUpperCase() === wanted)
-    : TIERS;
+    ? offered.filter(
+        (tier) => tier.api === wanted || tier.mode.toUpperCase() === wanted,
+      )
+    : offered;
 
   // A supplied chargeable weight is honoured by handing the engine a shipment that
   // weighs it: the engine takes the greatest of actual, volumetric and the mode minimum,
@@ -207,7 +202,16 @@ export async function POST(request: Request) {
   };
 
   const tiers = requested.flatMap((tier) => {
-    const result = quote({ ...shipment, mode: tier.mode }, { origin, destination }, card);
+    // A built-in network prices as its own mode: passing a multiplier of 1 would be the
+    // same arithmetic, but `nfo` is the exception — the card's own nfoMultiplier governs
+    // it, and handing the engine a service would override that with a 1 stored on a
+    // record nobody has tuned.
+    const rules = isBuiltIn(tier.service.key) ? undefined : serviceRules(tier.service);
+    const result = quote(
+      { ...shipment, mode: tier.mode, ...(rules === undefined ? {} : { service: rules }) },
+      { origin, destination },
+      card,
+    );
     // A lane the network does not carry is omitted rather than priced at zero: an
     // absent tier is a true answer, a zero is a bookable-looking lie.
     if (!result.available) return [];
@@ -215,7 +219,7 @@ export async function POST(request: Request) {
 
     return [
       {
-        service: tier.service,
+        service: tier.api,
         price: b.total,
         estimatedDays: b.transitDays === null ? '' : String(b.transitDays),
         description: tier.description,
@@ -263,10 +267,16 @@ export async function POST(request: Request) {
           ratePerKg: b.applicableRate ?? applicableTierRate(b.chargeableWeight, b.rates) ?? 0,
           minFreight: b.rates.minCharge ?? 0,
           baseFreight: b.freight,
-          // Their tiers are a multiplier on one rate; ours are separate cards, so the
-          // multiplier is always 1 and the name says which card answered.
-          serviceMult: 1,
-          serviceMultName: `${card.name} · ${tier.mode}`,
+          /**
+           * Their tiers are one rate times a service factor, and this is that factor.
+           *
+           * A network reports 1 because its rate was negotiated directly rather than
+           * derived — an EXPRESS price here is the air rate actually agreed, not surface
+           * with a markup. A configured service reports its own multiplier, because that
+           * is literally how its price was reached.
+           */
+          serviceMult: isBuiltIn(tier.service.key) ? 1 : tier.service.multiplier,
+          serviceMultName: `${card.name} · ${tier.service.name}`,
           originCity: origin.city ?? origin.area,
           destCity: destination.city ?? destination.area,
           chargeConfigName: card.name,
@@ -351,7 +361,7 @@ export async function POST(request: Request) {
       },
       tiers: tiers.map((tier) => ({
         service: tier.service,
-        mode: TIERS.find((entry) => entry.service === tier.service)?.mode ?? '',
+        mode: offered.find((entry) => entry.api === tier.service)?.mode ?? '',
         total: tier.price,
         chargeableWeight: tier.breakdown.chargeableWeight,
         breakdown: tier.breakdown as unknown as Record<string, unknown>,

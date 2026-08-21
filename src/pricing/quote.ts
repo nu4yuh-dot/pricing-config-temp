@@ -13,7 +13,8 @@ import { chargesFrom, fuelBaseFrom, taxOverridesFrom } from './card-config';
 import { gridLaneProvenance, resolveLaneRule, type LaneProvenance } from '../domain/lane-rules';
 import { rulesFrom, type StoredLaneRule } from '../domain/lane-rule-store';
 import { resolveOffers, type Offer } from '../domain/offers';
-import type { ModeTaxProfile } from '../domain/tax';
+import { serviceTransitDays } from '../domain/services';
+import type { BillableMode, ModeTaxProfile } from '../domain/tax';
 import type { Overrides } from '../domain/customers';
 
 export interface QuoteInput {
@@ -29,7 +30,16 @@ export interface QuoteInput {
    * It never widens what can be priced. The service must ride a network the card holds
    * rates for, which is enforced where services are defined, not here.
    */
-  service?: { key: string; mode: StoredMode; multiplier: number; transitAdjustmentDays?: number };
+  service?: {
+    key: string;
+    mode: StoredMode;
+    multiplier: number;
+    transitAdjustmentDays?: number;
+    /** Overrides the mode's SAC where the service is classified differently. */
+    sacCode?: string;
+    /** Overrides the mode's GST rate, as a fraction. Road is GTA at 5%, air 18%. */
+    gstRate?: number;
+  };
   actualWeight: number;
   length?: number;
   breadth?: number;
@@ -205,6 +215,32 @@ function rulesFor(mode: Mode, card: RateCard, service?: QuoteInput['service']): 
 }
 
 /**
+ * Lay a service's tax classification over its mode's.
+ *
+ * Returns the mode's own overrides untouched when the service states neither, which is the
+ * common case and must not allocate a different object — the tax profile is compared by
+ * value downstream.
+ */
+function serviceTax(
+  mode: Mode,
+  modeOverrides: Partial<Record<BillableMode, Partial<ModeTaxProfile>>>,
+  service: QuoteInput['service'],
+): Partial<Record<BillableMode, Partial<ModeTaxProfile>>> {
+  if (!service || (service.sacCode === undefined && service.gstRate === undefined)) {
+    return modeOverrides;
+  }
+  const key = mode as BillableMode;
+  return {
+    ...modeOverrides,
+    [key]: {
+      ...modeOverrides[key],
+      ...(service.sacCode === undefined ? {} : { sac: service.sacCode }),
+      ...(service.gstRate === undefined ? {} : { gstRate: service.gstRate }),
+    },
+  };
+}
+
+/**
  * Price one shipment against one rate card.
  *
  * Charge order, which the source workbook states explicitly and which matters
@@ -331,7 +367,15 @@ export function quote(
     fuelRate: rules.fuel,
     fuelBase: fuelBaseFrom(card.data),
     charges: chargesFrom(card.data).filter((charge) => !waived.has(charge.id)),
-    taxOverrides: taxOverridesFrom(mode, card.data, rules.gst),
+    /**
+     * The mode's tax treatment, with the service's own classification laid over it.
+     *
+     * A service that states a SAC or a GST rate is taxed by it — otherwise the field would
+     * be editable on the services screen and change nothing, which is worse than not
+     * offering it. Applied on top of the mode rather than instead of it, so a service that
+     * states only a SAC keeps the mode's rate and its RCM treatment.
+     */
+    taxOverrides: serviceTax(mode, taxOverridesFrom(mode, card.data, rules.gst), input.service),
     ...(billing === undefined ? {} : { gstApplicable: billing.gstApplicable }),
     ...(billing?.billingType === 'RCM' ? { forceRcm: true } : {}),
   });
@@ -372,7 +416,19 @@ export function quote(
       destinationEdlKm: destInfo.edlKm,
       volumetricWeight: volumetricWeight(input, rules),
       chargeableWeight: weight,
-      transitDays: card.data.transitTimes[storedMode][originInfo.zone]?.[destInfo.zone] ?? null,
+      /**
+       * The lane's transit, with the service's own adjustment already in it.
+       *
+       * Applied here rather than by each caller, so every reader agrees. An express
+       * service is not merely dearer — it arrives sooner, and a breakdown that reports the
+       * mode's transit while charging the service's price is wrong in the way customers
+       * notice. An unserved lane stays null: adding a day to nothing does not invent a
+       * transit.
+       */
+      transitDays: serviceTransitDays(
+        card.data.transitTimes[storedMode][originInfo.zone]?.[destInfo.zone] ?? null,
+        input.service,
+      ),
       rates,
       // A rule already knows its own trace and layer. Only the grid path needs the
       // override map, because a folded contract card is indistinguishable from a base one.

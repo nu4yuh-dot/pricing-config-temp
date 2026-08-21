@@ -691,3 +691,71 @@ describe('an offer on a quote', () => {
     expect(empty.breakdown.offer).toBeUndefined();
   });
 });
+
+describe('pricing through a configured service', () => {
+  const priced = (service?: Parameters<typeof quote>[0]['service']) => {
+    const result = quote(
+      { mode: 'surface', actualWeight: 50, ...(service === undefined ? {} : { service }) },
+      { origin: NCR, destination: PNQ },
+      card,
+    );
+    if (!result.available) throw new Error('expected an available quote');
+    return result.breakdown;
+  };
+
+  const base = priced();
+
+  test('no service prices exactly as the mode does', () => {
+    // The compatibility guarantee: every caller deployed today passes no service.
+    const same = priced({ key: 'surface', mode: 'surface', multiplier: 1 });
+    expect(same.total).toBe(base.total);
+    expect(same.freight).toBe(base.freight);
+  });
+
+  test('the multiplier applies to freight, and only to freight', () => {
+    const express = priced({ key: 'x', mode: 'surface', multiplier: 1.3 });
+    expect(express.freight).toBeCloseTo(round2(base.freight * 1.3), 2);
+    // Pickup and delivery are the same physical door job whatever the service.
+    expect(express.pickup).toBe(base.pickup);
+    expect(express.delivery).toBe(base.delivery);
+  });
+
+  test('fuel follows the dearer freight rather than being multiplied itself', () => {
+    // Fuel is a percentage of a base that grew. Multiplying fuel as well would compound.
+    const express = priced({ key: 'x', mode: 'surface', multiplier: 2 });
+    expect(express.fuel).toBeGreaterThan(base.fuel);
+    expect(express.fuel).toBeLessThan(base.fuel * 2 + 0.01);
+  });
+
+  test('a service states its own SAC and GST, over the mode’s', () => {
+    // Otherwise the fields are editable on the services screen and change nothing, which
+    // is worse than not offering them.
+    const air = priced({ key: 'x', mode: 'surface', multiplier: 1, sacCode: '996812', gstRate: 0.18 });
+    expect(air.tax.sac).toBe('996812');
+    expect(air.tax.gstRate).toBe(0.18);
+    expect(base.tax.gstRate).not.toBe(0.18);
+  });
+
+  test('stating only a SAC keeps the mode’s rate', () => {
+    const partial = priced({ key: 'x', mode: 'surface', multiplier: 1, sacCode: '996812' });
+    expect(partial.tax.sac).toBe('996812');
+    expect(partial.tax.gstRate).toBe(base.tax.gstRate);
+  });
+
+  test('an express service arrives sooner in the breakdown, not just in the price', () => {
+    const express = priced({ key: 'x', mode: 'surface', multiplier: 1.3, transitAdjustmentDays: -1 });
+    expect(base.transitDays).not.toBeNull();
+    expect(express.transitDays).toBe(base.transitDays! - 1);
+  });
+
+  test('transit never falls below a day however express the service', () => {
+    const absurd = priced({ key: 'x', mode: 'surface', multiplier: 4, transitAdjustmentDays: -99 });
+    expect(absurd.transitDays).toBe(1);
+  });
+
+  test('a discount service is cheaper, and the arithmetic is symmetric', () => {
+    const cheap = priced({ key: 'x', mode: 'surface', multiplier: 0.9 });
+    expect(cheap.freight).toBeCloseTo(round2(base.freight * 0.9), 2);
+    expect(cheap.total).toBeLessThan(base.total);
+  });
+});

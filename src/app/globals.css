@@ -336,6 +336,39 @@ button:hover:not(:disabled),
   background: var(--band);
 }
 
+/*
+ * A button that reads as text, for a row action that is not the row's purpose.
+ *
+ * Deactivating a carrier belongs on its row, but it is not why anybody opened the page —
+ * a full button there competes with the row's own content for attention.
+ */
+.linklike {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.linklike:hover:not(:disabled) {
+  background: none;
+  color: var(--ink);
+}
+
+/* The confirm step of something that removes a record, rather than merely changing one. */
+.btn.danger {
+  color: var(--rejected);
+  border-color: var(--rejected);
+}
+
+.btn.danger:hover {
+  background: var(--rejected-wash);
+}
+
 button:disabled {
   opacity: 0.45;
   cursor: not-allowed;

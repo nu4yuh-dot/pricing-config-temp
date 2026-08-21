@@ -2,8 +2,10 @@ import { redirect } from 'next/navigation';
 import { currentUser } from '../../../auth/session';
 import { can } from '../../../auth/roles';
 import { listServices, isBuiltIn } from '../../../data/services';
+import { apiTierName } from '../../../domain/services';
 import ServiceForm from '../../../components/console/ServiceForm';
-import { saveServiceRecord } from '../../console-actions';
+import { saveServiceRecord, removeService } from '../../console-actions';
+import RowAction from '../../../components/console/RowAction';
 
 /**
  * Services — what a customer buys, as against the network that carries it.
@@ -61,6 +63,7 @@ export default async function ServicesPage() {
                 <th style={{ textAlign: 'right' }}>Transit</th>
                 <th>Tax</th>
                 <th>Status</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -93,6 +96,19 @@ export default async function ServicesPage() {
                       <span className="chip live">on sale</span>
                     ) : (
                       <span className="chip">withdrawn</span>
+                    )}
+                    <div className="sub">
+                      {service.active ? `quoted as ${apiTierName(service)}` : 'not quoted'}
+                    </div>
+                  </td>
+                  <td>
+                    {editable && !isBuiltIn(service.key) && (
+                      <RowAction
+                        label="Delete"
+                        confirmLabel={`Delete ${service.name}`}
+                        danger
+                        run={() => removeService(service.key)}
+                      />
                     )}
                   </td>
                 </tr>
