@@ -267,6 +267,24 @@ body {
   white-space: nowrap;
 }
 
+/*
+ * The pricing engine, beside the card name.
+ *
+ * Scoped to `.toolbar` deliberately: `.method` is also used inside `.quote-card header`
+ * with a different treatment, and an unscoped rule would restyle that too.
+ */
+.toolbar .method {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
 .toolbar {
   display: flex;
   align-items: center;

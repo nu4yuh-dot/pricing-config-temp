@@ -80,6 +80,7 @@ export default async function SheetPage({
       <DraftBar
         cardKey={cardKey}
         cardName={card.name}
+        freightMethod={source === 'bluedart' ? 'DIRECTIONAL ZONES' : card.freightMethod}
         outstandingCount={outstanding.length}
         frozen={frozen}
         sheetView
