@@ -610,7 +610,7 @@ export async function importCustomerCsv(
     const { editDraftContract, editDraftScope, saveCommercialTerms, findCustomer } = await import(
       '../data/customers'
     );
-    const { DEFAULT_COMMERCIAL_TERMS } = await import('../domain/customers');
+    const { commercialTerms } = await import('../domain/customers');
 
     await editDraftContract(
       customerCode,
@@ -629,7 +629,7 @@ export async function importCustomerCsv(
       const customer = await findCustomer(customerCode);
       await saveCommercialTerms(
         customerCode,
-        { ...DEFAULT_COMMERCIAL_TERMS, ...customer?.commercial, ...parsed.commercial },
+        { ...commercialTerms(customer?.commercial), ...parsed.commercial },
         toActor(user),
       );
     }
@@ -1600,11 +1600,11 @@ export async function recordReceiptAction(
   try {
     const { recordReceipt } = await import('../data/collections');
     const { findCustomer } = await import('../data/customers');
-    const { DEFAULT_COMMERCIAL_TERMS } = await import('../domain/customers');
+    const { commercialTerms } = await import('../domain/customers');
 
     const customer = await findCustomer(customerCode);
     if (!customer) return { error: `No customer ${customerCode}.` };
-    const terms = customer.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+    const terms = commercialTerms(customer.commercial);
 
     const received = text('receivedAt');
     await recordReceipt({
@@ -1664,7 +1664,23 @@ export async function relockPeriodAction(
   const user = await authorise('record-money');
   const customerCode = String(form.get('customerCode') ?? '').trim();
   const from = String(form.get('from') ?? '').trim();
-  const corrected = Number(String(form.get('asCorrected') ?? '').trim());
+  /**
+   * Blank is not zero.
+   *
+   * `Number('')` is `0`, and zero passes a `< 0` guard — so submitting this form with the
+   * figure left empty recorded the period as totalling **nothing**, and `relockPeriod`
+   * compares the corrected figure against the original to report a restatement. A blank
+   * field therefore restated the whole bill as reversed, silently and with no error.
+   *
+   * Zero is a legitimate answer here — a period can genuinely be corrected to nil — which
+   * is exactly why the guard could not simply reject it. The raw text has to be checked
+   * before it is coerced.
+   */
+  const asCorrected = String(form.get('asCorrected') ?? '').trim();
+  if (asCorrected === '') {
+    return { error: 'What does the period total now? That is the figure being compared.' };
+  }
+  const corrected = Number(asCorrected);
 
   if (!Number.isFinite(corrected) || corrected < 0) {
     return { error: 'What does the period total now? That is the figure being compared.' };

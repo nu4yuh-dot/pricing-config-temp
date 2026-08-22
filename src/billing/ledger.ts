@@ -266,7 +266,14 @@ export function creditPosition(
     }
   }
 
-  const limit = terms.creditLimit === null ? 0 : paise(terms.creditLimit);
+  // `=== null` alone is not enough. A customer document with a partial `commercial` block
+  // yields `undefined` here, `paise(undefined)` is NaN, and NaN propagates into every
+  // comparison below as a silent false — the customer was refused with "exceeds the credit
+  // limit by ₹NaN". Absent and null both mean no credit facility.
+  const limit =
+    typeof terms.creditLimit === 'number' && Number.isFinite(terms.creditLimit)
+      ? paise(terms.creditLimit)
+      : 0;
   const walletBalance = balance(entries);
   const owed = Math.max(0, -walletBalance);
 

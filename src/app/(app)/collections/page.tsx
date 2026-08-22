@@ -6,7 +6,7 @@ import { listReceipts } from '../../../data/collections';
 import { listCustomers } from '../../../data/customers';
 import { ageingFor } from '../../../data/collections';
 import { unallocatedPaise, overduePaise } from '../../../billing/collections';
-import { DEFAULT_COMMERCIAL_TERMS } from '../../../domain/customers';
+import { commercialTerms } from '../../../domain/customers';
 import ReceiptForm from '../../../components/console/ReceiptForm';
 import { recordReceiptAction } from '../../console-actions';
 
@@ -31,7 +31,7 @@ export default async function CollectionsPage() {
 
   const withAgeing = await Promise.all(
     customers.map(async (customer) => {
-      const terms = customer.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+      const terms = commercialTerms(customer.commercial);
       const bands = await ageingFor(customer.code, terms.paymentTermsDays);
       return { customer, bands, overdue: overduePaise(bands) };
     }),
@@ -106,7 +106,7 @@ export default async function CollectionsPage() {
                     <td>
                       <Link href={`/customers/${row.customer.code}`}>{row.customer.name}</Link>
                       <div className="sub">
-                        {(row.customer.commercial ?? DEFAULT_COMMERCIAL_TERMS).paymentTermsDays}-day
+                        {(commercialTerms(row.customer.commercial)).paymentTermsDays}-day
                         terms
                       </div>
                     </td>

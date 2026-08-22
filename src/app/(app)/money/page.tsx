@@ -4,7 +4,7 @@ import { currentUser } from '../../../auth/session';
 import { listCustomers } from '../../../data/customers';
 import { billingFor } from '../../../data/billing';
 import { formatRupees } from '../../../billing/ledger';
-import { DEFAULT_COMMERCIAL_TERMS } from '../../../domain/customers';
+import { commercialTerms } from '../../../domain/customers';
 
 /**
  * Money — wallets, credit and invoices, read from the one ledger.
@@ -22,7 +22,7 @@ export default async function MoneyPage() {
   const customers = await listCustomers();
   const positions = await Promise.all(
     customers.map(async (customer) => {
-      const terms = customer.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+      const terms = commercialTerms(customer.commercial);
       const billing = await billingFor(customer.code, {
         creditLimit: terms.creditLimit,
         paymentTermsDays: terms.paymentTermsDays,

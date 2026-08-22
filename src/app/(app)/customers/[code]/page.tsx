@@ -23,7 +23,7 @@ import { summariseTemplate } from '../../../../domain/templates';
 import { scoreTemplateFit, templateConflicts } from '../../../../domain/template-fit';
 import { editableCellIndex } from '../../../../changes/diff';
 import { EMPTY_PROFILE } from '../../../../domain/company';
-import { DEFAULT_COMMERCIAL_TERMS } from '../../../../domain/customers';
+import { commercialTerms } from '../../../../domain/customers';
 import { CSV_TEMPLATE } from '../../../../customers/csv';
 import BillingPanel from '../../../../components/console/BillingPanel';
 import TaxChargesEditor from '../../../../components/console/TaxChargesEditor';
@@ -56,7 +56,7 @@ export default async function CustomerContractPage({
 
   // Credit terms come from the contract; a customer with none is treated as prepaid, which
   // is the safe reading — no terms agreed means no credit extended.
-  const terms = customer.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+  const terms = commercialTerms(customer.commercial);
   const billing = await billingFor(customer.code, {
     creditLimit: terms.creditLimit,
     paymentTermsDays: terms.paymentTermsDays,
@@ -381,7 +381,7 @@ export default async function CustomerContractPage({
         <CompanyProfileForm
           code={customer.code}
           profile={customer.profile ?? EMPTY_PROFILE}
-          commercial={customer.commercial ?? DEFAULT_COMMERCIAL_TERMS}
+          commercial={commercialTerms(customer.commercial)}
           canEdit={can(user.role, 'edit-draft')}
         />
 

@@ -361,10 +361,10 @@ export interface CreditSnapshot {
 
 export async function creditSnapshot(customer: CustomerDoc): Promise<CreditSnapshot> {
   const { billingFor } = await import('./billing');
-  const { DEFAULT_COMMERCIAL_TERMS } = await import('../domain/customers');
+  const { commercialTerms } = await import('../domain/customers');
   const { db: database, COLLECTIONS: collections } = await import('./mongo');
 
-  const terms = customer.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+  const terms = commercialTerms(customer.commercial);
   const summary = await billingFor(customer.code, {
     creditLimit: terms.creditLimit,
     paymentTermsDays: terms.paymentTermsDays,

@@ -99,6 +99,43 @@ export const DEFAULT_COMMERCIAL_TERMS: CommercialTerms = {
   creditLimit: null,
 };
 
+/**
+ * The commercial terms a customer is actually on, field by field.
+ *
+ * Not `customer.commercial ?? DEFAULT_COMMERCIAL_TERMS`. That reads as if it defaults the
+ * terms, and it does — but only when the whole block is missing. A customer whose block
+ * exists and is *partial* gets no defaults at all, and every absent field arrives as
+ * `undefined` behind a type that promises otherwise, because nothing validates a document
+ * read out of Mongo against the interface it is cast to.
+ *
+ * That was not hypothetical. A customer stored as `commercial: {}` produced
+ * `creditLimit: undefined`, which is not `null`, so the "no credit facility" branch was
+ * skipped and `paise(undefined)` gave `NaN` — quoting told the customer their booking
+ * "would exceed the credit limit by ₹NaN" and refused it. The same block left
+ * `paymentTermsDays` undefined, so no invoice was ever overdue, and `gstApplicable`
+ * undefined, which is falsy where the default is true.
+ *
+ * So the merge is per field, and an explicitly undefined value counts as absent.
+ */
+export function commercialTerms(
+  stored: Partial<CommercialTerms> | null | undefined,
+): CommercialTerms {
+  const terms = { ...DEFAULT_COMMERCIAL_TERMS };
+  if (!stored) return terms;
+  if (stored.billingType !== undefined) terms.billingType = stored.billingType;
+  if (stored.gstApplicable !== undefined) terms.gstApplicable = stored.gstApplicable;
+  if (typeof stored.paymentTermsDays === 'number' && Number.isFinite(stored.paymentTermsDays)) {
+    terms.paymentTermsDays = stored.paymentTermsDays;
+  }
+  // `null` is a real value here — it means "no credit facility", which is not the same as
+  // unlimited — so it is kept. Only undefined and a non-number fall back.
+  if (stored.creditLimit === null) terms.creditLimit = null;
+  else if (typeof stored.creditLimit === 'number' && Number.isFinite(stored.creditLimit)) {
+    terms.creditLimit = stored.creditLimit;
+  }
+  return terms;
+}
+
 export interface Customer {
   /** The identifier the booking website knows this customer by. */
   code: string;

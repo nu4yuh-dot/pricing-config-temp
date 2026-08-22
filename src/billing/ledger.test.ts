@@ -387,3 +387,37 @@ describe('ageing', () => {
     expect(total).toBe(creditPosition(terms, entries, asOf).outstanding);
   });
 });
+
+/**
+ * A partial `commercial` block must not turn into NaN money.
+ *
+ * A customer stored as `commercial: {}` reached `bookability` with `creditLimit:
+ * undefined`. That is not `null`, so the no-facility branch was skipped, `paise(undefined)`
+ * gave NaN, every comparison against it was silently false, and the customer was refused
+ * with "This would exceed the credit limit by ₹NaN" — a real refusal, shown to a real
+ * customer, computed from nothing.
+ */
+describe('credit terms that are missing rather than zero', () => {
+  const noFacility = { creditLimit: null, paymentTermsDays: 30 };
+
+  test('an absent credit limit is treated as no facility, not as NaN', () => {
+    const absent = { paymentTermsDays: 30 } as unknown as Parameters<typeof creditPosition>[0];
+    const position = creditPosition(absent, [], new Date('2026-08-22'));
+    expect(Number.isFinite(position.limit)).toBe(true);
+    expect(position.limit).toBe(0);
+    expect(Number.isFinite(position.available)).toBe(true);
+  });
+
+  test('the refusal message never contains NaN', () => {
+    const absent = { paymentTermsDays: 30 } as unknown as Parameters<typeof creditPosition>[0];
+    const position = creditPosition(absent, [], new Date('2026-08-22'));
+    const decision = bookability(position, 5000);
+    expect(decision.allowed).toBe(false);
+    expect(decision.message ?? '').not.toContain('NaN');
+  });
+
+  test('an explicit null still means no facility', () => {
+    const position = creditPosition(noFacility, [], new Date('2026-08-22'));
+    expect(position.limit).toBe(0);
+  });
+});
