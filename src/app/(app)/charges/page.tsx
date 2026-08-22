@@ -3,8 +3,9 @@ import { currentUser } from '../../../auth/session';
 import { can } from '../../../auth/roles';
 import { listCards, draftVersion } from '../../../data/rate-cards';
 import { listCustomers } from '../../../data/customers';
-import { chargeLibrary, isBookableOneOff } from '../../../domain/charge-library';
+import { chargeLibrary, chargePlaces, isBookableOneOff } from '../../../domain/charge-library';
 import NewChargeForm from '../../../components/console/NewChargeForm';
+import ChargeRow from '../../../components/console/ChargeRow';
 import { createLibraryCharge } from '../../console-actions';
 
 const BASIS_LABELS: Record<string, string> = {
@@ -25,6 +26,26 @@ export default async function ChargeLibraryPage() {
   const library = chargeLibrary(
     drafts.map((draft) => draft.data),
     customers.map((customer) => customer.liveTerms.overrides),
+  );
+
+  /**
+   * Where each charge actually is, so a row is something you can act on.
+   *
+   * The table reported "5 places" and never said which five, so you could see that a charge
+   * needed changing and had no route to any of them. Cards link to their own tax tab, which
+   * is where a single card's charges have always been editable.
+   */
+  const places = chargePlaces(
+    cards.map((card, index) => ({
+      key: card.key,
+      label: card.name,
+      data: drafts[index]!.data,
+    })),
+    customers.map((customer) => ({
+      key: customer.code,
+      label: customer.name,
+      overrides: customer.liveTerms.overrides,
+    })),
   );
   const canEdit = can(user.role, 'edit-draft');
 
@@ -50,49 +71,26 @@ export default async function ChargeLibraryPage() {
                 <th>GST</th>
                 <th>Fuel</th>
                 <th>One-off</th>
-                <th className="num">In use</th>
+                <th>Configured on</th>
+                <th />
               </tr>
             </thead>
             <tbody>
               {library.map((charge) => (
-                <tr key={charge.id}>
-                  <td>
-                    <strong>{charge.name}</strong>
-                  </td>
-                  <td className="ref">{charge.id}</td>
-                  <td>{BASIS_LABELS[charge.basis] ?? charge.basis}</td>
-                  {/* Only the exception is worth a chip. Marking every charge "in GST"
-                      when almost all of them are put six identical badges on the screen
-                      and made the one that is not harder to spot, not easier. */}
-                  <td>
-                    {charge.gstApplies === false ? (
-                      <span className="chip pending">outside GST</span>
-                    ) : (
-                      <span className="meta">in GST</span>
-                    )}
-                  </td>
-                  <td>
-                    {charge.fuelApplies ? (
-                      <span className="chip">applies</span>
-                    ) : (
-                      <span className="meta">—</span>
-                    )}
-                  </td>
-                  <td>
-                    {isBookableOneOff(charge) ? (
-                      <span className="chip live">bookable</span>
-                    ) : (
-                      <span className="meta">standing term only</span>
-                    )}
-                  </td>
-                  <td className="num">
-                    {charge.usedBy === 0 ? (
-                      <span className="meta">not used</span>
-                    ) : (
-                      `${charge.usedBy} ${charge.usedBy === 1 ? 'place' : 'places'}`
-                    )}
-                  </td>
-                </tr>
+                <ChargeRow
+                  key={charge.id}
+                  chargeId={charge.id}
+                  name={charge.name}
+                  basis={charge.basis}
+                  basisLabel={BASIS_LABELS[charge.basis] ?? charge.basis}
+                  gstApplies={charge.gstApplies !== false}
+                  fuelApplies={charge.fuelApplies === true}
+                  bookableOneOff={charge.bookableOneOff === true}
+                  offeredOneOff={isBookableOneOff(charge)}
+                  places={places.get(charge.id) ?? []}
+                  canEdit={canEdit}
+                  columns={8}
+                />
               ))}
             </tbody>
           </table>

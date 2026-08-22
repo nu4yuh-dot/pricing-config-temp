@@ -161,6 +161,14 @@ export interface StoredCharge {
   gstApplies?: Flag;
   fuelApplies?: Flag;
   active?: Flag;
+  /**
+   * May an operator add this to a single booking, for a customer with no standing term?
+   *
+   * A `Flag` rather than a boolean because it is an ordinary cell: the grid editors and the
+   * source workbooks write the word. It was written by `createLibraryCharge` and absent
+   * from this type, which is how the library came to compare it against `true`.
+   */
+  bookableOneOff?: Flag;
   /** For `per-destination` charges: amount by destination zone. */
   byDestination?: Record<string, number>;
   /** `air, nfo` in a cell; an array from the API. Absent means every mode. */

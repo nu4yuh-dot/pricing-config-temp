@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { signInAs, signOutCompletely, db, cleanup, closeDb, MARK, expectOk, reasonFrom } from './harness';
+import {
+  signInAs, signOutCompletely, db, cleanup, closeDb, MARK, expectOk, reasonFrom,
+  snapshotCard, restoreCard, type CardSnapshot,
+} from './harness';
 import { RedirectError } from './next-stubs';
 import {
   searchGeographyAction,
@@ -82,12 +85,16 @@ describe('geography and coverage queries', () => {
 });
 
 describe('previewing a lane rule before saving it', () => {
+  let card: CardSnapshot | null = null;
+
   beforeAll(async () => {
     await signInAs('admin', 'admin');
+    card = await snapshotCard(CARD);
   });
 
   afterAll(async () => {
     await removeLaneRule(CARD, RULE_ID).catch(() => {});
+    await restoreCard(card);
     await closeDb();
   });
 
@@ -221,11 +228,21 @@ describe('the UPS export quote', () => {
 });
 
 describe('the two remaining writes', () => {
+  /**
+   * Both of these write cells into model-2's draft, and a cell in an existing card carries
+   * no fixture marker — so `cleanup` cannot find it. The charge library is derived from what
+   * every card's draft declares, which means one leftover probe charge appears on a real
+   * screen indefinitely. Snapshot and put it back.
+   */
+  let card: CardSnapshot | null = null;
+
   beforeAll(async () => {
     await signInAs('admin', 'admin');
+    card = await snapshotCard(CARD);
   });
 
   afterAll(async () => {
+    await restoreCard(card);
     await cleanup();
     await closeDb();
   });

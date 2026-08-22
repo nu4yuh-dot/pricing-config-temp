@@ -160,3 +160,36 @@ export function figure(source: Record<string, number | undefined>, key: string):
 export function reasonFrom(outcome: AnyOutcome): string {
   return outcome?.error ?? outcome?.message ?? '';
 }
+
+/**
+ * Snapshot one rate card's versions, and put them back exactly.
+ *
+ * A spec that edits a card's draft leaves that edit behind: `cleanup` keys on a fixture
+ * marker, and a cell written into an existing card carries no marker. The charge library is
+ * read from what every card's draft declares, so one leftover charge shows up on a screen
+ * for good — which is how a probe charge came to sit in the real library.
+ */
+export type CardSnapshot = { cardId: unknown; versions: { id: unknown; data: unknown }[] };
+
+export async function snapshotCard(key: string): Promise<CardSnapshot> {
+  const d = await db();
+  const card = await d.collection('rateCards').findOne({ key });
+  if (!card) throw new Error(`${key} is not seeded — run: npm run seed`);
+  const rows = await d
+    .collection('rateCardVersions')
+    .find({ rateCardId: card._id })
+    .project({ _id: 1, data: 1 })
+    .toArray();
+  return {
+    cardId: card._id,
+    versions: rows.map((r) => ({ id: r._id, data: (r as { data: unknown }).data })),
+  };
+}
+
+export async function restoreCard(snapshot: CardSnapshot | null): Promise<void> {
+  if (!snapshot) return;
+  const versions = (await db()).collection('rateCardVersions');
+  for (const version of snapshot.versions) {
+    await versions.updateOne({ _id: version.id as never }, { $set: { data: version.data } });
+  }
+}

@@ -93,3 +93,62 @@ describe('which charges an operator may add to one booking', () => {
   });
 
 });
+
+/**
+ * The one-off flag, read out of what is actually stored.
+ *
+ * A cell holds the word — `'Yes'` — because that is what the grid editors and the source
+ * workbooks write. `chargeLibrary` never read the field at all, and `isBookableOneOff`
+ * compared it against `true`, so the library reported **every** charge as "standing term
+ * only" no matter what had been configured. A charge created as bookable at a booking had
+ * never once been offered at one.
+ */
+describe('bookableOneOff, as it is really stored', () => {
+  const card = (charge: Record<string, unknown>) => ({
+    chargeCatalog: { levy: { name: 'Site levy', basis: 'per-shipment', ...charge } },
+  }) as never;
+
+  test('the stored word Yes makes a charge bookable', () => {
+    const [levy] = chargeLibrary([card({ bookableOneOff: 'Yes' })], []).filter((c) => c.id === 'levy');
+    expect(levy?.bookableOneOff).toBe(true);
+    expect(isBookableOneOff(levy!)).toBe(true);
+  });
+
+  test('No, and an absent flag, both mean standing term only', () => {
+    const [no] = chargeLibrary([card({ bookableOneOff: 'No' })], []).filter((c) => c.id === 'levy');
+    expect(isBookableOneOff(no!)).toBe(false);
+    const [absent] = chargeLibrary([card({})], []).filter((c) => c.id === 'levy');
+    expect(isBookableOneOff(absent!)).toBe(false);
+  });
+
+  test('a real boolean still works, since the API posts one', () => {
+    const [levy] = chargeLibrary([card({ bookableOneOff: true })], []).filter((c) => c.id === 'levy');
+    expect(isBookableOneOff(levy!)).toBe(true);
+  });
+
+  /** Bookable on any card is bookable: an operator can reach it. */
+  test('one card offering it is enough, whatever order the cards arrive in', () => {
+    const off = card({ bookableOneOff: 'No' });
+    const on = card({ bookableOneOff: 'Yes' });
+    for (const cards of [[off, on], [on, off]]) {
+      const [levy] = chargeLibrary(cards, []).filter((c) => c.id === 'levy');
+      expect(isBookableOneOff(levy!), 'order must not decide it').toBe(true);
+    }
+  });
+
+  test('a contract that declares it bookable counts too', () => {
+    const [levy] = chargeLibrary([], [
+      { 'chargeCatalog.levy.name': 'Site levy', 'chargeCatalog.levy.bookableOneOff': 'Yes' },
+    ]).filter((c) => c.id === 'levy');
+    expect(isBookableOneOff({ ...levy!, basis: 'per-shipment' })).toBe(true);
+  });
+
+  /** The basis still overrules the flag — that rule was already right. */
+  test('a per-destination charge is never bookable, however it is flagged', () => {
+    const [ess] = chargeLibrary([
+      { chargeCatalog: { ess: { name: 'ESS', basis: 'per-destination', bookableOneOff: 'Yes' } } } as never,
+    ], []).filter((c) => c.id === 'ess');
+    expect(ess?.bookableOneOff).toBe(true);
+    expect(isBookableOneOff(ess!), 'no single amount to ask for at a counter').toBe(false);
+  });
+});

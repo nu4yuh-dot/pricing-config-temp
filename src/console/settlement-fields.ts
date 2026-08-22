@@ -153,6 +153,19 @@ export function chargeRows(current: RateCardData, baseline: RateCardData): Charg
         base.fuelApplies,
       ),
       active: flagField(`chargeCatalog.${known.id}.active`, stored.active, base.active),
+      bookableOneOff: flagField(
+        `chargeCatalog.${known.id}.bookableOneOff`,
+        stored.bookableOneOff,
+        base.bookableOneOff,
+      ),
+      /**
+       * The same rule `isBookableOneOff` enforces, applied to the control rather than to the
+       * value. A per-destination charge holds a figure per zone and a by-pincode charge is
+       * read off the distance table, so neither has one number an operator could be asked
+       * for at a booking. Offering the toggle and then ignoring it deeper in would be worse
+       * than not offering it.
+       */
+      oneOffPossible: definition.basis !== 'per-destination' && definition.basis !== 'by-pincode',
       modes: (definition.modes ?? []).join(', '),
     };
   });

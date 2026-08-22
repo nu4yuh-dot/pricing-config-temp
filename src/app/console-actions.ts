@@ -844,6 +844,85 @@ export async function previewRuleAction(
  * an approver before it can bill anyone. Switching it on, and setting its amount, is an
  * ordinary cell edit on the Tax & charges tab afterwards.
  */
+/**
+ * Change one charge's definition on every card that carries it.
+ *
+ * The charge library is derived, so a row in it is not one thing: "handling · 5 places" is
+ * five separate per-card cell sets. An edit therefore has to say which cards it means, and
+ * the caller passes them explicitly rather than this guessing — a button that silently
+ * touched five cards would be worse than no button.
+ *
+ * **Approval stays per card.** Each card owns its own draft and its own change request, so
+ * this writes into five drafts and each needs approving separately. That is not a
+ * limitation to route around: a card's rates are approved by whoever owns that card, and one
+ * request spanning five would take that decision away from four of them. The screen says so
+ * before the edit is made.
+ *
+ * `basis` is deliberately not editable. A per-destination charge holds a figure per zone and
+ * a by-pincode charge is read off the distance table, so switching basis leaves the amount
+ * cells meaningless — changing it means supplying the new shape's data, which is a different
+ * job from editing a definition.
+ */
+export async function editChargeEverywhere(input: {
+  chargeId: string;
+  cardKeys: string[];
+  name?: string;
+  gstApplies?: boolean;
+  fuelApplies?: boolean;
+  bookableOneOff?: boolean;
+}): Promise<Outcome<{ changed: string[] }>> {
+  const user = await authorise('edit-draft');
+
+  return attempt('Could not change that charge', async () => {
+    if (input.cardKeys.length === 0) throw new Error('Pick at least one card to change.');
+
+    const path = `chargeCatalog.${input.chargeId}`;
+    const edits: { bind: string; value: string | number | null }[] = [];
+    if (input.name !== undefined) {
+      const name = input.name.trim();
+      if (name === '') throw new Error('A charge needs a name — it is what appears on the invoice.');
+      edits.push({ bind: `${path}.name`, value: name });
+    }
+    if (input.gstApplies !== undefined) {
+      edits.push({ bind: `${path}.gstApplies`, value: input.gstApplies ? 'Yes' : 'No' });
+    }
+    if (input.fuelApplies !== undefined) {
+      edits.push({ bind: `${path}.fuelApplies`, value: input.fuelApplies ? 'Yes' : 'No' });
+    }
+    if (input.bookableOneOff !== undefined) {
+      edits.push({ bind: `${path}.bookableOneOff`, value: input.bookableOneOff ? 'Yes' : 'No' });
+    }
+    if (edits.length === 0) throw new Error('Nothing was changed.');
+
+    /**
+     * One card at a time, and the first failure stops the rest.
+     *
+     * A frozen draft is the ordinary reason one of them refuses, and continuing would leave
+     * the charge defined differently on different cards — which is precisely the drift the
+     * library exists to make visible. Reporting which cards were changed lets the screen say
+     * what happened rather than claim it all worked.
+     */
+    const changed: string[] = [];
+    for (const cardKey of input.cardKeys) {
+      try {
+        await editDraftCells(cardKey, edits, toActor(user));
+        changed.push(cardKey);
+      } catch (cause) {
+        const reason = cause instanceof Error ? cause.message : 'refused';
+        throw new Error(
+          changed.length === 0
+            ? `${cardKey}: ${reason}`
+            : `Changed ${changed.join(', ')}, then ${cardKey} refused: ${reason}`,
+        );
+      }
+    }
+
+    revalidatePath('/charges');
+    revalidatePath('/console/[card]', 'layout');
+    return { changed };
+  });
+}
+
 export async function createLibraryCharge(
   cardKey: string,
   definition: {

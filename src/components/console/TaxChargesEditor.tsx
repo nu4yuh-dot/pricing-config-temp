@@ -45,6 +45,20 @@ export interface ChargeRow {
   fuelApplies: FlagField;
   active: FlagField;
   modes: string;
+  /**
+   * May an operator add this to a single booking, for a customer with no standing term?
+   *
+   * Only settable when the charge was created before now, which is why it is here: the
+   * charge library lists it as a column and nothing could change it afterwards.
+   */
+  bookableOneOff: FlagField;
+  /**
+   * False for a basis that has no single amount to ask for — `per-destination` holds a
+   * figure per zone and `by-pincode` is read off the distance table. Flagging one of those
+   * bookable is a configuration mistake, so the control is closed rather than offered and
+   * then refused deeper in.
+   */
+  oneOffPossible: boolean;
 }
 
 /** One destination's express surcharge. */
@@ -287,6 +301,7 @@ export default function TaxChargesEditor(props: {
                 <th>In GST</th>
                 <th>Fuel on it</th>
                 <th>Active</th>
+                <th>One-off</th>
                 <th>Modes</th>
               </tr>
             </thead>
@@ -305,6 +320,18 @@ export default function TaxChargesEditor(props: {
                   <td>{flagSelect(row.gstApplies)}</td>
                   <td>{flagSelect(row.fuelApplies)}</td>
                   <td>{flagSelect(row.active)}</td>
+                  <td>
+                    {row.oneOffPossible ? (
+                      flagSelect(row.bookableOneOff)
+                    ) : (
+                      <span
+                        style={{ color: 'var(--ink-faint)' }}
+                        title={`A ${row.basisLabel.toLowerCase()} charge has no single amount an operator could be asked for at a booking.`}
+                      >
+                        not possible
+                      </span>
+                    )}
+                  </td>
                   <td style={{ color: 'var(--ink-soft)' }}>{row.modes || 'every mode'}</td>
                 </tr>
               ))}
