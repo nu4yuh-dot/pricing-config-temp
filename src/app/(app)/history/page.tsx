@@ -77,7 +77,7 @@ export default async function HistoryPage() {
                         {version.state}
                       </span>
                     </td>
-                    <td>{version.createdBy.name}</td>
+                    <td>{version.createdBy?.name ?? 'unknown'}</td>
                     <td>{when(version.createdAt)}</td>
                     <td>{version.approvedBy?.name ?? '—'}</td>
                     <td>{version.approvedAt ? when(version.approvedAt) : '—'}</td>
@@ -103,7 +103,16 @@ export default async function HistoryPage() {
             {entries.map((entry, index) => (
               <tr key={index}>
                 <td style={{ whiteSpace: 'nowrap', color: 'var(--ink-soft)' }}>{when(entry.at)}</td>
-                <td>{entry.actor.name}</td>
+                {/*
+                  Guarded, like `approvedBy` beside it.
+
+                  One audit row with no actor took this whole page down with a 500 — and the
+                  audit log is append-only and written from dozens of paths over years, so a
+                  malformed row is a question of when. This page is where somebody goes to
+                  find out what happened; it is the last page that should be unavailable
+                  because one of the things that happened was recorded badly.
+                */}
+                <td>{entry.actor?.name ?? 'unknown'}</td>
                 <td>{ACTION_LABELS[entry.action] ?? entry.action}</td>
                 <td>{entry.rateCardKey ?? '—'}</td>
                 <td className="ref" style={{ whiteSpace: 'normal' }}>

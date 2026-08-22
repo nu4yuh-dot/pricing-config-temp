@@ -155,10 +155,25 @@ export async function failedPushes(limit = 50): Promise<CorePushDoc[]> {
  * which defeats the point of asking for a retry.
  */
 export async function requeuePush(id: ObjectId): Promise<void> {
-  await (await pushes()).updateOne(
+  const result = await (await pushes()).updateOne(
     { _id: id, state: 'failed' },
     { $set: { state: 'queued', attempts: 0 }, $unset: { lastError: '' } },
   );
+
+  /**
+   * Nothing matched means nothing was requeued, and saying so matters.
+   *
+   * The filter is deliberately narrow — only a `failed` push may be retried — so a miss is
+   * the ordinary case rather than a rare one: somebody else retried it a moment earlier, or
+   * the drain already picked it up. Ignoring `matchedCount` made all of those report success,
+   * so an operator watching a stuck queue pressed Retry, saw it confirmed, and watched
+   * nothing move.
+   */
+  if (result.matchedCount === 0) {
+    throw new Error(
+      'That change is no longer waiting to be retried — it may already have been requeued or sent.',
+    );
+  }
 }
 
 /** What is outstanding, for the screen that shows whether the core is in step with us. */

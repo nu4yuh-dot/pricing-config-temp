@@ -241,6 +241,25 @@ export async function assignSettlement(
   const customer = await findCustomer(code);
   if (!customer) throw new Error(`No customer ${code}.`);
 
+  /**
+   * The arrangement has to exist.
+   *
+   * Nothing checked, so any string was accepted and stored. That fails in the worst
+   * available direction rather than loudly: `settlementFor` returns null for a key it cannot
+   * resolve, and every caller then falls back to the older wallet-plus-limit check — so a
+   * customer whose record says they are on a credit arrangement is enforced against no
+   * arrangement at all, and both the screen and the audit entry name the profile as though
+   * it were live. A typed key is the obvious way in; a profile removed from under an
+   * assignment is the other.
+   */
+  const { findProfile } = await import('./settlement');
+  if (!(await findProfile(settlement.profileKey))) {
+    throw new Error(
+      `There is no settlement arrangement called ${settlement.profileKey}. ` +
+        'Create it before putting a customer on it.',
+    );
+  }
+
   const staying = customer.settlement?.profileKey === settlement.profileKey;
   const overrides =
     settlement.overrides ?? (staying ? customer.settlement?.overrides : undefined);
