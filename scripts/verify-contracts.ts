@@ -94,7 +94,24 @@ async function main(): Promise<void> {
     `/api/quote?customer=${CODE}&mode=surface&from=411001&to=110001&weight=200`,
   );
   const q1Body = await q1.json();
-  check('a customer with no contract quotes at standard prices', q1.status === 200);
+  /**
+   * 200 or 402, and both are a successful quote.
+   *
+   * A brand-new customer has no wallet and no credit facility, and the funds gate answers
+   * 402 — "the price is right but the money is not". The price is in the body either way,
+   * which is what this check is about; whether it can be *booked* is asserted separately.
+   * Pinning this to 200 asserted the absence of a credit check rather than the presence of
+   * a price.
+   */
+  check(
+    'a customer with no contract quotes at standard prices',
+    q1.status === 200 || q1.status === 402,
+    `HTTP ${q1.status}`,
+  );
+  check(
+    'a customer with no funds is priced but not bookable',
+    q1.status !== 402 || q1Body.bookable === false,
+  );
   check(
     'and that price is the known base total',
     q1Body.breakdown?.total === 5197.5,
@@ -138,14 +155,8 @@ async function main(): Promise<void> {
   );
   check('coverage changes are recorded separately', proposal.scopeChanges.length === 2);
 
-  let selfApprovalRefused = false;
-  try {
-    await reviewProposal(proposal._id.toHexString(), 'approve-all', editor);
-  } catch {
-    selfApprovalRefused = true;
-  }
-  check('the proposer cannot approve their own contract', selfApprovalRefused);
-
+  // The draft is frozen while a proposal is pending, so the thing under review cannot be
+  // edited out from under the reviewer. Checked before any decision is taken.
   let frozenEditRefused = false;
   try {
     await editDraftContract(CODE, [{ bind: 'grids.surface.tier1.PNQ.NCR', value: 1 }], editor);
@@ -154,7 +165,9 @@ async function main(): Promise<void> {
   }
   check('a contract awaiting approval is frozen', frozenEditRefused);
 
-  await reviewProposal(proposal._id.toHexString(), 'approve-all', admin);
+  const decided = await reviewProposal(proposal._id.toHexString(), 'approve-all', admin);
+  check('a proposal reviewed by somebody else is approved', decided.status === 'approved');
+  check('and is not marked self-approved', decided.selfApproved !== true);
 
   /* ---------------------------------------------------- sparse storage & price */
 
@@ -268,6 +281,26 @@ async function main(): Promise<void> {
 
   const unknown = await api('/api/quote?customer=NOPE&mode=surface&from=411001&to=110001&weight=1');
   check('an unknown customer is rejected', unknown.status === 404);
+
+  /* ------------------------------------------------------- self-approval is allowed */
+
+  /**
+   * Permitted and recorded, not blocked.
+   *
+   * This script used to assert a refusal here. The system did refuse it once, and that
+   * deadlocked a single-admin setup: `admin` is the only role that may review, so
+   * forbidding self-approval left nobody able to approve anything. The rule became
+   * "allowed, and visible" instead — `selfApproved` on the proposal, and a callout on the
+   * approval screen — so what is worth proving is that the flag is set when it happens.
+   *
+   * Last, and on its own proposal, because approving a second set of rates would move the
+   * prices every assertion above is pinned to.
+   */
+  await editDraftContract(CODE, [{ bind: 'grids.surface.minCharge.PNQ.NCR', value: 425 }], editor);
+  const ownProposal = await proposeContract(CODE, editor);
+  const ownReview = await reviewProposal(ownProposal._id.toHexString(), 'approve-all', editor);
+  check('a proposer may approve their own contract', ownReview.status === 'approved');
+  check('and it is recorded as self-approved', ownReview.selfApproved === true);
 
   await cleanup();
   const gone = await findCustomer(CODE);

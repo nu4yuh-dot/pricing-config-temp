@@ -5,8 +5,13 @@
  * Capabilities are listed per role rather than derived from a hierarchy, so that
  * "can a configurator approve?" is answered by reading one line instead of
  * reasoning about inheritance. An admin can edit as well as approve — they run the
- * team — but `applyReview` still refuses to let anyone approve their own request,
- * so that remains a real second pair of eyes.
+ * team.
+ *
+ * Approving your own submission is **allowed and recorded**, not refused. It was refused
+ * once, and that deadlocked a single-admin setup: `admin` is the only role that may review,
+ * so forbidding it left nobody able to approve anything. The decision carries
+ * `selfApproved` instead, and the approval screens say plainly that no second pair of eyes
+ * saw it — visibility rather than prevention.
  *
  * A manager holds the admin's commercial authority — approving rate changes and
  * moving money — but not `manage-users`. Handing out accounts and roles is how

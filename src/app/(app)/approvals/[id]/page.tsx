@@ -78,8 +78,24 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
         {isOwn && request.status === 'pending' && (
           <div className="callout">
             <strong>You submitted this request</strong>
-            Someone else has to approve it. That is what makes the approval step a real second pair
-            of eyes rather than a formality.
+            Someone else approving it is what makes this a real second pair of eyes. You{' '}
+            <em>can</em> approve it yourself — blocking that would deadlock a single-admin
+            setup — but it will be recorded as self-approved, on this request and in the audit
+            log.
+          </div>
+        )}
+
+        {/*
+          Recorded is not the same as visible. The design keeps `selfApproved` so the absence
+          of a second pair of eyes can be seen, and the contract approvals page has always
+          shown it — this one did not, so a rate change approved by its own author looked
+          exactly like one somebody else had checked.
+        */}
+        {request.selfApproved && (
+          <div className="callout warn">
+            <strong>Self-approved</strong>
+            {request.reviewedBy?.name} both submitted and approved this change. No second
+            pair of eyes saw it.
           </div>
         )}
 

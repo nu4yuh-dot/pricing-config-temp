@@ -155,7 +155,7 @@ const CHECKS: Check[] = [
     label: 'Customers list',
     // Deliberately not asserting a particular customer: which ones exist differs
     // between a local database and a deployment.
-    expect: ['Contract customers', 'Negotiated cells', 'Contract covers'],
+    expect: ['Customer master', 'Negotiated cells', 'Contract covers'],
   },
   { path: '/history', label: 'History', expect: ['Rate card versions', 'Audit log', 'CUMULATIVE'] },
   {
@@ -163,7 +163,7 @@ const CHECKS: Check[] = [
     // every customer starts in.
     path: '/customers',
     label: 'Customers list still loads with billing in place',
-    expect: ['Contract customers'],
+    expect: ['Customer master'],
   },
 ];
 
