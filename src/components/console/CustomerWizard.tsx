@@ -8,6 +8,7 @@ import {
   type WizardInput,
 } from '../../app/console-actions';
 import type { Mode } from '../../domain/types';
+import { useToast } from '../Toasts';
 
 /**
  * Four steps to a contract somebody could actually propose.
@@ -56,6 +57,7 @@ export default function CustomerWizard({
    */
   const [contractNow, setContractNow] = useState(true);
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
   const [error, setError] = useState<string | null>(null);
 
   const [code, setCode] = useState('');
@@ -140,15 +142,24 @@ export default function CustomerWizard({
         // production build — and a caller that only caught would navigate away on a failure.
         if ('error' in result) {
           setError(result.error);
+          toast.failed('create that customer', result.error);
           return;
         }
+        toast.saved(
+          'Customer',
+          result.proposalId
+            ? `${result.code} created, and its contract is with an approver.`
+            : `${result.code} created with ${result.cells} negotiated ${result.cells === 1 ? 'cell' : 'cells'}.`,
+        );
         router.push(
           result.proposalId
             ? `/approvals/contract/${result.proposalId}`
             : `/customers/${encodeURIComponent(result.code)}`,
         );
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Could not create the customer.');
+        const reason = cause instanceof Error ? cause.message : 'Could not create the customer.';
+        setError(reason);
+        toast.failed('create that customer', reason);
       }
     });
   };

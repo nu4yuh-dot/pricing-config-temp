@@ -22,6 +22,7 @@ const SECTIONS: { key: UpsSection; label: string; bind?: string }[] = [
 import { saveParamEdits } from '../../app/console-actions';
 import { effectiveAccessorial } from '../../domain/ups';
 import type { UpsCardData } from '../../domain/ups';
+import { useToast } from '../Toasts';
 
 /**
  * Whether the accessorial table is editing the card's own rates or one zone's overrides.
@@ -70,6 +71,7 @@ export default function UpsCardEditor({
   const [dirty, setDirty] = useState<Record<string, string>>({});
   const [section, setSection] = useState<UpsSection>('params');
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
   const [saved, setSaved] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,11 +101,30 @@ export default function UpsCardEditor({
     setError(null);
     startTransition(async () => {
       try {
-        await saveParamEdits(cardKey, edits);
+        /**
+         * The refusal is in the result, not in an exception.
+         *
+         * `saveParamEdits` goes through `attempt`, so a frozen draft or a rejected value
+         * comes back as `{ error }` — and this treated every call as a success, clearing the
+         * dirty marks and reporting how many cells had been written. The editor then looked
+         * saved while the card still held the old rates, which on the UPS tariff means an
+         * export quote priced from numbers nobody agreed.
+         */
+        const outcome = await saveParamEdits(cardKey, edits);
+        if (outcome && 'error' in outcome) {
+          setError(outcome.error);
+          toast.failed('save those changes', outcome.error);
+          return;
+        }
         setSaved(edits.length);
         setDirty({});
+        toast.saved('UPS card', `${edits.length} value${edits.length === 1 ? '' : 's'} into the draft.`);
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Could not save those changes.');
+        const digest = (cause as { digest?: string } | null)?.digest;
+        if (typeof digest === 'string' && digest.startsWith('NEXT_')) throw cause;
+        const reason = cause instanceof Error ? cause.message : 'Could not save those changes.';
+        setError(reason);
+        toast.failed('save those changes', reason);
       }
     });
   };

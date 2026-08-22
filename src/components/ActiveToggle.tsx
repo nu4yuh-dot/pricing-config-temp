@@ -2,6 +2,7 @@
 
 import { useTransition } from 'react';
 import { toggleUserActive } from '../app/actions';
+import { useToast } from './Toasts';
 
 /**
  * Enable or disable an account.
@@ -21,6 +22,7 @@ export default function ActiveToggle({
   self: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
 
   if (self) {
     return (
@@ -33,7 +35,16 @@ export default function ActiveToggle({
   return (
     <button
       disabled={pending}
-      onClick={() => startTransition(async () => void (await toggleUserActive(userId, !active)))}
+      onClick={() =>
+        startTransition(async () => {
+          const outcome = await toggleUserActive(userId, !active);
+          if ('error' in outcome) {
+            toast.failed(`${active ? 'disable' : 'enable'} that account`, outcome.error);
+            return;
+          }
+          toast.saved('Account', active ? 'Disabled — they can no longer sign in.' : 'Enabled.');
+        })
+      }
     >
       {pending ? '…' : active ? 'Disable' : 'Enable'}
     </button>

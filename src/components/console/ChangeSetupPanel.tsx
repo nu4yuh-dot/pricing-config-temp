@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { changeCustomerSetup } from '../../app/console-actions';
+import { useToast } from '../Toasts';
 
 /**
  * The escape hatch, open only while nothing means anything yet.
@@ -27,6 +28,7 @@ export default function ChangeSetupPanel({
   const [card, setCard] = useState(baseCardKey);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
 
   const save = () => {
     setError(null);
@@ -37,11 +39,15 @@ export default function ChangeSetupPanel({
         // production build — and a caller that only caught would navigate on a failure.
         if ('error' in outcome) {
           setError(outcome.error);
+          toast.failed('change that setup', outcome.error);
           return;
         }
+        toast.saved('Setup', `This customer is now ${outcome.code}.`);
         router.push(`/customers/${encodeURIComponent(outcome.code)}`);
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Could not change the setup.');
+        const reason = cause instanceof Error ? cause.message : 'Could not change the setup.';
+        setError(reason);
+        toast.failed('change that setup', reason);
       }
     });
   };

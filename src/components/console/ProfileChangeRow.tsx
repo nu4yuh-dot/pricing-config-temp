@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import { decideProfileChange } from '../../app/console-actions';
+import { useActionToast } from '../Toasts';
 
 /**
  * One proposed change to a customer's company details, in the approvals queue.
@@ -30,6 +31,7 @@ export default function ProfileChangeRow({
   canReview: boolean;
 }) {
   const [state, action, pending] = useActionState(decideProfileChange, null);
+  useActionToast(state, { what: 'Decision', verb: 'record that decision' });
   const [rejecting, setRejecting] = useState(false);
 
   const readable: Record<string, string> = {

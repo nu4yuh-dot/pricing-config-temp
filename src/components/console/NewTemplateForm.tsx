@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { useActionToast } from '../Toasts';
 import {
   createBlankTemplate,
   createTemplateFromCustomer,
@@ -34,6 +35,8 @@ export default function NewTemplateForm({
     createBlankTemplate,
     null as ActionResult | null,
   );
+  useActionToast(fromCustomer, { what: 'Template', verb: 'create that template' });
+  useActionToast(fromBlank, { what: 'Template', verb: 'create that template' });
 
   const state = mode === 'customer' ? fromCustomer : fromBlank;
   const pending = mode === 'customer' ? customerPending : blankPending;

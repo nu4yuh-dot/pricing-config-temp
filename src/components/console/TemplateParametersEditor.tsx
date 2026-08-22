@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { markTemplateParameters } from '../../app/console-actions';
+import { useToast } from '../Toasts';
 
 /**
  * Which of a template's fields are decided, and which are asked.
@@ -27,6 +28,7 @@ export default function TemplateParametersEditor({
 }) {
   const [current, setCurrent] = useState(parameters);
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
   const [saved, setSaved] = useState(false);
 
   const toggle = (bind: string) => {
@@ -35,9 +37,23 @@ export default function TemplateParametersEditor({
       : [...current, bind];
     setCurrent(next);
     setSaved(false);
+    /**
+     * `setSaved(true)` ran whatever the action answered.
+     *
+     * `markTemplateParameters` goes through `attempt`, so a refusal comes back as
+     * `{ error }` rather than throwing — and this reported "Saved" for it, then put the
+     * checkbox back on the next render from data that had never changed.
+     */
     startTransition(async () => {
-      await markTemplateParameters(templateKey, next);
+      const outcome = await markTemplateParameters(templateKey, next);
+      if ('error' in outcome) {
+        setCurrent(current);
+        setSaved(false);
+        toast.failed('save those parameters', outcome.error);
+        return;
+      }
       setSaved(true);
+      toast.saved('Parameters', `${next.length} left for whoever assigns this template.`);
     });
   };
 

@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import { decideContractRequest } from '../../app/console-actions';
+import { useActionToast } from '../Toasts';
 
 /**
  * One customer negotiation request in the approvals queue.
@@ -32,6 +33,7 @@ export default function ContractRequestRow({
   canReview: boolean;
 }) {
   const [state, action, pending] = useActionState(decideContractRequest, null);
+  useActionToast(state, { what: 'Decision', verb: 'record that decision' });
   const [declining, setDeclining] = useState(false);
 
   return (

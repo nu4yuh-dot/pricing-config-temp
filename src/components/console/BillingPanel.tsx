@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { rechargeWallet, payInvoice, type MoneyResult } from '../../app/console-actions';
+import { useActionToast } from '../Toasts';
 
 /**
  * A customer's money: what they hold, what they owe, and what has moved.
@@ -77,6 +78,8 @@ export default function BillingPanel(props: BillingPanelProps) {
     payInvoice,
     null,
   );
+  useActionToast(recharge, { what: 'Recharge', verb: 'record that recharge' });
+  useActionToast(payment, { what: 'Payment', verb: 'record that payment' });
 
   const { position } = props;
   const unpaid = props.invoices.filter((invoice) => invoice.status !== 'paid');

@@ -3,6 +3,7 @@
 import { useActionState, useState, useTransition } from 'react';
 import { previewBill, runBillingAction } from '../../app/console-actions';
 import type { ActionResult } from '../../app/console-actions';
+import { useActionToast } from '../Toasts';
 
 /** The preview itself, unwrapped from the outcome the action now returns. */
 type Preview = Extract<Awaited<ReturnType<typeof previewBill>>, { ok: true }>['preview'];
@@ -24,6 +25,7 @@ export default function BillRunForm({
     runBillingAction as (p: ActionResult | null, f: FormData) => Promise<ActionResult>,
     null,
   );
+  useActionToast(state, { what: 'Bill run', verb: 'run the billing' });
   const [preview, setPreview] = useState<Preview | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [checking, startChecking] = useTransition();

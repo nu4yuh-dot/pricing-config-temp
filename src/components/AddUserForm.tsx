@@ -3,12 +3,14 @@
 import { useActionState } from 'react';
 import { addUser } from '../app/actions';
 import { ROLES, ROLE_LABELS } from '../auth/roles';
+import { useActionToast } from './Toasts';
 
 export default function AddUserForm() {
   const [state, action, pending] = useActionState(
     addUser,
     null as { error?: string; ok?: boolean } | null,
   );
+  useActionToast(state, { what: 'Account', verb: 'create that account' });
 
   return (
     <form action={action}>

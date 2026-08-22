@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import SheetGrid, { type GridCell } from './SheetGrid';
 import { saveDraftEdits, discardDraft } from '../app/actions';
+import { useToast } from './Toasts';
 
 /**
  * Wraps the grid with the draft controls: save, discard, submit for approval.
@@ -26,6 +27,7 @@ export default function SheetEditor(props: {
   pendingRequestId?: string;
 }) {
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
   const [error, setError] = useState<string | null>(null);
 
   const commit = async (edits: { bind: string; value: string | number | null }[]) => {
@@ -78,7 +80,9 @@ export default function SheetEditor(props: {
                   onClick={() =>
                     startTransition(async () => {
                       if (confirm('Discard every unsubmitted change on this card?')) {
-                        await discardDraft(props.cardKey);
+                        const outcome = await discardDraft(props.cardKey);
+                        if ('error' in outcome) toast.failed('discard that draft', outcome.error);
+                        else toast.deleted('Draft', 'Every unsubmitted change on this card is gone.');
                       }
                     })
                   }

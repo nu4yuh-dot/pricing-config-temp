@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { submitContractProposal, discardContractDraft } from '../../app/console-actions';
+import { useToast } from '../Toasts';
 
 export default function ContractDraftBar(props: {
   customerCode: string;
@@ -12,6 +13,7 @@ export default function ContractDraftBar(props: {
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   const hasChanges = props.outstandingCount > 0 || props.scopeChanged;
 
@@ -64,7 +66,14 @@ export default function ContractDraftBar(props: {
             onClick={() =>
               startTransition(async () => {
                 if (confirm('Discard this contract draft?')) {
-                  await discardContractDraft(props.customerCode);
+                  const outcome = await discardContractDraft(props.customerCode);
+                  if ('error' in outcome) {
+                    setError(outcome.error);
+                    toast.failed('discard that draft', outcome.error);
+                    return;
+                  }
+                  setError(null);
+                  toast.deleted('Draft contract', 'The negotiated rates have been thrown away.');
                 }
               })
             }
@@ -74,12 +83,35 @@ export default function ContractDraftBar(props: {
           <button
             className="primary"
             disabled={pending}
+            /**
+             * The refusal comes back in the result, not as an exception.
+             *
+             * This used to be a bare `try/catch` around the call, which caught the wrong
+             * thing in both directions: `submitContractProposal` goes through `attempt`, so a
+             * real refusal — a contract already awaiting approval, a draft with nothing in it
+             * — is **returned** as `{ error }` and was being discarded, while the only thing
+             * the catch could actually see was the redirect `attempt` deliberately re-throws
+             * on success. So a success was reported as an error and a failure as nothing.
+             *
+             * The catch is kept, narrowed, and re-throws: swallowing Next's control flow
+             * would break the navigation to the new proposal.
+             */
             onClick={() =>
               startTransition(async () => {
                 try {
-                  await submitContractProposal(props.customerCode);
+                  const outcome = await submitContractProposal(props.customerCode);
+                  if (outcome && 'error' in outcome) {
+                    setError(outcome.error);
+                    toast.failed('submit that proposal', outcome.error);
+                    return;
+                  }
+                  setError(null);
                 } catch (cause) {
-                  setError(cause instanceof Error ? cause.message : 'Could not submit.');
+                  const digest = (cause as { digest?: string } | null)?.digest;
+                  if (typeof digest === 'string' && digest.startsWith('NEXT_')) throw cause;
+                  const reason = cause instanceof Error ? cause.message : 'Could not submit.';
+                  setError(reason);
+                  toast.failed('submit that proposal', reason);
                 }
               })
             }

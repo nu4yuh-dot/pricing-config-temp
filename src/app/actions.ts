@@ -25,6 +25,7 @@ import { checkThrottle, recordFailure, recordSuccess } from '../auth/throttle';
 import { headers } from 'next/headers';
 import type { ReviewDecisions } from '../data/workflow';
 import { recordAudit } from '../data/audit';
+import { attempt, type Outcome } from './action-result';
 
 async function authorise(capability: Capability) {
   const user = await currentUser();
@@ -86,9 +87,21 @@ export async function saveDraftEdits(
   await editDraftCells(cardKey, edits, toActor(user));
 }
 
-export async function discardDraft(cardKey: string) {
+/**
+ * Throw away every unsubmitted change on a card.
+ *
+ * Answers an outcome because of what it costs to get wrong in silence: the button behind
+ * this is confirmed with "Discard every unsubmitted change on this card?", so somebody has
+ * already decided their work is expendable. If the discard is then refused — a frozen draft
+ * awaiting review is the usual reason — they walk away believing it happened.
+ */
+export async function discardDraft(cardKey: string): Promise<Outcome<object>> {
   const user = await authorise('edit-draft');
-  await resetDraft(cardKey, toActor(user));
+
+  return attempt('Could not discard that draft', async () => {
+    await resetDraft(cardKey, toActor(user));
+    return {};
+  });
 }
 
 export async function submitDraftForApproval(cardKey: string) {
@@ -201,7 +214,29 @@ export async function addUser(_previous: unknown, form: FormData) {
   if (!email || !name) return { error: 'Name and email are both required.' };
   if (password.length < 12) return { error: 'Choose a password of at least 12 characters.' };
 
-  await createUser({ email, name, password, role });
+  /**
+   * An email that is already taken is an expected answer, not a crash.
+   *
+   * A unique index on `email` enforces this, and the duplicate-key error was reaching the
+   * caller unhandled — so an admin adding somebody who already has an account got Next's
+   * boilerplate in a production build, where a thrown message is stripped. "Something went
+   * wrong" for the most ordinary mistake available on this screen.
+   *
+   * The index stays the enforcement; this only translates it. Checking first and then
+   * inserting would leave the same gap between the two statements that the index exists to
+   * close.
+   */
+  try {
+    await createUser({ email, name, password, role });
+  } catch (cause) {
+    if ((cause as { code?: number }).code === 11000) {
+      return { error: `Somebody already has an account for ${email}.` };
+    }
+    return {
+      error: cause instanceof Error ? cause.message : 'Could not create that account.',
+    };
+  }
+
   await recordAudit({
     action: 'user-created',
     actor: toActor(actor),
@@ -212,20 +247,41 @@ export async function addUser(_previous: unknown, form: FormData) {
   return { ok: true as const };
 }
 
-export async function changeUserRole(userId: string, role: Role) {
+/**
+ * These two answer an outcome rather than throwing, because their callers are controls
+ * with no other way to speak.
+ *
+ * Both were called as `void changeUserRole(...)` from a select and a button, so a refusal
+ * was discarded twice over: the promise rejection went unhandled, and nothing on the screen
+ * changed either way. An admin picked a role, watched the select move to it, and had no idea
+ * the change had been refused — and in a production build the thrown message would have been
+ * stripped even if somebody had caught it.
+ */
+export async function changeUserRole(userId: string, role: Role): Promise<Outcome<object>> {
   const user = await authorise('manage-users');
-  await setUserRole(userId, role);
-  await recordAudit({
-    action: 'user-role-changed',
-    actor: toActor(user),
-    at: new Date(),
-    detail: { userId, role },
+
+  return attempt('Could not change that role', async () => {
+    await setUserRole(userId, role);
+    await recordAudit({
+      action: 'user-role-changed',
+      actor: toActor(user),
+      at: new Date(),
+      detail: { userId, role },
+    });
+    revalidatePath('/users');
+    return {};
   });
-  revalidatePath('/users');
 }
 
-export async function toggleUserActive(userId: string, active: boolean) {
+export async function toggleUserActive(
+  userId: string,
+  active: boolean,
+): Promise<Outcome<object>> {
   await authorise('manage-users');
-  await setUserActive(userId, active);
-  revalidatePath('/users');
+
+  return attempt(`Could not ${active ? 'enable' : 'disable'} that account`, async () => {
+    await setUserActive(userId, active);
+    revalidatePath('/users');
+    return {};
+  });
 }

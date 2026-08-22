@@ -68,3 +68,88 @@ test('it is announced to a screen reader, not only drawn', async ({ page }) => {
   await expect(region).toHaveAttribute('role', 'status');
   await expect(region).toHaveAttribute('aria-live', 'polite');
 });
+
+/**
+ * The controls that used to say nothing at all.
+ *
+ * Three surfaces called an action and discarded the result: a role select, an account
+ * toggle, and the segment-tag editor. Success and failure looked identical on all three,
+ * which for the tag editor meant a customer could appear tagged — and so appear eligible for
+ * an offer — on the strength of a save that never happened.
+ *
+ * These are the assertions that stop that returning. They deliberately act on a *real*
+ * control rather than a fixture, because the bug was that the wiring was missing, and a
+ * fixture would have been wired correctly by whoever wrote the test.
+ */
+test('a segment tag says it saved, and the tag is really there', async ({ page }) => {
+  await page.goto('/customers/MAHLE');
+
+  const tag = `${MARK}-seg`;
+
+  /**
+   * Clear the tag first, rather than assuming it is absent.
+   *
+   * The editor's `add` returns early when the tag is already present — correctly, it is a
+   * set — so a run that left the tag behind made the next run save nothing, show no toast,
+   * and fail as though the wiring were broken. A test that depends on the state a previous
+   * run left is the same defect I have been fixing elsewhere.
+   */
+  const existing = page.getByRole('button', { name: `Remove ${tag}` });
+  if ((await existing.count()) > 0) {
+    await existing.first().click();
+    await expect(existing).toHaveCount(0, { timeout: 10_000 });
+  }
+
+  await page.fill('#segment-tag', tag);
+  await page.getByRole('button', { name: /^Add$/ }).click();
+
+  const toast = page.locator('.toast.success').first();
+  await expect(toast).toBeVisible({ timeout: 10_000 });
+  await expect(toast).toContainText(/tag/i);
+
+  // Reloaded, so this is the stored value rather than the optimistic chip — the chip was set
+  // before the save was even asked for. `.pill-list` appears five times on this page, so the
+  // assertion is on the tag's own Remove control, which only exists for a tag that is there.
+  await page.reload();
+  await expect(page.getByRole('button', { name: `Remove ${tag}` })).toBeVisible();
+
+  // Put it back, and check the removal is confirmed too.
+  await page.getByRole('button', { name: `Remove ${tag}` }).click();
+  await expect(page.locator('.toast.success').first()).toBeVisible({ timeout: 10_000 });
+  await page.reload();
+  await expect(page.getByRole('button', { name: `Remove ${tag}` })).toHaveCount(0);
+});
+
+test('changing a role is confirmed rather than assumed', async ({ page }) => {
+  // Three navigations and two round trips through the action; the default 30s is tight.
+  test.setTimeout(90_000);
+  await page.goto('/users');
+
+  const select = page.locator('select').first();
+  await expect(select).toBeVisible();
+  const before = await select.inputValue();
+  const next = before === 'viewer' ? 'configurator' : 'viewer';
+
+  await select.selectOption(next);
+  const toast = page.locator('.toast').first();
+  await expect(toast).toBeVisible({ timeout: 10_000 });
+  await expect(toast, 'it has to name what happened').toContainText(/role/i);
+  const said = (await toast.textContent()) ?? '';
+
+  await page.reload();
+  const after = await page.locator('select').first().inputValue();
+
+  if (said.toLowerCase().includes('could not')) {
+    // A refusal has to leave the control where it was, not showing the role it failed to set.
+    expect(after, 'a refused change must not stick on screen').toBe(before);
+    return;
+  }
+
+  expect(after, 'a confirmed change must actually be stored').toBe(next);
+
+  // Leave the account on the role it started with.
+  await page.locator('select').first().selectOption(before);
+  await expect(page.locator('.toast').first()).toBeVisible({ timeout: 10_000 });
+  await page.reload();
+  expect(await page.locator('select').first().inputValue()).toBe(before);
+});

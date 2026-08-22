@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { saveCustomerTags } from '../../app/console-actions';
+import { useToast } from '../Toasts';
 
 /**
  * The segments a customer belongs to.
@@ -25,11 +26,26 @@ export default function SegmentTagsEditor({
   const [current, setCurrent] = useState(tags);
   const [entry, setEntry] = useState('');
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
 
+  /**
+   * Optimistic, but only until the action answers.
+   *
+   * The tags were set on screen and the result thrown away, so a refused save left the
+   * customer looking tagged. Tags decide which offers reach them, so a tag that exists only
+   * in the browser is a discount somebody expects and never gets.
+   */
   const save = (next: string[]) => {
+    const previous = current;
     setCurrent(next);
     startTransition(async () => {
-      await saveCustomerTags(customerCode, next);
+      const outcome = await saveCustomerTags(customerCode, next);
+      if ('error' in outcome) {
+        setCurrent(previous);
+        toast.failed('save those tags', outcome.error);
+        return;
+      }
+      toast.saved('Tags', next.length === 0 ? 'All tags removed.' : next.join(', '));
     });
   };
 

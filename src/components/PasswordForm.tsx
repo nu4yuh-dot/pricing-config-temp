@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { changePassword } from '../app/actions';
+import { useActionToast } from './Toasts';
 
 /**
  * Change your own password. Requires the current one, so a borrowed session cannot
@@ -12,6 +13,7 @@ export default function PasswordForm() {
     changePassword,
     null as { error?: string; ok?: string } | null,
   );
+  useActionToast(state, { what: 'Password', verb: 'change your password' });
 
   return (
     <form action={action} className="stack">

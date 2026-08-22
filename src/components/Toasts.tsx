@@ -48,6 +48,55 @@ const ToastContext = createContext<ToastApi | null>(null);
 const LINGER_MS = 4500;
 
 
+/**
+ * Toast whatever an action just answered, once per answer.
+ *
+ * Twenty-six screens already rendered their result inline — a red paragraph under the form —
+ * which works while you are looking at that paragraph. It does not work for a control at the
+ * top of a long page, or for a save you triggered and then scrolled away from, and it means
+ * every screen reports in its own place and its own words.
+ *
+ * This exists so adding a toast to one of them is a single line rather than a rewrite. It
+ * fires on the *identity* of the result object, which is what `useActionState` gives a new
+ * one of per submission — so re-renders do not re-announce, and two identical failures in a
+ * row are still two toasts, because the second attempt genuinely failed too.
+ *
+ * The inline message stays where it is. A toast is a better notification, not a replacement
+ * for text that belongs beside the field it is about.
+ */
+export function useActionToast(
+  result: { ok?: unknown; error?: string; message?: string } | null | undefined,
+  labels: {
+    /** The thing, capitalised: "Carrier", "Commercial terms". */
+    what: string;
+    /** What was attempted, lower case, for the failure line: "save the carrier". */
+    verb: string;
+    /** True when success means the thing is gone rather than stored. */
+    removed?: boolean;
+    /** Shown under a success, when there is something worth adding. */
+    detail?: string;
+  },
+): void {
+  const toast = useToast();
+  const announced = useRef<unknown>(null);
+
+  useEffect(() => {
+    if (!result || announced.current === result) return;
+    announced.current = result;
+
+    const reason = result.error ?? (result.ok === false ? result.message : undefined);
+    if (reason !== undefined && reason !== '') {
+      toast.failed(labels.verb, reason);
+      return;
+    }
+    // `ok` may be `true`, or a message string some of the older actions return.
+    if (result.ok === undefined && result.error === undefined) return;
+    const detail = labels.detail ?? (typeof result.ok === 'string' ? result.ok : undefined);
+    if (labels.removed) toast.deleted(labels.what, detail);
+    else toast.saved(labels.what, detail);
+  }, [result, toast, labels.what, labels.verb, labels.removed, labels.detail]);
+}
+
 export function useToast(): ToastApi {
   const api = useContext(ToastContext);
   if (!api) {

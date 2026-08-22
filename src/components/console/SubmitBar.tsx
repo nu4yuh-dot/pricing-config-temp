@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { submitDraftForApproval, discardDraft } from '../../app/actions';
+import { useToast } from '../Toasts';
 
 /**
  * The confirm step at the end of the change summary.
@@ -17,6 +18,7 @@ export default function SubmitBar(props: {
   canSubmit: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
   const [acknowledged, setAcknowledged] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,7 +98,9 @@ export default function SubmitBar(props: {
                     `Discard all ${props.count} unsubmitted changes on this card? This cannot be undone.`,
                   )
                 ) {
-                  await discardDraft(props.cardKey);
+                  const outcome = await discardDraft(props.cardKey);
+                  if ('error' in outcome) toast.failed('discard that draft', outcome.error);
+                  else toast.deleted('Draft', `All ${props.count} unsubmitted changes are gone.`);
                 }
               })
             }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { sendQueuedToCore } from '../../app/console-actions';
+import { useToast } from '../Toasts';
 
 /**
  * Send the customer changes that are waiting for the SameX core.
@@ -17,6 +18,7 @@ import { sendQueuedToCore } from '../../app/console-actions';
  */
 export default function SendToCoreButton({ queued }: { queued: number }) {
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
   const [result, setResult] = useState<
     { ok: true; sent: number; failed: number } | { ok: false; message: string } | null
   >(null);
@@ -32,9 +34,28 @@ export default function SendToCoreButton({ queued }: { queued: number }) {
             const report = await sendQueuedToCore();
             if ('error' in report && report.error) {
               setResult({ ok: false, message: report.error });
+              toast.failed('send those changes', report.error);
               return;
             }
-            setResult({ ok: true, sent: report.sent ?? 0, failed: report.failed ?? 0 });
+            const sent = report.sent ?? 0;
+            const failed = report.failed ?? 0;
+            setResult({ ok: true, sent, failed });
+            // A drain that sent nothing and failed nothing is not a success worth a green
+            // toast — it means there was nothing to send, and saying "sent 0" as a
+            // confirmation is how somebody stops reading them.
+            if (failed > 0) {
+              toast.show({
+                kind: 'error',
+                title: `${failed} could not be delivered`,
+                detail:
+                  `${sent} went through. The failures are listed below with their reason, ` +
+                  'and each can be retried.',
+              });
+            } else if (sent > 0) {
+              toast.saved('Queue', `${sent} change${sent === 1 ? '' : 's'} delivered to the core.`);
+            } else {
+              toast.show({ kind: 'info', title: 'Nothing was waiting to be sent' });
+            }
           })
         }
       >

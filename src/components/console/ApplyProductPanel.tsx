@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { applyProduct, type ApplyProductResult } from '../../app/console-actions';
+import { useActionToast } from '../Toasts';
 
 /**
  * Put a product on one customer, or on everybody in its segment.
@@ -25,6 +26,7 @@ export default function ApplyProductPanel({
   blocked: string | null;
 }) {
   const [state, action, pending] = useActionState(applyProduct, null as ApplyProductResult | null);
+  useActionToast(state, { what: 'Product', verb: 'apply that product' });
   const [target, setTarget] = useState<'customer' | 'segment'>('customer');
   const [mode, setMode] = useState<'fill-gaps' | 'replace'>('fill-gaps');
 

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { assignTemplate, type AssignTemplateResult } from '../../app/console-actions';
+import { useActionToast } from '../Toasts';
 
 /**
  * Start a contract from a saved template instead of building it lane by lane.
@@ -39,6 +40,7 @@ export default function ApplyTemplatePanel({
     assignTemplate,
     null as AssignTemplateResult | null,
   );
+  useActionToast(state, { what: 'Template', verb: 'assign that template' });
   const [mode, setMode] = useState<'fill-gaps' | 'replace'>('fill-gaps');
   const [chosen, setChosen] = useState(templates[0]?.key ?? '');
   const template = templates.find((entry) => entry.key === chosen) ?? templates[0];

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { importCustomerCsv, type CsvImportResult } from '../../app/console-actions';
+import { useActionToast } from '../Toasts';
 
 /**
  * Configure a whole customer from one file.
@@ -23,6 +24,7 @@ export default function CsvImportPanel({
     importCustomerCsv,
     null as CsvImportResult | null,
   );
+  useActionToast(state, { what: 'Import', verb: 'import that configuration' });
   const [text, setText] = useState('');
 
   const download = () => {

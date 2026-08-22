@@ -18,6 +18,7 @@ import {
   type Plant,
 } from '../../domain/company';
 import type { CommercialTerms } from '../../domain/customers';
+import { useActionToast } from '../Toasts';
 
 /**
  * Company master data.
@@ -88,6 +89,8 @@ export default function CompanyProfileForm({
     saveCommercial,
     null as ActionResult | null,
   );
+  useActionToast(profileState, { what: 'Company profile', verb: 'save the profile' });
+  useActionToast(termsState, { what: 'Commercial terms', verb: 'save the commercial terms' });
 
   const gst = draft.gstin ? checkGstin(draft.gstin) : null;
   const pan = draft.pan ? checkPan(draft.pan) : null;

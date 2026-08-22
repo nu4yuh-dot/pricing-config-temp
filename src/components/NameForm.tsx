@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { changeName } from '../app/actions';
+import { useActionToast } from './Toasts';
 
 /**
  * Change your own display name.
@@ -14,6 +15,7 @@ export default function NameForm({ name }: { name: string }) {
     changeName,
     null as { error?: string; ok?: string } | null,
   );
+  useActionToast(state, { what: 'Name', verb: 'change your name' });
 
   return (
     <form action={action} className="inline-form">

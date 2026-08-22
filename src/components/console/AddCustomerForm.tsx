@@ -2,12 +2,14 @@
 
 import { useActionState } from 'react';
 import { addCustomerManually } from '../../app/console-actions';
+import { useActionToast } from '../Toasts';
 
 export default function AddCustomerForm({ cards }: { cards: { key: string; name: string }[] }) {
   const [state, action, pending] = useActionState(
     addCustomerManually,
     null as { error?: string; ok?: boolean } | null,
   );
+  useActionToast(state, { what: 'Customer', verb: 'add that customer' });
 
   return (
     <form action={action}>

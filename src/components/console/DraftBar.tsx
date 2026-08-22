@@ -4,6 +4,7 @@ import { useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { discardDraft } from '../../app/actions';
+import { useToast } from '../Toasts';
 
 /**
  * The draft's state, always visible.
@@ -30,13 +31,29 @@ export default function DraftBar(props: {
   toggleHref?: string;
   /** True on the sheet itself, so the toggle reads as on and switches back. */
   sheetView?: boolean;
+  /**
+   * Which engine reads this grid, e.g. `CUMULATIVE_SLABS`.
+   *
+   * Shown because the numbers do not mean anything on their own: 15 in a slab row is a rate
+   * per kg on every kilo under `CUMULATIVE_SLABS` and a rate on the excess only under
+   * `MIN_PLUS_EXCESS`. The card bar used to carry this beside each card's name, and it went
+   * when card switching moved to the masthead — which left the grid editable with nothing
+   * on the page saying how it would be read.
+   */
+  freightMethod?: string;
 }) {
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
   const router = useRouter();
 
   return (
     <div className="toolbar">
       <span className="cardname">{props.cardName}</span>
+      {props.freightMethod && (
+        <span className="method" title="The pricing engine that reads this card's grids">
+          {props.freightMethod}
+        </span>
+      )}
       {props.toggleHref && (
         <Link
           className="viewtoggle"
@@ -91,7 +108,9 @@ export default function DraftBar(props: {
             onClick={() =>
               startTransition(async () => {
                 if (confirm('Discard every unsubmitted change on this card?')) {
-                  await discardDraft(props.cardKey);
+                  const outcome = await discardDraft(props.cardKey);
+                  if ('error' in outcome) toast.failed('discard that draft', outcome.error);
+                  else toast.deleted('Draft', 'Every unsubmitted change on this card is gone.');
                 }
               })
             }

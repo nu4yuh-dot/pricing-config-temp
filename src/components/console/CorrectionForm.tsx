@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState, useTransition } from 'react';
 import { correctInvoice, correctionOptions, type ActionResult } from '../../app/console-actions';
+import { useActionToast } from '../Toasts';
 
 /** What may be done to the selected invoice, unwrapped from the action's outcome. */
 type Options = Extract<Awaited<ReturnType<typeof correctionOptions>>, { ok: true }>['options'];
@@ -28,6 +29,7 @@ export default function CorrectionForm({
     (ActionResult & { route?: string; noteNumber?: string }) | null,
     FormData
   >(correctInvoice, null);
+  useActionToast(state, { what: 'Correction', verb: 'correct that invoice' });
 
   const [selected, setSelected] = useState(invoices[0]?.number ?? '');
   const [withdraw, setWithdraw] = useState(false);
