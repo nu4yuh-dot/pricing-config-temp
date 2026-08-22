@@ -19,7 +19,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
   if (!parsed.success) return badRequest('Invalid address.', parsed.error.flatten());
 
   const { code } = await params;
-  const customer = await customerOr404(code);
+  const customer = await customerOr404(code, auth.caller);
   if ('response' in customer) return customer.response;
 
   // The core names these `address`, `type`, `phoneCode` and `isDefault`; we shipped
@@ -54,7 +54,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ c
   if (!id) return badRequest('id is required.');
 
   const { code } = await params;
-  const customer = await customerOr404(code);
+  const customer = await customerOr404(code, auth.caller);
   if ('response' in customer) return customer.response;
 
   try {

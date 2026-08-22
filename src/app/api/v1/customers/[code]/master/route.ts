@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authenticatedRequest } from '../../../../_auth';
-import { findCustomer } from '../../../../../../data/customers';
+import { customerOr404 } from '../../../../../../customers/portal-actor';
 import { toLegacyCustomerMaster } from '../../../../../../core/legacy-shapes';
 
 /**
@@ -18,13 +18,9 @@ export async function GET(
   if (!auth.ok) return auth.response;
 
   const { code } = await params;
-  const customer = await findCustomer(code);
-  if (!customer) {
-    return NextResponse.json(
-      { success: false, message: `Unknown customer ${code}.` },
-      { status: 404 },
-    );
-  }
+  const resolved = await customerOr404(code, auth.caller);
+  if ('response' in resolved) return resolved.response;
+  const customer = resolved.customer;
 
   return NextResponse.json({ success: true, data: toLegacyCustomerMaster(customer) });
 }

@@ -91,7 +91,19 @@ export async function GET(request: Request) {
   const limit = requested === null ? null : Math.min(Math.floor(requested), MAX_PAGE);
 
   const all = await listCustomers();
-  const ordered = [...all].sort((a, b) => (a.code < b.code ? -1 : a.code > b.code ? 1 : 0));
+  /**
+   * A key scoped to one customer sees one customer.
+   *
+   * Filtered rather than refused, so a scoped caller can use the same endpoint as an
+   * unscoped one and simply gets a one-row list. Refusing would make the scope a special
+   * case every caller has to branch on; this way the list means "the customers you may
+   * act for", which is what an unscoped caller was already getting.
+   */
+  const visible =
+    auth.caller.customerScope === null
+      ? all
+      : all.filter((customer) => customer.code === auth.caller.customerScope);
+  const ordered = [...visible].sort((a, b) => (a.code < b.code ? -1 : a.code > b.code ? 1 : 0));
   const after = cursor === null ? ordered : ordered.filter((customer) => customer.code > cursor);
   const page = limit === null ? after : after.slice(0, limit);
   const last = page[page.length - 1];

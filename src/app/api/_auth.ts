@@ -43,6 +43,20 @@ export interface ServiceCaller {
   /** Which key was presented, for the audit trail. Never the secret itself. */
   keyId: string;
   scheme: 'signed' | 'static-key';
+  /**
+   * The one customer this key may act for, or null for a key that may act for any.
+   *
+   * Authentication answers "is this a caller we know". It does not answer "may this caller
+   * see *this customer*", and until this field existed nothing did: every key that got
+   * through the door could read any customer's negotiated rates, account position and team
+   * roster by changing the code in the path. For the core and the admin console that is
+   * correct — they are trusted and act for everybody. For a per-tenant caller it is not.
+   *
+   * Null unless the key is named in `SERVICE_KEY_SCOPES`, so no key that works today
+   * changes behaviour. Scoping is something you turn on for a key, not something that
+   * arrives underneath an existing integration.
+   */
+  customerScope: string | null;
 }
 
 /**
@@ -70,6 +84,32 @@ export function parseServiceKeys(raw: string): Map<string, string> {
 
 function signingKeys(): Map<string, string> {
   return parseServiceKeys(process.env.SERVICE_KEYS ?? '');
+}
+
+/**
+ * Which key may act for which customer, as `keyId:CUSTOMERCODE` pairs.
+ *
+ * A separate variable rather than a third field on `SERVICE_KEYS`, because a secret there
+ * may itself contain a colon — `parseServiceKeys` splits on the first one only and takes
+ * the remainder verbatim. Adding a third field would make a secret containing a colon
+ * parse as a scope, which is a silent authorisation change hidden in a formatting detail.
+ */
+export function parseKeyScopes(raw: string): Map<string, string> {
+  const scopes = new Map<string, string>();
+  for (const entry of raw.split(',')) {
+    const trimmed = entry.trim();
+    if (!trimmed) continue;
+    const at = trimmed.indexOf(':');
+    if (at <= 0) continue;
+    const keyId = trimmed.slice(0, at).trim();
+    const code = trimmed.slice(at + 1).trim();
+    if (keyId && code) scopes.set(keyId, code);
+  }
+  return scopes;
+}
+
+function scopeFor(keyId: string): string | null {
+  return parseKeyScopes(process.env.SERVICE_KEY_SCOPES ?? '').get(keyId) ?? null;
 }
 
 /**
@@ -287,7 +327,7 @@ export async function authenticateService(
       };
     }
 
-    const signedCaller = { keyId, scheme: 'signed' as const };
+    const signedCaller = { keyId, scheme: 'signed' as const, customerScope: scopeFor(keyId) };
     return withinBudget(signedCaller) ?? { ok: true, caller: signedCaller };
   }
 
@@ -317,7 +357,11 @@ export async function authenticateService(
     };
   }
 
-  const staticCaller = { keyId: 'booking-site', scheme: 'static-key' as const };
+  const staticCaller = {
+    keyId: 'booking-site',
+    scheme: 'static-key' as const,
+    customerScope: scopeFor('booking-site'),
+  };
   return withinBudget(staticCaller) ?? { ok: true, caller: staticCaller };
 }
 

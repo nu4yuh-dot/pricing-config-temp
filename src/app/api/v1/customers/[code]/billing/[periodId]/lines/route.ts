@@ -3,7 +3,7 @@ import { BillAcceptAll } from '../../../../../../../../api/contracts';
 import { authenticatedJson, badRequest } from '../../../../../../_auth';
 import { acceptAll } from '../../../../../../../../data/customer-billing';
 import { portalActor, customerOr404 } from '../../../../../../../../customers/portal-actor';
-import { DEFAULT_COMMERCIAL_TERMS } from '../../../../../../../../domain/customers';
+import { commercialTerms } from '../../../../../../../../domain/customers';
 
 /**
  * Accepting every outstanding line at once — the portal's "accept all".
@@ -22,10 +22,10 @@ export async function POST(
   if (!parsed.success) return badRequest('Who is accepting?', parsed.error.flatten());
 
   const { code, periodId } = await params;
-  const found = await customerOr404(code);
+  const found = await customerOr404(code, auth.caller);
   if ('response' in found) return found.response;
 
-  const terms = found.customer.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+  const terms = commercialTerms(found.customer.commercial);
 
   try {
     const accepted = await acceptAll(

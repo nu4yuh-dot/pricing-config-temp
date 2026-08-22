@@ -19,7 +19,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
   if (!parsed.success) return badRequest('Invalid config.', parsed.error.flatten());
 
   const { code } = await params;
-  const customer = await customerOr404(code);
+  const customer = await customerOr404(code, auth.caller);
   if ('response' in customer) return customer.response;
 
   const saved = await setAdminBookingAccess(

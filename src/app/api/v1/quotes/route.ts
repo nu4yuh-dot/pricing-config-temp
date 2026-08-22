@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { outOfScope } from '../../../../customers/portal-actor';
 import { z } from 'zod';
 import { QuoteRequest } from '../../../../api/contracts';
 import { authenticatedJson, badRequest } from '../../_auth';
@@ -160,6 +161,9 @@ export async function POST(request: Request) {
   let contract: { fingerprint: string; overrides: number } | null = null;
 
   if (named.customerCode) {
+    const refused = outOfScope(auth.caller, named.customerCode);
+    if (refused) return refused;
+
     const customer = await findCustomer(named.customerCode);
     if (!customer) {
       return NextResponse.json(

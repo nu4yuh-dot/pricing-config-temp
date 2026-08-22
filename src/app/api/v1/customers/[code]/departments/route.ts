@@ -23,7 +23,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
   if (!auth.ok) return auth.response;
 
   const { code } = await params;
-  const customer = await customerOr404(code);
+  const customer = await customerOr404(code, auth.caller);
   if ('response' in customer) return customer.response;
 
   const { accountOf } = await import('../../../../../../data/enterprise');
@@ -46,7 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
   if (!parsed.success) return badRequest('Invalid department.', parsed.error.flatten());
 
   const { code } = await params;
-  const customer = await customerOr404(code);
+  const customer = await customerOr404(code, auth.caller);
   if ('response' in customer) return customer.response;
 
   try {
@@ -72,7 +72,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ c
   if (!id) return badRequest('id is required.');
 
   const { code } = await params;
-  const customer = await customerOr404(code);
+  const customer = await customerOr404(code, auth.caller);
   if ('response' in customer) return customer.response;
 
   try {

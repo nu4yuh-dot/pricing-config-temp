@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authenticatedRequest } from '../../../../_auth';
-import { findCustomer, baseCardFor } from '../../../../../../data/customers';
+import { baseCardFor } from '../../../../../../data/customers';
+import { customerOr404 } from '../../../../../../customers/portal-actor';
 import { effectiveCard } from '../../../../../../customers/contract';
 import {
   toLegacyCustomerRateCards,
@@ -27,13 +28,9 @@ export async function GET(
   if (!auth.ok) return auth.response;
 
   const { code } = await params;
-  const customer = await findCustomer(code);
-  if (!customer) {
-    return NextResponse.json(
-      { success: false, message: `Unknown customer ${code}.` },
-      { status: 404 },
-    );
-  }
+  const resolved = await customerOr404(code, auth.caller);
+  if ('response' in resolved) return resolved.response;
+  const customer = resolved.customer;
 
   const base = await baseCardFor(customer);
   const contracted = effectiveCard(base, customer.liveTerms);

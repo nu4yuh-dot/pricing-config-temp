@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   parseServiceKeys,
+  parseKeyScopes,
   stringToSign,
   sign,
   SKEW_SECONDS,
@@ -96,5 +97,42 @@ describe('the replay window', () => {
     // If a nonce were forgotten sooner than the clock skew allowed, a captured request
     // would become replayable the moment its nonce expired — which is the whole defence.
     expect(NONCE_TTL_SECONDS).toBeGreaterThan(SKEW_SECONDS * 2);
+  });
+});
+
+/**
+ * Which customer a key may act for.
+ *
+ * Authentication says a caller is known. It never said which *customers* a known caller
+ * may reach, and nothing else did either: any key that got through the door could read
+ * any customer's negotiated rates, account position and team roster by changing the code
+ * in the path. That is right for the core and the admin console, which act for everybody,
+ * and wrong for a per-tenant caller.
+ */
+describe('per-key customer scope', () => {
+  test('a key with no scope entry is unrestricted, so nothing installed today changes', () => {
+    const scopes = parseKeyScopes('portal-acme:ACME');
+    expect(scopes.get('core')).toBeUndefined();
+  });
+
+  test('a scoped key names exactly one customer', () => {
+    const scopes = parseKeyScopes('portal-acme:ACME,portal-mahle:MAHLE');
+    expect(scopes.get('portal-acme')).toBe('ACME');
+    expect(scopes.get('portal-mahle')).toBe('MAHLE');
+  });
+
+  test('whitespace around entries is tolerated', () => {
+    expect(parseKeyScopes(' portal-acme : ACME , portal-x : XCO ').get('portal-x')).toBe('XCO');
+  });
+
+  test('a malformed entry is dropped rather than half-applied', () => {
+    // A scope that parsed to an empty code would restrict a key to a customer that cannot
+    // exist, locking it out of everything — worse than not being configured.
+    const scopes = parseKeyScopes('nocolon,:LEADINGCOLON,portal:,good:GOODCO');
+    expect([...scopes.keys()]).toEqual(['good']);
+  });
+
+  test('an empty variable scopes nothing', () => {
+    expect(parseKeyScopes('').size).toBe(0);
   });
 });

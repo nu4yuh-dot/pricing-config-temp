@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { authenticatedRequest } from '../../../../_auth';
 import { billHistory, currentBill } from '../../../../../../data/customer-billing';
 import { customerOr404 } from '../../../../../../customers/portal-actor';
-import { DEFAULT_COMMERCIAL_TERMS } from '../../../../../../domain/customers';
+import { commercialTerms } from '../../../../../../domain/customers';
 
 /**
  * The customer's bills, for the enterprise portal's Billing tab.
@@ -20,10 +20,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
   if (!auth.ok) return auth.response;
 
   const { code } = await params;
-  const found = await customerOr404(code);
+  const found = await customerOr404(code, auth.caller);
   if ('response' in found) return found.response;
 
-  const terms = found.customer.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+  const terms = commercialTerms(found.customer.commercial);
   const [current, history] = await Promise.all([
     currentBill(found.customer.code, terms.paymentTermsDays),
     billHistory(found.customer.code, terms.paymentTermsDays),

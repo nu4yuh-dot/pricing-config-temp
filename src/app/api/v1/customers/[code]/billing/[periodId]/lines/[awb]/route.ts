@@ -3,7 +3,7 @@ import { BillLineMark } from '../../../../../../../../../api/contracts';
 import { authenticatedJson, badRequest } from '../../../../../../../_auth';
 import { markLine, billFor } from '../../../../../../../../../data/customer-billing';
 import { portalActor, customerOr404 } from '../../../../../../../../../customers/portal-actor';
-import { DEFAULT_COMMERCIAL_TERMS } from '../../../../../../../../../domain/customers';
+import { commercialTerms } from '../../../../../../../../../domain/customers';
 
 /**
  * The customer accepting or disputing one line of their bill.
@@ -26,10 +26,10 @@ export async function POST(
   if (!parsed.success) return badRequest('Invalid mark.', parsed.error.flatten());
 
   const { code, periodId, awb } = await params;
-  const found = await customerOr404(code);
+  const found = await customerOr404(code, auth.caller);
   if ('response' in found) return found.response;
 
-  const terms = found.customer.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+  const terms = commercialTerms(found.customer.commercial);
   const bill = await billFor(found.customer.code, periodId, terms.paymentTermsDays);
   if (!bill) {
     return NextResponse.json({ success: false, message: `No bill for ${periodId}.` }, { status: 404 });

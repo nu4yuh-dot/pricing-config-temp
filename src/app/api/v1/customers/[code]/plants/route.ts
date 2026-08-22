@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
   const input = parsed.data;
 
   const { code } = await params;
-  const customer = await customerOr404(code);
+  const customer = await customerOr404(code, auth.caller);
   if ('response' in customer) return customer.response;
 
   const { city, state } = splitLocation(input.location);
@@ -77,7 +77,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ c
   if (!plantCode) return badRequest('plantCode is required.');
 
   const { code } = await params;
-  const customer = await customerOr404(code);
+  const customer = await customerOr404(code, auth.caller);
   if ('response' in customer) return customer.response;
 
   try {

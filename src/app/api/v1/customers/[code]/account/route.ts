@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authenticatedRequest } from '../../../../_auth';
-import { findCustomer } from '../../../../../../data/customers';
+import { customerOr404 } from '../../../../../../customers/portal-actor';
 import { accountOf, creditSnapshot } from '../../../../../../data/enterprise';
 import { settlementFor } from '../../../../../../data/settlement';
 import {
@@ -35,10 +35,9 @@ export async function GET(
   if (!auth.ok) return auth.response;
 
   const { code } = await params;
-  const customer = await findCustomer(code);
-  if (!customer) {
-    return NextResponse.json({ success: false, message: `Unknown customer ${code}.` }, { status: 404 });
-  }
+  const resolved = await customerOr404(code, auth.caller);
+  if ('response' in resolved) return resolved.response;
+  const customer = resolved.customer;
 
   const account = accountOf(customer);
   const settlement = await settlementFor(customer.settlement);

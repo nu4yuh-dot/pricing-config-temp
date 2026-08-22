@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { outOfScope } from '../../../../../customers/portal-actor';
 import { NetworkQuoteQuery } from '../../../../../api/contracts';
 import { authenticatedRequest, badRequest } from '../../../_auth';
 import { findCustomer, baseCardFor, contractedCard } from '../../../../../data/customers';
@@ -10,7 +11,7 @@ import { checkContract } from '../../../../../customers/contract';
 import type { Mode } from '../../../../../domain/types';
 import { canBook } from '../../../../../data/billing';
 import { settlementFor } from '../../../../../data/settlement';
-import { DEFAULT_COMMERCIAL_TERMS } from '../../../../../domain/customers';
+import { commercialTerms } from '../../../../../domain/customers';
 
 export async function GET(request: Request) {
   const auth = await authenticatedRequest(request);
@@ -80,6 +81,9 @@ export async function GET(request: Request) {
   }
 
   /* ---------------------------------------------------------- with customer */
+
+  const refused = outOfScope(auth.caller, q.customer);
+  if (refused) return refused;
 
   const customer = await findCustomer(q.customer);
   if (!customer) {
@@ -174,7 +178,7 @@ export async function GET(request: Request) {
     // Being in contract settles the price. Whether it can be booked also depends on the
     // customer having the money for it — an exhausted limit or an overdue balance holds
     // the booking even though the rate is agreed.
-    const terms = customer.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+    const terms = commercialTerms(customer.commercial);
     // The arrangement decides, when the customer is on one. `settlementFor` returns null
     // for a customer nobody has put on terms, and the older wallet-plus-limit check then
     // applies — which is what was deciding for them yesterday.

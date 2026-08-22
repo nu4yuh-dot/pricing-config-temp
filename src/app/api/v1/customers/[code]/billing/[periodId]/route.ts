@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { authenticatedRequest } from '../../../../../_auth';
 import { billFor } from '../../../../../../../data/customer-billing';
 import { customerOr404 } from '../../../../../../../customers/portal-actor';
-import { DEFAULT_COMMERCIAL_TERMS } from '../../../../../../../domain/customers';
+import { commercialTerms } from '../../../../../../../domain/customers';
 
 /**
  * One bill, with every line.
@@ -29,10 +29,10 @@ export async function GET(
     );
   }
 
-  const found = await customerOr404(code);
+  const found = await customerOr404(code, auth.caller);
   if ('response' in found) return found.response;
 
-  const terms = found.customer.commercial ?? DEFAULT_COMMERCIAL_TERMS;
+  const terms = commercialTerms(found.customer.commercial);
   const bill = await billFor(found.customer.code, periodId, terms.paymentTermsDays);
   if (!bill) {
     return NextResponse.json({ success: false, message: `No bill for ${periodId}.` }, { status: 404 });
